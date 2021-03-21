@@ -14,8 +14,9 @@ import numpy as np
 from PIL import Image
 import qimage2ndarray
 
-from down-hole_view import *
+from down_hole_view import *
 from overlay_view import *
+from import_functions import *
 
 
 class mainWindow(QMainWindow):
@@ -91,8 +92,8 @@ class mainWindow(QMainWindow):
         self.gcWaveSpecNames = []
 
         # default colors for minerals in plots and overlay
-        self.startColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-        self.plotColors = self.startColors.copy()
+        self.defaultColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+        self.plotColors = self.defaultColors.copy()
         self.setWindowIcon(QIcon('Icon.ico'))
 
         # initialize app widgets
@@ -574,42 +575,42 @@ class mainWindow(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             # load spectral metric data from _DATA.csv
-            self.loadCsvData()
+            loadCsvData(self)
 
             # get directories containing intentisty spectral images
             intDirs = self.getMinDirs('RGB_')
             intDirDict = dict(zip(intDirs, range(len(intDirs))))    # dictionary to map an index to mineral name
             self.intMinList = [intDirs.replace('RGB_','') for intDirs in intDirs]
-            intImNameList = self.getCoreImageNames(intDirs)
+            intImNameList = getCoreImageNames(self.mainDir, self.rootDir, self.numIms, intDirs)
 
             # get directories containing composition spectral images
             compDirs = self.getMinDirs('mineral_')
             compDirDict = dict(zip(compDirs, range(len(compDirs))))  # dictionary to map an index to mineral name
             self.compMinList = [compDirs.replace('mineral_','') for compDirs in compDirs]
-            compImNameList = self.getCoreImageNames(compDirs)
+            compImNameList = getCoreImageNames(self.mainDir, self.rootDir, self.numIms, compDirs)
 
             # get directory containing medium resolution core box images
             medResDirs = self.getMinDirs('Photos_Medium_')
-            self.medResImNameList = self.getCoreBoxImageNames(medResDirs)
+            self.medResImNameList = getCoreBoxImageNames(self, medResDirs)
 
             # get directory containing high resolution core box images
             hiResDirs = self.getMinDirs('Photos_High_')
-            self.hiResImNameList = self.getCoreBoxImageNames(hiResDirs)
+            self.hiResImNameList = getCoreBoxImageNames(self, hiResDirs)
 
             # add all imagery to lists
-            self.intIms = self.getCoreImages(intDirs, intDirDict, intImNameList)
-            self.compIms = self.getCoreImages(compDirs, compDirDict, compImNameList)
-            self.medResIms = self.getCoreBoxImages(medResDirs,  self.medResImNameList)
-            self.hiResIms = self.getCoreBoxImages(hiResDirs, self.hiResImNameList)
+            self.intIms = getCoreImages(self.mainDir, self.numIms, intDirs, intDirDict, intImNameList)
+            self.compIms = getCoreImages(self.mainDir, self.numIms, compDirs, compDirDict, compImNameList)
+            self.medResIms = getCoreBoxImages(self, medResDirs,  self.medResImNameList)
+            self.hiResIms = getCoreBoxImages(self, hiResDirs, self.hiResImNameList)
 
             # check for missing images
-            checkPassed = self.checkCoreDirs(self.intIms, self.compIms)
+            checkPassed = checkCoreDirs(self, self.intIms, self.compIms)
 
             if checkPassed:
                 # determine the number of spectral images per core box
                 self.numCoresPerBox = int(len(self.intIms[0])/len(self.medResIms))
                 # determine the height of widgets in the dataArea
-                self.dataWidgetHeight = self.getCoreDims(self.intIms)
+                self.dataWidgetHeight = getCoreDims(self, self.intIms)
                 # add drill hole name to top of options drawer
                 self.projBanner.setText(" " + self.projName + " " )
 
@@ -1488,7 +1489,7 @@ class mainWindow(QMainWindow):
          arguements are references to the three color sliders and idx of the affected mineral
         """
 
-        hex = self.startColors[idx][1:]
+        hex = self.defaultColors[idx][1:]
         self.plotColors[idx] = hex
         self.plotColorDict = {self.minList[i]: self.plotColors[i] for i in range(len(self.minList))}
         rgb = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
