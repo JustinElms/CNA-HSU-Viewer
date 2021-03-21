@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 import qimage2ndarray
 
-from down-hole_view import *
+from down_hole_view import *
 from overlay_view import *
 
 
