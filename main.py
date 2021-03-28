@@ -29,6 +29,7 @@ class mainWindow(QMainWindow):
 
     drawerToggled = Signal()                                        # signal for when the drawer is opened or closed
     minColorChanged = Signal()                                      # signal for when a minerals color is changed
+
     def __init__(self):
         super().__init__()
         """
@@ -83,14 +84,8 @@ class mainWindow(QMainWindow):
         self.intMinList = []
         self.compIms = []
         self.compMinList = []
-        self.minDepth = []
-        self.perSpecNames = []
-        self.ppmSpecNames = []
-        self.waveSpecNames = []
-        self.gcPerSpecNames = []
-        self.gcPpmSpecNames = []
-        self.gcWaveSpecNames = []
-
+        self.minMeter = []
+        
         # default colors for minerals in plots and overlay
         self.defaultColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
         self.plotColors = self.defaultColors.copy()
@@ -112,7 +107,7 @@ class mainWindow(QMainWindow):
         """
 
         os.chdir(self.rootDir)
-        self.setWindowTitle("CNA Core Viewer v0.26")
+        self.setWindowTitle("CNA Core Viewer v0.27")
 
         # create main widget and layout
         self.main = QWidget(self)
@@ -342,16 +337,15 @@ class mainWindow(QMainWindow):
         # combobox used to select plot type
         self.newSpecPlotWindowCB = QComboBox(newSpecPlotGroupBox)
         self.specPlotTypeCB = QComboBox(newSpecPlotGroupBox)
-        self.specPlotTypeCB.addItems(('%', 'ppm', 'Wavelength'))
-        self.specPlotTypeCB.currentTextChanged.connect(lambda: self.changeSpecPlotType())
-
+        self.newSpecPlotWindowCB.currentTextChanged.connect(lambda: self.changeSpecPlotMin(self.minData, self.newSpecPlotWindowCB.currentText(), self.specPlotTypeCB))
+        
         # button adds plot widget to dashboard/main area
         addSpecPlotButton = QPushButton("Add",newSpecPlotGroupBox)
-        addSpecPlotButton.clicked.connect(lambda: self.addSpectralPlotWindow(self.newSpecPlotWindowCB.currentText(), self.specPlotTypeCB.currentText(), False))
+        addSpecPlotButton.clicked.connect(lambda: self.addSpectralPlotWindow(False))
         addSpecPlotButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
-        newSpecPlotGroupLayout.addWidget(self.specPlotTypeCB)
         newSpecPlotGroupLayout.addWidget(self.newSpecPlotWindowCB)
+        newSpecPlotGroupLayout.addWidget(self.specPlotTypeCB)
         newSpecPlotGroupLayout.addWidget(addSpecPlotButton)
 
         # group box for 'Add Geochemistry Plot' plot options
@@ -361,15 +355,14 @@ class mainWindow(QMainWindow):
         # comoboxes to select plot type
         self.newGcPlotWindowCB = QComboBox(newGcPlotGroupBox)
         self.gcPlotTypeCB = QComboBox(newGcPlotGroupBox)
-        self.gcPlotTypeCB.addItems(('%', 'ppm', 'Wavelength'))
-        self.gcPlotTypeCB.currentTextChanged.connect(lambda: self.changeSpecPlotType())
-
+        self.newGcPlotWindowCB.currentTextChanged.connect(lambda: self.changeSpecPlotMin(self.gcMinData, self.newGcPlotWindowCB.currentText(), self.gcPlotTypeCB))
+        
         addGcPlotButton = QPushButton("Add",newGcPlotGroupBox)
-        addGcPlotButton.clicked.connect(lambda: self.addSpectralPlotWindow(self.newGcPlotWindowCB.currentText(), self.gcPlotTypeCB.currentText(), True))
+        addGcPlotButton.clicked.connect(lambda: self.addSpectralPlotWindow(True))
         addGcPlotButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
-        newGcPlotGroupLayout.addWidget(self.gcPlotTypeCB)
         newGcPlotGroupLayout.addWidget(self.newGcPlotWindowCB)
+        newGcPlotGroupLayout.addWidget(self.gcPlotTypeCB)
         newGcPlotGroupLayout.addWidget(addGcPlotButton)
 
         # group box for 'Add Stacked Spectral Plot' options
@@ -466,23 +459,23 @@ class mainWindow(QMainWindow):
         elif self.coreTypeCB.currentText() == 'Composition':
             self.newCoreWindowCB.addItems(self.compMinList)
 
-    def changeSpecPlotType(self):
+    def changeSpecPlotMin(self, minData, currentMin, typeCB):
         """
-         function changes core drop down menu items (%, ppm, wavelength) based on combobox state
+         function changes plot type combobox items based on mineral combobox state
+
+         params:
+         minData - dictionary of mineral data 
+         currentMin - current value of mineral combobox
+         typeCB - refernce to combobox containing data types 
         """
-        self.newSpecPlotWindowCB.clear()
-        if self.specPlotTypeCB.currentText() == '%':
-            specList = self.perSpecNames + self.gcPerSpecNames
-            specList.sort()
-            self.newSpecPlotWindowCB.addItems(specList)
-        elif self.specPlotTypeCB.currentText() == 'ppm':
-            specList = self.ppmSpecNames + self.gcPpmSpecNames
-            specList.sort()
-            self.newSpecPlotWindowCB.addItems(specList)
-        elif self.specPlotTypeCB.currentText() == 'Wavelength':
-            specList = self.waveSpecNames + self.gcWaveSpecNames
-            specList.sort()
-            self.newSpecPlotWindowCB.addItems(specList)
+
+        typeCB.clear()
+        cbVals = list(minData[currentMin].keys())
+        for item in cbVals:
+            if '_range' in item:
+                cbVals.remove(item)
+
+        typeCB.addItems(cbVals)
 
     def clearLayout(self,layout):
         """
@@ -547,13 +540,6 @@ class mainWindow(QMainWindow):
             self.intMinList = []
             self.compIms = []
             self.compMinList = []
-            self.minDepth = []
-            self.perSpecNames = []
-            self.ppmSpecNames = []
-            self.waveSpecNames = []
-            self.gcPerSpecNames = []
-            self.gcPpmSpecNames = []
-            self.gcWaveSpecNames = []
 
             # intialize lists for Stacked Spectral plot checkboxes
             self.checkedList = []
@@ -575,36 +561,37 @@ class mainWindow(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             # load spectral metric data from _DATA.csv
-            loadCsvData(self)
+            self.minData, self.gcMinData, self.minMeter, self.gcMeter = loadCsvData(self.mainDir, self.projName)
+            self.minList = list(self.minData.keys())                                                # can this global var be removed? 
 
             # get directories containing intentisty spectral images
             intDirs = self.getMinDirs('RGB_')
             intDirDict = dict(zip(intDirs, range(len(intDirs))))    # dictionary to map an index to mineral name
             self.intMinList = [intDirs.replace('RGB_','') for intDirs in intDirs]
-            intImNameList = getCoreImageNames(self.mainDir, self.rootDir, self.numIms, intDirs)
+            intImNameList, self.numIms = getCoreImageNames(self.mainDir, self.rootDir, intDirs)
 
             # get directories containing composition spectral images
             compDirs = self.getMinDirs('mineral_')
             compDirDict = dict(zip(compDirs, range(len(compDirs))))  # dictionary to map an index to mineral name
             self.compMinList = [compDirs.replace('mineral_','') for compDirs in compDirs]
-            compImNameList = getCoreImageNames(self.mainDir, self.rootDir, self.numIms, compDirs)
+            compImNameList = getCoreImageNames(self.mainDir, self.rootDir, compDirs)[0]
 
             # get directory containing medium resolution core box images
             medResDirs = self.getMinDirs('Photos_Medium_')
-            self.medResImNameList = getCoreBoxImageNames(self, medResDirs)
+            self.medResImNameList = getCoreBoxImageNames(self.mainDir, self.rootDir, medResDirs)
 
             # get directory containing high resolution core box images
             hiResDirs = self.getMinDirs('Photos_High_')
-            self.hiResImNameList = getCoreBoxImageNames(self, hiResDirs)
+            self.hiResImNameList = getCoreBoxImageNames(self.mainDir, self.rootDir, hiResDirs)
 
             # add all imagery to lists
             self.intIms = getCoreImages(self.mainDir, self.numIms, intDirs, intDirDict, intImNameList)
             self.compIms = getCoreImages(self.mainDir, self.numIms, compDirs, compDirDict, compImNameList)
-            self.medResIms = getCoreBoxImages(self, medResDirs,  self.medResImNameList)
-            self.hiResIms = getCoreBoxImages(self, hiResDirs, self.hiResImNameList)
+            self.medResIms = getCoreBoxImages(self.mainDir, self.rootDir, medResDirs,  self.medResImNameList)
+            self.hiResIms = getCoreBoxImages(self.mainDir, self.rootDir, hiResDirs, self.hiResImNameList)
 
             # check for missing images
-            checkPassed = checkCoreDirs(self, self.intIms, self.compIms)
+            checkPassed = checkCoreDirs(self.numIms, self.intIms, self.compIms)
 
             if checkPassed:
                 # determine the number of spectral images per core box
@@ -614,7 +601,7 @@ class mainWindow(QMainWindow):
                 # add drill hole name to top of options drawer
                 self.projBanner.setText(" " + self.projName + " " )
 
-                # adjust size of banner
+                # adjust size of banner    FIND A BETTER WAY TO DO THIS
                 if len(self.projName) <= 10:
                     self.projBanner.setStyleSheet("font: bold 22pt")
                 elif len(self.projName) > 10 and len(self.projName) < 15:
@@ -628,34 +615,27 @@ class mainWindow(QMainWindow):
                 self.addMeter()
                 self.addCoreBoxes()
 
-                # get list of percentage minerals and sort it
-                specList = self.perSpecNames
-                specList.sort()
-
-                # get list of geochemistry minerals and sort it
-                gcList = self.gcPerSpecNames
-                gcList.sort()
-
                 # create a dictionary to map mineral to plot color
                 self.plotColorDict = {self.minList[i]: self.plotColors[i] for i in range(len(self.minList))}
 
                 # populate comoboxes
                 self.newCoreWindowCB.addItems(self.intMinList)
-                self.newSpecPlotWindowCB.addItems(specList)
-                self.newGcPlotWindowCB.addItems(gcList)
+                self.newSpecPlotWindowCB.addItems(list(self.minData.keys()))
+                self.newGcPlotWindowCB.addItems(list(self.gcMinData.keys()))
 
                 # add checkboxes to Stacked Plot groupbox
-                for i in range(len(self.perSpecNames)):
+                perSpecList = self.getPerSpecList()
+                for i in range(len(perSpecList)):
                     specCBox = QCheckBox()
-                    specCBox.setText(self.perSpecNames[i])
+                    specCBox.setText(perSpecList[i])
                     specCBox.setChecked(True)
-                    specCBox.min = self.perSpecNames[i]
+                    specCBox.min = perSpecList[i]
                     self.cBoxes.append(specCBox)
                     self.newStackPlotGroupLayout.insertWidget(self.newStackPlotGroupLayout.count()-1, specCBox)
                     self.checkedList.append(int(i))
 
                 # add minerals to the mineral legend
-                for i in range(len(self.minList)):
+                for i in range(len(list(self.minData.keys()))):
                     self.makeLegend(i)          # need to use function for each mineral to keep button signals seperate
 
                 # restore the cursor and change directory back to root
@@ -669,6 +649,39 @@ class mainWindow(QMainWindow):
         self.toggleDrawer()
 
         self.resizeOverlays()
+
+    def getPerSpecList(self):
+        """
+        returns list of minerals with percentage spectral metrics
+        """
+        perSpecList = []
+        
+        for mins in list(self.minData.keys()):
+            if '%' in list(self.minData[mins].keys()):
+                perSpecList.append(mins)
+
+        return perSpecList 
+
+    def getMineralDataTypes(self, minData):
+        """
+        returns datatypes of all minerals in a dictionary of mineral data
+        
+        params:
+        minData - dictionary of mineral data structured as minData['mineral']['datatype']
+
+        returns:
+        typeList - lists of datatypes found in minData
+        """
+        typeList = []
+
+        for min in list(minData.keys()):
+            tempList = list(minData[min].keys())
+            for item in tempList:
+                if '_range' not in item:
+                    typeList.append(item)
+
+        typeList = natsorted(list(set(typeList)))     
+        return typeList   
 
     def selectMainDir(self):
         """
@@ -690,8 +703,6 @@ class mainWindow(QMainWindow):
                 self.throwError('Directory missing data file')
         else:
             self.mainDir = []
-
-    
 
     def makeLegend(self, idx):
         """
@@ -871,7 +882,7 @@ class mainWindow(QMainWindow):
         """
 
         numPoints = self.numIms/self.numCoresPerBox
-        meterVals = np.arange(self.minDepth[0],self.minDepth[-1],(self.minDepth[-1]-self.minDepth[0])/(len(self.medResIms)))
+        meterVals = np.arange(self.minMeter[0],self.minMeter[-1],(self.minMeter[-1]-self.minMeter[0])/(len(self.medResIms)))
 
         return meterVals
 
@@ -1053,60 +1064,46 @@ class mainWindow(QMainWindow):
         overlayMain = None
         overlayCloseButton = None
 
-    def addSpectralPlotWindow(self, min, type, gc):
+    def addSpectralPlotWindow(self, gc):
         """
-         adds spectral plot to dataArea, arguemnts are mineral name, plot type, and gc
-         flag to indicate if data belongs to geochemistry set
+         adds spectral plot to dataArea
+         
+         Parms:
+         gc - flag to indicate if data belongs to geochemistry set
         """
 
         # check to see that data has been loaded from csv
-        if self.perSpecNames  or self.ppmSpecNames  or self.waveSpecNames  or \
-            self.gcPerSpecNames or self.gcPpmSpecNames or self.gcWaveSpecNames:
+        if self.minData or self.gcData:
             newDataWindow = QWidget(self.dataArea)
             newDataWindow.setFixedSize(self.dataWidgetWidth/2,self.dataWidgetHeight)
             newDataWindowLayout = QVBoxLayout(newDataWindow)
 
-            # check if metric belongs to geochemical data
+            # check if metric belongs to geochemical data, get data, plot unit, and max X value
             if not gc:
-                plotDepth = self.minDepth
-                # check plot type, get data, plot unit, and max X value
-                if type == '%':
-                    plotSpec = self.perSpec[:,self.perSpecNames.index(min)]
-                    unit = '%'
-                    xMax = 100*np.nanmax(plotSpec)
-                elif type == 'ppm':
-                    plotSpec = self.ppmSpec[:,self.ppmSpecNames.index(min)]
-                    unit = 'ppm'
-                    xMax = np.nanmax(plotSpec)
-                elif type == 'Wavelength':
-                    plotSpec = self.waveSpec[:,self.waveSpecNames.index(min)]
-                    unit = 'nm'
-                    xMax = np.nanmax(plotSpec)
+                mineral = self.newSpecPlotWindowCB.currentText()
+                dataType = self.specPlotTypeCB.currentText()
+                plotSpec = self.minData[mineral][dataType]['Data']
+                unit = self.minData[mineral][dataType]['Unit']
+                xMin = self.minData[mineral][dataType]['Min']
+                xMax = self.minData[mineral][dataType]['Max']
+                plotDepth = self.minMeter
+
             # repeat same process for geochremistry sets
             elif gc:
-                plotDepth = self.gcDepth
-                if type == '%':
-                    plotSpec = self.gcPerSpec#self.gcPerSpec[:,self.gcPerSpecNames.index(min)]
-                    unit = '%'
-                    xMax = 100*np.nanmax(plotSpec)
-                elif type == 'ppm':
-                    plotSpec = self.gcPerSpec#self.gcPpmSpec[:,self.gcPpmSpecNames.index(min)]
-                    unit = 'ppm'
-                    xMax = np.nanmax(plotSpec)
-                elif type == 'Wavelength':
-                    plotSpec = self.gcPerSpec#self.gcWaveSpec[:,self.gcWaveSpecNames.index(min)]
-                    unit = 'nm'
-                    xMax = np.nanmax(plotSpec)
+                mineral = self.newGcPlotWindowCB.currentText()
+                dataType = self.gcPlotTypeCB.currentText()
+                plotSpec = self.gcMinData[mineral][dataType]['Data']
+                unit = self.gcMinData[mineral][dataType]['Unit']
+                xMin = self.gcMinData[mineral][dataType]['Min']
+                xMax = self.gcMinData[mineral][dataType]['Max']
+                plotDepth = self.gcMeter
 
             # cast 1d arrays to 2d arrays
             plotSpec = np.reshape(plotSpec,(np.amax(plotSpec.shape)))
             plotDepth = np.reshape(plotDepth,(np.amax(plotDepth.shape)))
 
-            # add plot header to headerArea
-            self.addHeader(min, self.dataWidgetWidth/2, newDataWindow, '0', "{:.1f}".format(xMax) +' ' + unit)
-
             # create plot figure and canvas
-            plotFig = Figure(figsize=(self.dataWidgetWidth/100, (self.dataWidgetHeight-40)/100),dpi=100,facecolor = '#000000')
+            plotFig = Figure(figsize=(self.dataWidgetWidth/100, (self.dataWidgetHeight-40)/100), dpi=100, facecolor = '#000000')
             plotCanvas = FigureCanvas(plotFig)
             plotCanvas.draw()
             plotCanvas.setMouseTracking(True)
@@ -1122,13 +1119,18 @@ class mainWindow(QMainWindow):
             newDataWindow.setVisible(True)
 
             # draw plot and add slot which redraws if mineral color changes
-            self.createSpecPlot(plotFig, plotCanvas, plotSpec, plotDepth, self.plotColorDict[min])
-            self.minColorChanged.connect(lambda: self.createSpecPlot(plotFig, plotCanvas, plotSpec, plotDepth, self.plotColorDict[min]))
+            self.createSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral])
+            self.minColorChanged.connect(lambda: self.createSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral]))
+
+            # add plot header to headerArea
+            if unit == '%':
+                xMax = xMax * 100
+            self.addHeader(mineral, self.dataWidgetWidth/2, newDataWindow, "{:.1f}".format(xMin), "{:.1f}".format(xMax) +' ' + unit)
 
         else:
             self.throwError('No Drill Hole Open')
 
-    def createSpecPlot(self, plotFig, plotCanvas, plotSpec, plotDepth, plotColor):
+    def createSpecPlot(self, plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, plotColor):
         """
          draws plot used in addSpectralPlotWindow. takes reference to plotFig and plotCanvas,
          plot and depth data, and the plot's color
@@ -1136,10 +1138,11 @@ class mainWindow(QMainWindow):
 
         plotFig.clear()
         plot = plotFig.add_axes([0,0,1,1])
-        plot.fill_betweenx(plotDepth, plotSpec, facecolor=plotColor)
-        plot.set_ylim(float(plotDepth[-1]), float(plotDepth[0]))
+        plot.fill_betweenx(plotDepth, xMin, plotSpec, facecolor=plotColor)
         plot.set_yticks(self.meterVals)
-        plot.set_xticks([0, np.nanmax(plotSpec)/2, np.nanmax(plotSpec)])
+        plot.set_xticks([xMin, (xMax+xMin)/2, xMax])
+        plot.set_ylim(float(plotDepth[-1]), float(plotDepth[0]))
+        plot.set_xlim([xMin, xMax])
         plot.set_frame_on(False)
         plot.grid(color='#323232')
         plot.xaxis.set_major_formatter(NullFormatter())
@@ -1162,22 +1165,21 @@ class mainWindow(QMainWindow):
         """
 
         # check to see that data has been loaded from csv
-        if self.perSpecNames or self.ppmSpecNames or self.waveSpecNames \
-            or self.gcPerSpecNames or self.gcPpmSpecNames or self.gcWaveSpecNames:
+        if self.minData:
             newDataWindow = QWidget(self.dataArea)
             newDataWindow.setFixedSize(self.dataWidgetWidth/2,self.dataWidgetHeight)
             newDataWindowLayout = QVBoxLayout(newDataWindow)
 
             # create a temporary array to hold data from checked check boxes
-            tempSpec = np.zeros([self.perSpec.shape[0],1])
+            tempSpec = np.zeros([self.minMeter.shape[0],1])
 
             # add data to tempSpec
             for i in range(len(self.cBoxes)):
                 if self.cBoxes[i].isChecked():
                     if np.sum(tempSpec) != 0:
-                        tempSpec = np.c_[tempSpec, self.perSpec[:,self.perSpecNames.index(self.cBoxes[i].text())]]
+                        tempSpec = np.c_[tempSpec, self.minData[self.cBoxes[i].text()]['%']['Data']]
                     else:
-                        tempSpec[:,0] = self.perSpec[:,self.perSpecNames.index(self.cBoxes[i].text())]
+                        tempSpec[:,0] = self.minData[self.cBoxes[i].text()]['%']['Data']
 
             # replaces NaNs with 0s for stacked plot
             tempSpec = np.nan_to_num(tempSpec, copy=False, nan=0.0, posinf=None, neginf=None)
@@ -1233,30 +1235,33 @@ class mainWindow(QMainWindow):
         # create a legend for the toolTip
         legend = self.makeHTMLTag(plotMinNames, plotColor)
         plotCanvas.setMouseTracking(True)
-        plotCanvas.mouseMoveEvent = lambda event: self.makePlotToolTip(event, plotCanvas, 0, 100, self.minDepth[0], self.minDepth[-1], '%', 'stack', legend)
+        plotCanvas.mouseMoveEvent = lambda event: self.makePlotToolTip(event, plotCanvas, 0, 100, self.minMeter[0], self.minMeter[-1], '%', 'stack', legend)
 
         # clear the figure incase plot needs to be redrawn and set new axis limits
         plotFig.clear()
         plot = plotFig.add_axes([0,0,1,1])
-        plot.set_ylim(float(self.minDepth[-1]), float(self.minDepth[0]))
+        plot.set_ylim(float(self.minMeter[-1]), float(self.minMeter[0]))
 
         # plot each column of plotSpec and fill between them
         for i in range(specDim[1] + 1):
             if i==0:
-                plot.fill_betweenx(self.minDepth,plotSpec[:,i], facecolor = plotColor[i])
+                plot.fill_betweenx(self.minMeter,plotSpec[:,i], facecolor = plotColor[i])
             elif i > 0 and i < specDim[1]:
-                plot.fill_betweenx(self.minDepth,plotSpec[:,i],plotSpec[:,i-1], facecolor = plotColor[i])
+                plot.fill_betweenx(self.minMeter,plotSpec[:,i],plotSpec[:,i-1], facecolor = plotColor[i])
             else:
-                plot.fill_betweenx(self.minDepth,plotSpec[:,i],plotSpec[:,i-1], facecolor ='#969696')
+                plot.fill_betweenx(self.minMeter,plotSpec[:,i],plotSpec[:,i-1], facecolor ='#969696')
 
         # set ticks at 0, 50, adn 100% and draw plot
         plot.set_yticks(self.meterVals)
         plot.set_xticks([0, 0.5, 1])
+        plot.set_ylim(float(self.meterVals[-1]), float(self.meterVals[0]))
+        plot.set_xlim([0, 1])
         plot.set_frame_on(False)
         plot.grid(color='#323232')
         plot.xaxis.set_major_formatter(NullFormatter())
         plot.yaxis.set_major_formatter(NullFormatter())
         plotCanvas.draw()
+
 
     def makePlotToolTip(self, event, parent, minX, maxX, minY, maxY, unit, plotType, legend):
         """
@@ -1322,7 +1327,7 @@ class mainWindow(QMainWindow):
             self.dHView = dhView(self)
             self.dHView.setGeometry(50,50,self.width()-100, self.height()-100)
             self.dHViewOpen = True
-            self.dHView.setMeter(self.minDepth, self.numIms)    # pass meter info to dhView class
+            self.dHView.setMeter(self.minMeter, self.numIms)    # pass meter info to dhView class
             self.dHView.addCoreIms(self.intMinList, self.intIms, self.compMinList, self.compIms)   # pass mineral names and images to dhView class
             self.dHView.show()
 
