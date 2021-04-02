@@ -29,7 +29,6 @@ class mainWindow(QMainWindow):
 
     drawerToggled = Signal()                                        # signal for when the drawer is opened or closed
     minColorChanged = Signal()                                      # signal for when a minerals color is changed
-    print(test)
 
     def __init__(self):
         super().__init__()
