@@ -168,23 +168,25 @@ def checkCoreDirs(numIms, intIms, compIms):
 
     return checkPassed
 
-def getCoreDims(self, imList):
+def getCoreDims(imList, widgetHeight):
     """
-        returns total pixel height of all core images in imlist within a data widget after
-        images have been scaled
+        returns width of data widgets after scaling images
     """
-
+    
     coreWidths = np.empty([len(imList[0]),len(imList)])
     coreHeights = np.empty([len(imList[0]),len(imList)])
+
     for j in range(len(imList)):
         for i in range(len(imList[j])):
             coreWidths[i,j] = imList[j][i].width()
             coreHeights[i,j] = imList[j][i].height()
 
-    self.coreImWidth = np.max(coreWidths)
-    self.coreImHeight = np.sum(coreHeights[:,0])
+    coreImWidth = np.max(coreWidths)
+    coreImHeight = np.sum(coreHeights[:,0])
 
-    return int(self.coreImHeight*self.dataWidgetWidth/self.coreImWidth)
+    coreImWidth = int(widgetHeight*coreImWidth/coreImHeight)
+
+    return int(coreImWidth)
 
 def getCoreBoxImageNames(mainDir, rootDir,dirs):
     """

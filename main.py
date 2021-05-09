@@ -75,9 +75,9 @@ class mainWindow(QMainWindow):
 
         self.rootDir = os.getcwd()                                  # save the apps root directory for future reference
         screenGeometry = app.desktop().availableGeometry(self)      # gets screen resolution
-        self.dataWidgetWidth = int(0.25*screenGeometry.width())     # sets width of data area items to 25% of screen width
-        self.meterWidth = int(0.03*screenGeometry.width())          # sets width of down hole meter to 3% of screen width
-        self.dataWidgetHeight = 0                                   # initialize variable, gets corrected when data is loaded
+        self.meterWidth = 60                                        # sets width of down hole meter to 3% of screen width
+        self.dataWidgetHeight = screenGeometry.height()-45          
+        self.dataWidgetWidth = 0                                    # initialize variable, gets corrected when data is loaded
 
         # intialize lists for data, mineral names, and images
         self.intIms = []
@@ -91,12 +91,11 @@ class mainWindow(QMainWindow):
         self.plotColors = self.defaultColors.copy()
         self.setWindowIcon(QIcon('Icon.ico'))
 
+        # set minimum size of app
+        self.setMinimumSize(1000,750)
+
         # initialize app widgets
         self.initUI()
-
-        # start app maximized
-        self.showMaximized()
-        #self.setMinimumSize(1000,750)
 
         # display app
         self.show()
@@ -250,7 +249,7 @@ class mainWindow(QMainWindow):
         self.headerAreaScroll.horizontalScrollBar().valueChanged.connect(self.mainScroll.horizontalScrollBar().setValue)
 
         # set the maximum width of the drawer widget
-        self.drawerWidth = int(int(0.6*self.dataWidgetWidth))
+        self.drawerWidth = 300
         self.drawer.setFixedWidth(self.drawerWidth)
         self.drawerButton.setText('<')
 
@@ -264,6 +263,9 @@ class mainWindow(QMainWindow):
 
         # call initDrawerWidgets to initilize widgets inside of the drawer
         self.initDrawerWidgets()
+
+        # maximized
+        self.showMaximized()
 
     def initDrawerWidgets(self):
         """
@@ -562,7 +564,7 @@ class mainWindow(QMainWindow):
 
             # load spectral metric data from _DATA.csv
             self.minData, self.gcMinData, self.minMeter, self.gcMeter = loadCsvData(self.mainDir, self.projName)
-            self.minList = list(self.minData.keys())                                                # can this global var be removed? 
+            self.minList = list(self.minData.keys()) + list(self.gcMinData.keys())                                              # can this global var be removed? 
 
             # get directories containing intentisty spectral images
             intDirs = self.getMinDirs('RGB_')
@@ -596,8 +598,7 @@ class mainWindow(QMainWindow):
             if checkPassed:
                 # determine the number of spectral images per core box
                 self.numCoresPerBox = int(len(self.intIms[0])/len(self.medResIms))
-                # determine the height of widgets in the dataArea
-                self.dataWidgetHeight = getCoreDims(self, self.intIms)
+                self.dataWidgetWidth = getCoreDims(self.intIms, self.dataWidgetHeight)
                 # add drill hole name to top of options drawer
                 self.projBanner.setText(" " + self.projName + " " )
 
@@ -743,6 +744,7 @@ class mainWindow(QMainWindow):
         coreBoxWindow = QWidget(self.dataArea)
         coreBoxWindow.setFixedSize(self.dataWidgetWidth,self.dataWidgetHeight)
         coreBoxWindowLayout = QVBoxLayout(coreBoxWindow)
+        coreBoxWindow.setStyleSheet('background-color: rgb(0,0,0)')
 
         # frame for labels
         coreFrame = QFrame(coreBoxWindow)
@@ -751,7 +753,7 @@ class mainWindow(QMainWindow):
         coreFrameLayout.setContentsMargins(0,0,0,0)
 
         # create labels for core box image pixmaps
-        for i in range(int(self.numIms/self.numCoresPerBox)):
+        for i in range(self.numIms):
             coreIm = QLabel()
             coreIm.setPixmap(self.medResIms[i].scaledToWidth(self.dataWidgetWidth))
             coreFrameLayout.addWidget(coreIm,i,0)
@@ -762,7 +764,7 @@ class mainWindow(QMainWindow):
         # add coreFrame to coreBoxWindow
         coreBoxWindowLayout.addWidget(coreFrame)
         coreBoxWindowLayout.setSpacing(0)
-        coreBoxWindowLayout.setContentsMargins(0,20,0,20)
+        coreBoxWindowLayout.setContentsMargins(0,20,0,0)
 
         # insert widget before end spacer in dataArea
         self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, coreBoxWindow)
@@ -778,30 +780,32 @@ class mainWindow(QMainWindow):
         # get numbers for meter ticks
         self.meterVals = self.getMeterDepths()
         self.meterLabel = QLabel(self.meterArea)
-        self.meterLabel.setFixedSize(self.meterWidth, int(self.dataWidgetHeight))
+        self.meterLabel.setFixedSize(self.meterWidth, self.dataWidgetHeight)
         self.meterLabel.setStyleSheet('Background-Color: rgb(0,0,0)')
 
         # produce pixmap of meter
-        meter = self.drawMeter(self.meterWidth, int(self.dataWidgetHeight),40,10,self.numCoresPerBox)
+        meter = self.drawMeter(self.meterWidth, self.dataWidgetHeight)
 
         # set pixmap of meterLabel to meter pixmap
         self.meterLabel.setPixmap(meter[0])
 
         # set meterClicked flag false (i.e meter has not been clicked)
-        self.meterClicked = False
-        self.meterPos = 0                       # marker position for meter line
-        self.lineOverlay.setFixedHeight(self.dataWidgetHeight)      # set height of meter lien overlay
+        #self.meterClicked = False
+        #self.meterPos = 0                       # marker position for meter line
+        #self.lineOverlay.setFixedHeight(self.dataWidgetHeight)      # set height of meter lien overlay
 
         # add label to meterArea and connect mouse click event
         self.meterAreaLayout.addWidget(self.meterLabel)
-        self.meterAreaLayout.setContentsMargins(0,20,0,20)
+        self.meterAreaLayout.setContentsMargins(0,0,0,0)
         self.meterLabel.mouseReleaseEvent = lambda event: self.drawLine(event)
 
-    def drawMeter(self, width, height, offset, fontSize, div):
+    def drawMeter(self, width, height):
         """
          draws pixmaps for down-hole meter. Maximum pixmap size is 32767 px so multiple pixmaps
          may be needed depending on depth of drill hole and image sizes
         """
+
+        print(height)
 
         # determine number of pixmaps needed for meterPos
         numPixmaps = np.ceil(height/32767).astype(int)
@@ -813,13 +817,13 @@ class mainWindow(QMainWindow):
         else:
             for i in range(numPixmaps):
                 if i == (numPixmaps - 1):
-                    pxHeight = height% (i *32767) - offset/2
+                    pxHeight = height% (i *32767)
                 else:
                     pxHeight = 32767
                 pixmap.append(QPixmap(width, pxHeight))
 
         # determine space between meter ticks
-        ySpace = (height-offset)/self.numIms
+        tickSpace = np.ceil(height/len(self.meterVals))
         pxNum = 0
 
         # check that height of pixmap is less than 32767
@@ -830,17 +834,16 @@ class mainWindow(QMainWindow):
 
         qp = QPainter(pixmap[pxNum])                            # initiate painter
         qp.setBrush(QColor(0, 0, 0))                            # paint meter background black
-        qp.drawRect(0, 0, width, pxHeight-offset/2)
+        qp.drawRect(0, 0, width, pxHeight)
         qp.setBrush(QColor(222, 222, 222))                      # set color for ticks and text
         qp.setPen(QColor(222,222,222))
-        qp.setFont(QFont("Times", fontSize))
 
-        # draw meter pixmaps
-        for i in range(self.numIms):
-            if i*ySpace > (pxNum+1)*32767:
+        # # draw meter pixmaps
+        for i in range(len(self.meterVals)):
+            if i*tickSpace > (pxNum+1)*32767:
                 pxNum = pxNum + 1
                 if pxNum == (numPixmaps - 1):
-                    pxHeight = height% (pxNum *32767) - offset/2
+                    pxHeight = height% (pxNum *32767)
                 else:
                     pxHeight = 32767
 
@@ -849,16 +852,14 @@ class mainWindow(QMainWindow):
                 qp.drawRect(0, 0, width, pxHeight)
                 qp.setBrush(QColor(222, 222, 222))
                 qp.setPen(QColor(222,222,222))
-                qp.setFont(QFont("Times", fontSize))
 
             if i == 0 and pxNum == 0:                                   # starting major tick and text
-                qp.drawRect(int(0.25*self.meterWidth), 1, int(0.75*self.meterWidth), 2)
-                qp.drawText(QPoint(0, int(1.5*fontSize+2)), "{:.1f}".format(self.meterVals[int(i/div)]) + ' m')
-            elif i%div == 0:                                            # other major ticks and text
-                qp.drawRect(int(0.25*self.meterWidth), i*ySpace-pxNum*32767, int(0.75*self.meterWidth), 2)
-                qp.drawText(QPoint(0, i*ySpace-pxNum*32767+int(1.5*fontSize)), "{:.1f}".format(self.meterVals[int(i/div)]) + ' m')
-            else:                                                       # minor ticks
-                qp.drawRect(int(0.5*self.meterWidth), i*ySpace-pxNum*32767, int(0.5*self.meterWidth), 2)
+                qp.drawRect(int(0.25*self.meterWidth), 20, int(0.75*self.meterWidth), 1)
+                qp.drawText(QPoint(0, 17), "{:.1f}".format(self.meterVals[i]) + ' m')
+             #elif i%numCoresPerBox == 0:                                            # other major ticks and text
+            else:
+                qp.drawRect(int(0.25*self.meterWidth), i*tickSpace+20-pxNum*32767, int(0.75*self.meterWidth), 1)
+                qp.drawText(QPoint(0, i*tickSpace-pxNum*32767+17), "{:.1f}".format(self.meterVals[i]) + ' m')
 
         return pixmap
 
@@ -881,8 +882,13 @@ class mainWindow(QMainWindow):
          returns values used for down-hole meter ticks
         """
 
-        numPoints = self.numIms/self.numCoresPerBox
-        meterVals = np.arange(self.minMeter[0],self.minMeter[-1],(self.minMeter[-1]-self.minMeter[0])/(len(self.medResIms)))
+        numPoints = self.numIms
+
+        while numPoints * 20 > self.dataWidgetHeight:
+            numPoints = numPoints / 2
+
+        meterVals = np.arange(self.minMeter[0],self.minMeter[-1],(self.minMeter[-1]-self.minMeter[0])/(np.floor(numPoints)-1))
+        meterVals = np.append(meterVals,self.minMeter[-1])
 
         return meterVals
 
@@ -1012,7 +1018,7 @@ class mainWindow(QMainWindow):
 
             newDataWindowLayout.addWidget(coreFrame)
             newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,20)
+            newDataWindowLayout.setContentsMargins(0,20,0,0)
 
             # craetes header and places it in headerArea above data widget
             self.addHeader(title,self.dataWidgetWidth,newDataWindow,' ', ' ')
@@ -1113,14 +1119,14 @@ class mainWindow(QMainWindow):
             # add widget to dataAera
             newDataWindowLayout.addWidget(plotCanvas)
             newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,20)
+            newDataWindowLayout.setContentsMargins(0,20,0,0)
             newDataWindow.setVisible(False)
             self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWindow)
             newDataWindow.setVisible(True)
 
             # draw plot and add slot which redraws if mineral color changes
-            self.createSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral])
-            self.minColorChanged.connect(lambda: self.createSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral]))
+            self.drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral])
+            self.minColorChanged.connect(lambda: self.drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral]))
 
             # add plot header to headerArea
             if unit == '%':
@@ -1130,7 +1136,7 @@ class mainWindow(QMainWindow):
         else:
             self.throwError('No Drill Hole Open')
 
-    def createSpecPlot(self, plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, plotColor):
+    def drawSpecPlot(self, plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, plotColor):
         """
          draws plot used in addSpectralPlotWindow. takes reference to plotFig and plotCanvas,
          plot and depth data, and the plot's color
@@ -1204,7 +1210,7 @@ class mainWindow(QMainWindow):
             # add widget to dataArea
             newDataWindowLayout.addWidget(plotCanvas)
             newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,20)
+            newDataWindowLayout.setContentsMargins(0,20,0,0)
             newDataWindow.setVisible(False)
             self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWindow)
             newDataWindow.setVisible(True)
@@ -1213,12 +1219,12 @@ class mainWindow(QMainWindow):
             self.addHeader(' ',self.dataWidgetWidth/2,newDataWindow, '0', '100 %')
 
             # draw plot and add slot which redraws if mineral color changes
-            self.createStackPlot(plotFig, plotCanvas, plotSpec, specDim)
-            self.minColorChanged.connect(lambda: self.createStackPlot(plotFig, plotCanvas, plotSpec, specDim))
+            self.drawStackPlot(plotFig, plotCanvas, plotSpec, specDim)
+            self.minColorChanged.connect(lambda: self.drawStackPlot(plotFig, plotCanvas, plotSpec, specDim))
         else:
             self.throwError('No Drill Hole Open')
 
-    def createStackPlot(self, plotFig, plotCanvas, plotSpec, specDim):
+    def drawStackPlot(self, plotFig, plotCanvas, plotSpec, specDim):
         """
          draws plot used in addStackPlotWindow. takes reference to plotFig and plotCanvas,
          plot and depth data
@@ -1261,7 +1267,6 @@ class mainWindow(QMainWindow):
         plot.xaxis.set_major_formatter(NullFormatter())
         plot.yaxis.set_major_formatter(NullFormatter())
         plotCanvas.draw()
-
 
     def makePlotToolTip(self, event, parent, minX, maxX, minY, maxY, unit, plotType, legend):
         """
