@@ -1,16 +1,11 @@
-import sys
-import os
-from PySide2.QtWidgets import QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGridLayout, QComboBox, QPushButton, QSlider
-from PySide2.QtGui import QImage, QPixmap, QColor, QPixmap, QColor, QFont
-from PySide2.QtCore import Qt, Signal, QRect
-from matplotlib.backends.backend_qt4agg import FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib.ticker import NullFormatter
-import matplotlib.pyplot as plt
-from natsort import natsorted, ns
 import numpy as np
-from PIL import Image
 import qimage2ndarray
+from PySide2.QtCore import Qt
+from PySide2.QtGui import QPixmap
+from PySide2.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout,
+                               QLabel, QPushButton, QSlider, QVBoxLayout,
+                               QWidget)
+
 
 class overlayView(QWidget):
     """

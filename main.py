@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-from matplotlib.backends.backend_qt4agg import FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from PySide2.QtCore import QPoint, Qt, Signal
 from PySide2.QtGui import QIcon, QMouseEvent
@@ -20,7 +20,6 @@ try:
 except ImportError:
     pass
 
-from down_hole_view import *
 from drawing import *
 from import_functions import *
 from overlay_view import *
@@ -488,7 +487,7 @@ class mainWindow(QMainWindow):
         """
         if self.imDict.keys():
             self.newCoreWindowCB.clear()
-            self.newCoreWindowCB.addItems(self.imDict[self.coreTypeCB.currentText()].keys())
+            self.newCoreWindowCB.addItems(list(self.imDict[self.coreTypeCB.currentText()].keys()))
 
     def changeSpecPlotMin(self, minData, currentMin, typeCB):
         """
@@ -621,8 +620,8 @@ class mainWindow(QMainWindow):
                 self.plotColorDict = {self.minList[i]: self.plotColors[i] for i in range(len(self.minList))}
 
                 # populate comoboxes
-                self.coreTypeCB.addItems(self.imDict.keys())
-                self.newCoreWindowCB.addItems(self.imDict[self.coreTypeCB.currentText()].keys())
+                self.coreTypeCB.addItems(list(self.imDict.keys()))
+                self.newCoreWindowCB.addItems(list(self.imDict[self.coreTypeCB.currentText()].keys()))
                 self.newCoreWindowCB.addItems(self.intMinList)
                 self.newSpecPlotWindowCB.addItems(list(self.minData.keys()))
                 self.newGcPlotWindowCB.addItems(list(self.gcMinData.keys()))
@@ -878,7 +877,7 @@ class mainWindow(QMainWindow):
 
     def closeWindow(self,widget,header, widgetParentLayout, headerParentLayout):
         """
-         function removes headers and widgets passs by arguments
+         function removes headers and widgets passed by arguments
         """
 
         widgetParentLayout.removeWidget(widget)
