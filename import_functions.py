@@ -2,22 +2,8 @@ import os
 import sys
 
 import numpy as np
-import qimage2ndarray
 from natsort import natsorted, ns
-from PIL import Image
-from PySide2.QtCore import (QAbstractAnimation, QEvent, QMargins, QObject,
-                            QPoint, QPropertyAnimation, QRect, QRectF, QSize,
-                            Qt, Signal, Slot)
-from PySide2.QtGui import (QBrush, QColor, QFont, QFontMetrics, QIcon, QImage,
-                           QMouseEvent, QPainter, QPixmap, QTransform)
-from PySide2.QtWidgets import (QAction, QApplication, QButtonGroup, QCheckBox,
-                               QComboBox, QFileDialog, QFrame,
-                               QGraphicsOpacityEffect, QGraphicsPixmapItem,
-                               QGraphicsScene, QGraphicsView, QGridLayout,
-                               QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QMainWindow, QMenu, QPushButton, QRadioButton,
-                               QScrollArea, QSizePolicy, QSlider, QToolButton,
-                               QVBoxLayout, QWidget)
+from PySide2.QtGui import QPixmap
 
 
 def loadCsvData(mainDir, projName):
@@ -119,97 +105,71 @@ def getMeter(meterName, data, dataList):
         
     return meter
 
-def getCoreImageNames(mainDir,rootDir,dirs):
-    """
-        returns the image names within directories dirs
-    """
+def makeImDict(mainDir):
+    
+    subDirs = [ f for f in os.scandir(mainDir) if f.is_dir() ]
 
-    imNameList = []
-    numDirs = len(dirs)
-    for i in range(numDirs):
-        imDir = mainDir + '/' + dirs[i]
-        os.chdir(imDir)
-        imNameList.append(natsorted(os.listdir(imDir)))
-        if i == 0:
-            tempImList = natsorted(os.listdir(imDir))
-            numIms = len(tempImList)
-    os.chdir(rootDir)
-    return imNameList, numIms
+    imTypes = natsorted(list(set([ f.name.split('_')[0] for f in subDirs ])))
 
-def getCoreImages(mainDir,numIms,dirs,dirDict,imNameList):
-    """
-        returns list of pixmap images from imNameList, found within directories dirs
-    """
+    imDict = {}
+    for imType in imTypes:
+        typeDict = {}
+        for ims in subDirs:
+            if imType in ims.name:
+                minDict = {}
+                minDict['Path'] = ims.path.replace('\\','/')
+                minDict['Images'] = []
+                typeDict[ims.name.split('_')[1]] = minDict
+        imDict[imType] = typeDict
+
+    return imDict
+
+def importMineralImages(imDict, imType, mineral):
+
+    imDir = imDict[imType][mineral]['Path']
+    imNames = natsorted(os.listdir(imDir))
 
     imList = []
-    numDirs = len(dirs)
-    for i in range(numDirs):
-        imDir = mainDir + '/' + dirs[i]
-        tempImList = []
-        for j in range(numIms):
-            pixmap = QPixmap(imDir + '/' + imNameList[dirDict[dirs[i]]][j])
-            tempImList.append(pixmap)
-        imList.append(tempImList)
-    return imList
+    for i in range(len(imNames)):
+        pixmap = QPixmap(imDir + '/' + imNames[i])
+        imList.append(pixmap)
 
-def checkCoreDirs(numIms, intIms, compIms):
-    """
-        checks that there is the same number of core images in each Directory
-    """
+    imDict[imType][mineral]['Images'] = imList
+
+    return imDict
+
+def checkNumIms(mainDir):
+    subDirs = [ f for f in os.scandir(mainDir) if f.is_dir() ]
 
     checkPassed = True
-    for i in range(len(intIms)):
-        if len(intIms[i]) != numIms:
-            checkPassed = False
+    
+    numIms = []
+    for imDir in subDirs:
+        imList = os.listdir(imDir.path)
+        if not numIms:
+            numIms = len(imList)
+        elif len(imList) != numIms:
+            checkPassed = 0
+            numIms = 0
+            return checkPassed, numIms
 
-    for i in range(len(compIms)):
-        if len(compIms[i]) != numIms:
-            checkPassed = False
-
-    return checkPassed
+    return checkPassed, numIms
 
 def getCoreDims(imList, widgetHeight):
     """
         returns width of data widgets after scaling images
     """
     
-    coreWidths = np.empty([len(imList[0]),len(imList)])
-    coreHeights = np.empty([len(imList[0]),len(imList)])
+    coreWidths = np.empty(len(imList))
+    coreHeights = np.empty(len(imList))
 
-    for j in range(len(imList)):
-        for i in range(len(imList[j])):
-            coreWidths[i,j] = imList[j][i].width()
-            coreHeights[i,j] = imList[j][i].height()
+    for i in range(len(imList)):
+        coreWidths[i] = imList[i].width()
+        coreHeights[i] = imList[i].height()
 
     coreImWidth = np.max(coreWidths)
-    coreImHeight = np.sum(coreHeights[:,0])
+    coreImHeight = np.sum(coreHeights)
 
     coreImWidth = int(widgetHeight*coreImWidth/coreImHeight)
 
     return int(coreImWidth)
-
-def getCoreBoxImageNames(mainDir, rootDir,dirs):
-    """
-        returns list of core box image names found in dirs
-    """
-
-    imDir = mainDir + '/' + dirs[0]
-    os.chdir(imDir)
-    imNameList = natsorted(os.listdir(imDir))
-    os.chdir(rootDir)
-    return imNameList
-
-def getCoreBoxImages(mainDir, rootDir, dirs, imNameList):
-    """
-        returns core box images in dirs with names imNameList
-    """
-
-    imList = []
-    imDir = mainDir + '/' + dirs[0]
-    os.chdir(imDir)
-    for j in range(len(imNameList)):
-        pixmap = QPixmap(imNameList[j])
-        # pixmapResized = pixmap.scaledToWidth(self.dataWidgetWidth)#, int(self.numCoresPerBox*self.coreHeight))
-        imList.append(pixmap)
-    os.chdir(rootDir)
-    return imList
