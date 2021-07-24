@@ -1,18 +1,11 @@
-import sys
-import os
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QFrame, QVBoxLayout, QHBoxLayout,QScrollArea, QLabel, \
-    QFileDialog, QGridLayout, QAction, QComboBox, QPushButton, QRadioButton, QSizePolicy, QCheckBox, QGroupBox, QGraphicsView, \
-    QGraphicsScene, QGraphicsPixmapItem, QToolButton, QLineEdit, QMenu, QSlider, QGraphicsOpacityEffect, QButtonGroup
-from PySide2.QtGui import QImage, QPixmap, QIcon, QMouseEvent, QColor, QBrush, QPixmap, QPainter, QColor, QFont, QFontMetrics, QTransform
-from PySide2.QtCore import Qt, QSize, QPropertyAnimation, QAbstractAnimation, Signal, Slot, QPoint, QRect, QRectF, QObject, QEvent, QMargins
-from matplotlib.backends.backend_qt4agg import FigureCanvas
-from matplotlib.figure import Figure
-from matplotlib.ticker import NullFormatter
-import matplotlib.pyplot as plt
-from natsort import natsorted, ns
 import numpy as np
-from PIL import Image
 import qimage2ndarray
+from PySide2.QtCore import Qt
+from PySide2.QtGui import QPixmap
+from PySide2.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout,
+                               QLabel, QPushButton, QSlider, QVBoxLayout,
+                               QWidget)
+
 
 class overlayView(QWidget):
     """
