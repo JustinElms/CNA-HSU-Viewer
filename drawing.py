@@ -2,7 +2,10 @@ import numpy as np
 from matplotlib.ticker import NullFormatter
 from PySide2.QtCore import Qt, QPoint
 from PySide2.QtGui import QColor, QPainter, QPixmap
-from PySide2.QtWidgets import QFrame, QGridLayout, QLabel, QSizePolicy
+from PySide2.QtWidgets import QFrame, QGridLayout, QLabel
+
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.figure import Figure
 
 
 def drawMeter(depthValues, width, height):
@@ -88,14 +91,27 @@ def drawCoreImages(parent, parentLayout, title, ims):
     coreFrameLayout.setContentsMargins(0,0,0,0)
     coreFrame.setToolTip(title)         # tooltip displays min name when hovering mouse over widget
 
-    parentLayout.addWidget(coreFrame)
+    #parentLayout.addWidget(coreFrame)
+    return coreFrame
 
-def drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, plotColor, meterVals):
+def drawSpecPlot(width, height, plotSpec, axisLims, plotDepth, plotColor, meterVals):
     """
     draws plot used in addSpectralPlotWindow. takes reference to plotFig and plotCanvas,
     plot and depth data, and the plot's color
     """
 
+    # create plot figure and canvas
+    plotFig = Figure(figsize=(width/100, (height-40)/100), dpi=100, facecolor = '#000000')
+    plotCanvas = FigureCanvas(plotFig)
+    plotCanvas.draw()
+    plotCanvas.setMouseTracking(True)
+
+    # # make plot tooltip to display cursor coordinates and plot info
+    # plotCanvas.mouseMoveEvent = lambda event: self.makePlotToolTip(event, newDataWindow, 0, xMax, plotDepth[0], plotDepth[-1], unit, 'spec', ' ')
+
+    xMin = axisLims[0]
+    xMax = axisLims[1]
+    
     plotFig.clear()
     plot = plotFig.add_axes([0,0,1,1])
     plot.fill_betweenx(plotDepth, xMin, plotSpec, facecolor=plotColor)
@@ -109,11 +125,19 @@ def drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, plotColor
     plot.yaxis.set_major_formatter(NullFormatter())
     plotCanvas.draw()
 
-def drawStackPlot(plotFig, plotCanvas, plotSpec, specDim, plotColor, plotMinNames, minMeter, meterVals):
+    return plotCanvas
+
+def drawStackPlot(width, height, plotSpec, specDim, plotColor, minMeter, meterVals):
     """
     draws plot used in addStackPlotWindow. takes reference to plotFig and plotCanvas,
     plot and depth data
     """
+
+    # create plot figure and canvas
+    plotFig = Figure(figsize=(width/100, (height-40)/100), dpi=100, facecolor = '#000000')
+    plotCanvas = FigureCanvas(plotFig)
+    plotCanvas.draw()
+    plotCanvas.setMouseTracking(True)
 
     # clear the figure incase plot needs to be redrawn and set new axis limits
     plotFig.clear()
@@ -139,5 +163,7 @@ def drawStackPlot(plotFig, plotCanvas, plotSpec, specDim, plotColor, plotMinName
     plot.xaxis.set_major_formatter(NullFormatter())
     plot.yaxis.set_major_formatter(NullFormatter())
     plotCanvas.draw()
+
+    return plotCanvas
 
 

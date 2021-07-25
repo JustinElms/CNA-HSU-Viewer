@@ -24,6 +24,8 @@ from drawing import *
 from import_functions import *
 from overlay_view import *
 
+from data_widget import DataWidget
+
 
 class mainWindow(QMainWindow):
     """
@@ -32,10 +34,9 @@ class mainWindow(QMainWindow):
      two overlays are used to display data headers and a depth marker on top of the data
      area
     """
-
-    drawerToggled = Signal()                                        # signal for when the drawer is opened or closed
-    minColorChanged = Signal()                                      # signal for when a minerals color is changed
-    zoomChanged = Signal()
+    
+    minColorChanged = Signal() # signal for when a minerals color is changed
+    zoomChanged = Signal() # signal for when zoom level is changed
 
     def __init__(self):
         super().__init__()
@@ -83,7 +84,7 @@ class mainWindow(QMainWindow):
         self.rootDir = os.getcwd()                                  # save the apps root directory for future reference
         screenGeometry = app.desktop().availableGeometry(self)      # gets screen resolution
         self.meterWidth = 60                                        # sets width of down hole meter to 3% of screen width
-        self.startHeight = screenGeometry.height()-45 
+        self.startHeight = screenGeometry.height()-60 
         self.dataWidgetHeight = self.startHeight  
         self.startWidth = []      
         self.dataWidgetWidth = []                                   # initialize variable, gets corrected when data is loaded
@@ -131,18 +132,31 @@ class mainWindow(QMainWindow):
 
         # widget to contain drawer open/close button
         self.drawerButtonArea = QWidget(self.main)
-        self.drawerButtonAreaLayout = QHBoxLayout(self.drawerButtonArea)
+        self.drawerButtonAreaLayout = QVBoxLayout(self.drawerButtonArea)
         self.drawerButtonArea.setStyleSheet('background-color: rgb(10,15,20)')
-        self.drawerButtonArea.setFixedWidth(14)
-        self.drawerButtonAreaLayout.setSpacing(0)
-        self.drawerButtonAreaLayout.setContentsMargins(0,0,0,0)
+        self.drawerButtonArea.setFixedWidth(20)
+        self.drawerButtonAreaLayout.setSpacing(5)
+        self.drawerButtonAreaLayout.setContentsMargins(0,20,0,0)
+
+        zoomInButton = QPushButton('+')
+        zoomInButton.clicked.connect(lambda: self.scaleDataWidgets(1))
+        zoomInButton.setFixedSize(20,20)
+        zoomInButton.setStyleSheet("background-color: grey; font: bold 12pt")
+        zoomOutButton = QPushButton('-')
+        zoomOutButton.clicked.connect(lambda: self.scaleDataWidgets(-1))
+        zoomOutButton.setStyleSheet("background-color: grey; font: bold 12pt")
+        zoomOutButton.setFixedSize(20,20)
 
         # create button to toggle drawer
         self.drawerButton = QPushButton(self.drawerButtonArea)
         self.drawerButton.setText('>')
         self.drawerButton.setFixedSize(10,500)
         self.drawerButton.clicked.connect(lambda: self.toggleDrawer())
+        self.drawerButtonAreaLayout.addWidget(zoomInButton)
+        self.drawerButtonAreaLayout.addWidget(zoomOutButton)
+        self.drawerButtonAreaLayout.addStretch()
         self.drawerButtonAreaLayout.addWidget(self.drawerButton)
+        self.drawerButtonAreaLayout.addStretch()
         self.drawerButton.setStyleSheet('background-color: rgb(43,43,43); border: 1px solid rgb(222, 222, 222); border-radius : 5')
 
         # create area to display data
@@ -164,16 +178,6 @@ class mainWindow(QMainWindow):
         mainLayout.addWidget(self.drawer)
         mainLayout.addWidget(self.drawerButtonArea)
         mainLayout.addWidget(self.contentsScroll)
-
-        # headerArea is created to display data headers, sits on top over the contentsScroll
-        self.headerArea = QWidget()
-        self.headerArea.setFixedHeight(40)
-        self.headerArea.setStyleSheet('background-color: transparent')
-        self.headerArea.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
-        self.headerAreaLayout = QHBoxLayout(self.headerArea)
-        self.headerAreaLayout.setSpacing(5)
-        self.headerAreaLayout.setContentsMargins(0,0,0,0)
-        self.headerAreaLayout.addStretch()
 
         # neter area will contain the down-hole meter
         self.meterArea= QWidget()
@@ -217,21 +221,9 @@ class mainWindow(QMainWindow):
         self.mainScroll.setWidget(self.dataArea)
         self.mainScroll.setWidgetResizable(True)
         self.mainScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.mainScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.mainScroll.setStyleSheet('Background-Color: black; border: 1px transparent')
         contentsLayout.addWidget(self.mainScroll)
-
-        # scroll area for the data headers
-        self.headerAreaScroll = QScrollArea(self.contents)
-        self.headerAreaScroll.setWidget(self.headerArea)
-        self.headerAreaScroll.setWidgetResizable(True)
-        self.headerAreaScroll.move(self.meterWidth,0)
-        self.headerAreaScroll.setFixedHeight(40)
-        self.headerAreaScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.headerAreaScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.headerAreaScroll.show()
-        self.headerAreaScroll.raise_()
-        self.headerAreaScroll.setStyleSheet('Background-Color: transparent; border: 1px transparent')
-        self.headerAreaScroll.setFixedWidth(self.mainScroll.width())
 
         # scroll area for the meter line overlay
         self.lineOverlayScroll = QScrollArea(self.contents)
@@ -299,12 +291,6 @@ class mainWindow(QMainWindow):
         newProject.setStyleSheet("background-color: green; font: bold 12pt")
         newProject.clicked.connect(self.newProject)
 
-        # add 'Down-Hole View' button
-        # newDHViewButton = QPushButton(drawerVFrame)
-        # newDHViewButton.setText('Down-Hole View')
-        # newDHViewButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        # newDHViewButton.clicked.connect(lambda: self.openDHView())
-
         # add 'Open Core Overlay' button
         newOverlayButton = QPushButton(drawerVFrame)
         newOverlayButton.setText('Open Core Overlay')
@@ -322,7 +308,7 @@ class mainWindow(QMainWindow):
 
         # button adds core images to contents widget
         addCoreButton = QPushButton("Add",drawerVFrame)
-        addCoreButton.clicked.connect(lambda: self.initCoreWindow(self.coreTypeCB.currentText(), self.newCoreWindowCB.currentText()))
+        addCoreButton.clicked.connect(lambda: self.initCoreWidget(self.coreTypeCB.currentText(), self.newCoreWindowCB.currentText()))
         addCoreButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
         # add widgets to 'Add Spectral Images' group box
@@ -341,7 +327,7 @@ class mainWindow(QMainWindow):
         
         # button adds plot widget to dashboard/main area
         addSpecPlotButton = QPushButton("Add",newSpecPlotGroupBox)
-        addSpecPlotButton.clicked.connect(lambda: self.initSpectralPlotWindow(False))
+        addSpecPlotButton.clicked.connect(lambda: self.initSpectralPlotWidget(False))
         addSpecPlotButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
         newSpecPlotGroupLayout.addWidget(self.newSpecPlotWindowCB)
@@ -358,7 +344,7 @@ class mainWindow(QMainWindow):
         self.newGcPlotWindowCB.currentTextChanged.connect(lambda: self.changeSpecPlotMin(self.gcMinData, self.newGcPlotWindowCB.currentText(), self.gcPlotTypeCB))
         
         addGcPlotButton = QPushButton("Add",newGcPlotGroupBox)
-        addGcPlotButton.clicked.connect(lambda: self.initSpectralPlotWindow(True))
+        addGcPlotButton.clicked.connect(lambda: self.initSpectralPlotWidget(True))
         addGcPlotButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
         newGcPlotGroupLayout.addWidget(self.newGcPlotWindowCB)
@@ -375,27 +361,14 @@ class mainWindow(QMainWindow):
 
         # button adds plot widget to dashboard/main area
         addStackPlotButton = QPushButton("Add",newStackPlotGroupBox)
-        addStackPlotButton.clicked.connect(lambda: self.initStackPlotWindow())
+        addStackPlotButton.clicked.connect(lambda: self.initStackPlotWidget())
         addStackPlotButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
 
         self.newStackPlotGroupLayout.addWidget(addStackPlotButton)
 
-        zoomButtonFrame = QFrame()
-        zoomButtonFramelayout = QHBoxLayout(zoomButtonFrame)
-
-        zoomInButton = QPushButton('+')
-        zoomInButton.clicked.connect(lambda: self.scaleDataWidgets(1))
-        zoomInButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
-        zoomOutButton = QPushButton('-')
-        zoomOutButton.clicked.connect(lambda: self.scaleDataWidgets(-1))
-        zoomOutButton.setStyleSheet('background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);')
-        
-        zoomButtonFramelayout.addWidget(zoomOutButton)
-        zoomButtonFramelayout.addWidget(zoomInButton)
-
         # add widgets to vertical layout
         drawerVLayout.addWidget(self.projBanner)
-        drawerVLayout.addWidget(zoomButtonFrame)
+        #drawerVLayout.addWidget(zoomButtonFrame)
         drawerVLayout.addWidget(newProject)
         drawerVLayout.addWidget(newCoreGroupBox)
         drawerVLayout.addWidget(newSpecPlotGroupBox)
@@ -427,7 +400,7 @@ class mainWindow(QMainWindow):
             self.drawer.setFixedWidth(self.drawerWidth)
             self.drawerButton.setText('<')
             self.drawerOpen = True
-        self.drawerToggled.emit()
+        #self.drawerToggled.emit()
         self.resizeOverlays()
 
     def resizeEvent(self,event):
@@ -451,12 +424,12 @@ class mainWindow(QMainWindow):
 
     def syncScrollBars(self):   
 
-        width = self.width()-self.mainScroll.verticalScrollBar().width()-self.drawer.width()-14
-        self.headerAreaScroll.setFixedWidth(width-self.meterWidth)
+        width = self.width()-self.mainScroll.verticalScrollBar().width()-self.drawer.width()-20
+        #self.headerAreaScroll.setFixedWidth(width-self.meterWidth)
 
         # set maximum value of each scroll bar so that they scroll evenly together
-        self.mainScroll.horizontalScrollBar().setMaximum(1000)
-        self.headerAreaScroll.horizontalScrollBar().setMaximum(1000)
+        #self.mainScroll.horizontalScrollBar().setMaximum(1000)
+        #self.headerAreaScroll.horizontalScrollBar().setMaximum(1000)
 
         # sync main and meter scroll areas
         self.mainScroll.verticalScrollBar().valueChanged.connect(self.meterScroll.verticalScrollBar().setValue)
@@ -467,8 +440,8 @@ class mainWindow(QMainWindow):
         self.lineOverlayScroll.verticalScrollBar().valueChanged.connect(self.mainScroll.verticalScrollBar().setValue)
 
         # sync main and header overlay scroll areas
-        self.mainScroll.horizontalScrollBar().valueChanged.connect(self.headerAreaScroll.horizontalScrollBar().setValue)
-        self.headerAreaScroll.horizontalScrollBar().valueChanged.connect(self.mainScroll.horizontalScrollBar().setValue)
+        #self.mainScroll.horizontalScrollBar().valueChanged.connect(self.headerAreaScroll.horizontalScrollBar().setValue)
+        #self.headerAreaScroll.horizontalScrollBar().valueChanged.connect(self.mainScroll.horizontalScrollBar().setValue)
 
     def resizeOverlays(self):
         """
@@ -476,7 +449,7 @@ class mainWindow(QMainWindow):
          also called outside of resize event so keep as a seperate funciton
         """
         width = self.width()-self.mainScroll.verticalScrollBar().width()-self.drawer.width()-14
-        self.headerAreaScroll.setFixedWidth(width-self.meterWidth)
+        #self.headerAreaScroll.setFixedWidth(width-self.meterWidth)
         self.lineLabel.setFixedSize(width, 3)
         self.lineOverlay.setGeometry(0, 0, width, self.mainScroll.viewport().height())
         self.lineOverlayScroll.setGeometry(0, 0, width, self.mainScroll.viewport().height())
@@ -562,7 +535,7 @@ class mainWindow(QMainWindow):
         if self.mainDir:
             #clear data from previous drill hole
             self.clearLayout(self.dataAreaLayout)
-            self.clearLayout(self.headerAreaLayout)
+            #self.clearLayout(self.headerAreaLayout)
             self.clearLayout(self.legendAreaLayout)
 
             # initilize lists for mineral images, mineral names, and spectral metrics
@@ -614,7 +587,6 @@ class mainWindow(QMainWindow):
                 self.dataArea.setFixedHeight(self.dataWidgetHeight)
 
                 self.initMeter()
-                #self.addCoreBoxes()
 
                 # create a dictionary to map mineral to plot color
                 self.plotColorDict = {self.minList[i]: self.plotColors[i] for i in range(len(self.minList))}
@@ -646,9 +618,9 @@ class mainWindow(QMainWindow):
                 os.chdir(self.rootDir)
 
                 try:
-                    self.initCoreWindow('Photos','Medium-Resolution')
+                    self.initCoreWidget('Photos','Medium-Resolution')
                 except:
-                    self.initCoreWindow(self.coreTypeCB.currentText(), self.newCoreWindowCB.currentText())
+                    self.initCoreWidget(self.coreTypeCB.currentText(), self.newCoreWindowCB.currentText())
             else:
                 # throw an error if missing images
                 self.throwError('Missing core spectra images')
@@ -774,8 +746,12 @@ class mainWindow(QMainWindow):
         self.meterPos = 0                       # marker position for meter line
         self.lineOverlay.setFixedHeight(self.dataWidgetHeight)      # set height of meter line overlay
 
+        spacer = QWidget(self.meterArea)
+        spacer.setFixedHeight(5)
+
         # add label to meterArea and connect mouse click event
         self.meterAreaLayout.addWidget(self.meterLabel)
+        self.meterAreaLayout.addWidget(spacer)
         self.meterAreaLayout.setContentsMargins(0,0,0,0)
         self.meterLabel.mouseReleaseEvent = lambda event: self.drawLine(event)
 
@@ -808,86 +784,7 @@ class mainWindow(QMainWindow):
 
         return meterVals
 
-    def addHeader(self, windowHeader, windowHeaderLayout, title, width, widget, axisStart, axisEnd):
-        """
-         adds header and close button above each data widget. title gives the text to
-         display on the header, width is the width of the associated data widget,
-         axis start and end are the minimum and maxiumim x axis values of plot widgets
-        """
-
-        # create container for widgets
-        windowHeader.setFixedSize(width,40)             # 20 px for title and close button, 20 px for x axis limits
-        windowHeader.setStyleSheet('background-color: transparent; border: transparent')
-
-        # container for header title
-        titleArea = QWidget(windowHeader)
-        titleArea.setFixedHeight(20)
-        titleArea.setStyleSheet('Background-Color: rgba(100,100,100,150)')
-        titleAreaLayout = QHBoxLayout(titleArea)
-        titleAreaLayout.setSpacing(0)
-        titleAreaLayout.setContentsMargins(0,0,0,0)
-
-        # label for header title
-        windowTitle = QLabel(titleArea)
-        windowTitle.setFixedHeight(20)
-        windowTitle.setText(title)
-        windowTitle.setStyleSheet('background-color: transparent; font: bold 10pt; border: transparent')
-
-        titleAreaLayout.addWidget(windowTitle)
-
-        # area for axis limits
-        axisLabelArea = QWidget(self.headerArea)
-        axisLabelArea.setFixedHeight(20)
-        axisLabelAreaLayout = QHBoxLayout(axisLabelArea)
-        axisLabelAreaLayout.setSpacing(0)
-        axisLabelAreaLayout.setContentsMargins(0,0,0,0)
-
-        # label for axis minimum
-        axisStartLabel = QLabel(windowHeader)
-        axisStartLabel.setFixedHeight(20)
-        axisStartLabel.setStyleSheet('background-color: transparent; font: bold 10pt; border: transparent')
-        axisStartLabel.setText(axisStart)
-
-        # label for axis maximum
-        axisEndLabel = QLabel(windowHeader)
-        axisEndLabel.setFixedHeight(20)
-        axisEndLabel.setStyleSheet('background-color: transparent; font: bold 10pt; border: transparent')
-        axisEndLabel.setText(axisEnd)
-
-        axisLabelAreaLayout.addWidget(axisStartLabel)
-        axisLabelAreaLayout.addStretch()
-        axisLabelAreaLayout.addWidget(axisEndLabel)
-
-        windowHeaderLayout.addWidget(titleArea)
-        windowHeaderLayout.addWidget(axisLabelArea)
-        windowHeaderLayout.addStretch()
-
-        titleAreaLayout.addStretch()
-        titleAreaLayout.addWidget(windowTitle)
-        titleAreaLayout.addStretch()
-
-        # special header for core box images, does not include close button or axis limits
-        if title != 'Core Box Images':
-            closeButton = QPushButton(titleArea)
-            closeButton.setText('X')
-            closeButton.setFixedSize(20,20)
-            closeButton.setStyleSheet('background-color: transparent; font: bold 10pt; border: transparent')
-            closeButton.clicked.connect(lambda: self.closeWindow(widget, windowHeader, self.dataAreaLayout, self.headerAreaLayout))
-            titleAreaLayout.addWidget(closeButton)
-
-    def closeWindow(self,widget,header, widgetParentLayout, headerParentLayout):
-        """
-         function removes headers and widgets passed by arguments
-        """
-
-        widgetParentLayout.removeWidget(widget)
-        headerParentLayout.removeWidget(header)
-        widget.deleteLater()
-        header.deleteLater()
-        widget = None
-        header = None
-
-    def initCoreWindow(self, imType, mineral):
+    def initCoreWidget(self, imType, mineral):
         """
             Creates container widgets for core images and associated header. Allows widgets to be resized with 
             zoomChanged method.
@@ -898,114 +795,54 @@ class mainWindow(QMainWindow):
 
         """
 
-        if imType and mineral:             # check to see that data has been loaded
+        if imType and mineral:            
+            # check to see that data has been loaded
+            if not self.imDict[imType][mineral]['Images']:
+                self.imDict = importMineralImages(self.imDict, imType, mineral)
+            ims = self.imDict[imType][mineral]['Images']
 
-            # create container widget for cores
-            newDataWindow = QWidget(self.dataArea)
-            newDataWindowLayout = QVBoxLayout(newDataWindow)
-            newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,0)
+            # check if image size has been defined
+            if not self.dataWidgetWidth:
+                self.startWidth = getCoreDims(self.imDict[imType][mineral]['Images'], self.dataWidgetHeight)
+                self.dataWidgetWidth = self.startWidth
 
-            # create container widget for header
-            windowHeader = QWidget(self.headerArea)
-            windowHeaderLayout = QVBoxLayout(windowHeader)
-            windowHeaderLayout.setSpacing(0)
-            windowHeaderLayout.setContentsMargins(0,0,0,0)
-           
+            # create dataWidget
+            newDataWidget = DataWidget(self.dataArea, 
+                                    widget_type='core_images',
+                                    width = self.dataWidgetWidth, 
+                                    height = self.dataWidgetHeight, 
+                                    title = mineral,
+                                    images = ims)
+
+            # connect signals/slots of widget functions
+            resizeWidget = lambda: newDataWidget.update_size(self.dataWidgetWidth, self.dataWidgetHeight)
+            moveHeader = lambda: newDataWidget.move_header(self.mainScroll.verticalScrollBar().value())
+            self.zoomChanged.connect(resizeWidget)
+            self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
+            newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+        
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
-                self.dataAreaLayout.addWidget(newDataWindow)
+                self.dataAreaLayout.addWidget(newDataWidget)
                 self.dataAreaLayout.addStretch()
             else:
-                self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWindow)
-
-            if self.headerAreaLayout.count() == 0:
-                self.headerAreaLayout.addWidget(windowHeader)
-                self.headerAreaLayout.addStretch()
-            else:
-                self.headerAreaLayout.insertWidget(self.headerAreaLayout.count()-1,windowHeader)
-
-            self.addCoreWindow(newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, imType, mineral)
-            self.zoomChanged.connect(lambda: self.resizeCoreWindow(newDataWindow, windowHeader))
+                self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWidget)
         else:
             # throw area if data has not been loaded
             self.throwError('No Drill Hole Open')
 
-    def resizeCoreWindow(self, dataWindow, header):
-        dataWindow.setFixedSize(self.dataWidgetWidth, self.dataWidgetHeight)
-        header.setFixedSize(self.dataWidgetWidth, 40)
-
-    def addCoreWindow(self, newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, imType, mineral):
+    def initSpectralPlotWidget(self, gc):
         """
-         adds core spectral images to dataArea
+            Creates container widgets for spectral plots images and associated header. Allows widgets to be resized with 
+            zoomChanged method.
+
+            params:
+            imType - core image type as read from directory name
+            mineral - mineral type as read from directory name
+
         """
-
-        self.clearLayout(newDataWindowLayout)
-        self.clearLayout(windowHeaderLayout)
-
-        if not self.imDict[imType][mineral]['Images']:
-            self.imDict = importMineralImages(self.imDict, imType, mineral)
-        ims = self.imDict[imType][mineral]['Images']
-
-        if not self.dataWidgetWidth:
-            self.startWidth = getCoreDims(self.imDict[imType][mineral]['Images'], self.dataWidgetHeight)
-            self.dataWidgetWidth = self.startWidth
-
-        newDataWindow.setFixedSize(self.dataWidgetWidth,self.dataWidgetHeight)
-
-        # title for header
-        title = mineral
-
-        # creates header and places it in headerArea above data widget
-        self.addHeader(windowHeader, windowHeaderLayout, title, self.dataWidgetWidth, newDataWindow, ' ', ' ')
-
-        # displays zoom menu when right-clicking on data widget
-        #newDataWindow.mouseReleaseEvent = lambda event: self.clickedCoreWidget(event,title,self.coreTypeCB.currentText())
-
-        drawCoreImages(newDataWindow, newDataWindowLayout, title, ims)
-
-    def closeOverlay(self, overlayBG, overlayMain, overlayCloseButton):
-        """
-         general close function used to close overlay specified by input arguements and
-         set open flags to False
-        """
-
-        self.zoomOpen = False
-        #self.dHViewOpen = False
-        self.overlayWinOpen = False
-        self.errorThrown = False
-        overlayBG.deleteLater()
-        overlayMain.deleteLater()
-        overlayCloseButton.deleteLater()
-        overlayBG = None
-        overlayMain = None
-        overlayCloseButton = None
-
-    def initSpectralPlotWindow(self, gc):
-
         # check to see that data has been loaded from csv
         if self.minData or self.gcData:
-            # create container widget for plot
-            newDataWindow = QWidget(self.dataArea)
-            newDataWindowLayout = QVBoxLayout(newDataWindow)
-            newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,0)
-
-            newDataWindow.setVisible(False)
-            self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWindow)
-            newDataWindow.setVisible(True)
-
-            # create container widget for header
-            windowHeader = QWidget(self.headerArea)
-            windowHeaderLayout = QVBoxLayout(windowHeader)
-            windowHeaderLayout.setSpacing(0)
-            windowHeaderLayout.setContentsMargins(0,0,0,0)
-
-            if self.headerAreaLayout.count() == 0:
-                self.headerAreaLayout.addWidget(windowHeader)
-                self.headerAreaLayout.addStretch()
-            else:
-                self.headerAreaLayout.insertWidget(self.headerAreaLayout.count()-1,windowHeader)
 
             # check if metric belongs to geochemical data, get data, plot unit, and max X value
             if not gc:
@@ -1031,87 +868,41 @@ class mainWindow(QMainWindow):
             plotSpec = np.reshape(plotSpec,(np.amax(plotSpec.shape)))
             plotDepth = np.reshape(plotDepth,(np.amax(plotDepth.shape)))
 
-            self.addSpectralPlotWindow(newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, mineral, plotSpec, plotDepth, xMin, xMax, unit)
-            self.zoomChanged.connect(lambda: self.resizePlotWindow(newDataWindow, windowHeader))
+            # create dataWidget
+            newDataWidget = DataWidget(self.dataArea, 
+                                    widget_type='spec_plot',
+                                    width = self.dataWidgetWidth/2, 
+                                    height = self.dataWidgetHeight, 
+                                    title = mineral,
+                                    data = plotSpec,
+                                    depth = plotDepth,
+                                    axis_limits = [xMin, xMax],
+                                    unit = unit,
+                                    color = self.plotColorDict[mineral], 
+                                    meter_values = self.meterVals,
+                                    )#color_signal = self.minColorChanged)
+
+            # connect signals/slots of widget functions
+            resizeWidget = lambda: newDataWidget.update_size(self.dataWidgetWidth/2, self.dataWidgetHeight)
+            moveHeader = lambda: newDataWidget.move_header(self.mainScroll.verticalScrollBar().value())
+            self.zoomChanged.connect(resizeWidget)
+            self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
+            newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+
+            # insert widget in dataArea
+            if self.dataAreaLayout.count() == 0:
+                self.dataAreaLayout.addWidget(newDataWidget)
+                self.dataAreaLayout.addStretch()
+            else:
+                self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWidget)
+
         else:
+            # throw area if data has not been loaded
             self.throwError('No Drill Hole Open')
 
-    def resizePlotWindow(self, dataWindow, header):
-        dataWindow.setFixedSize(self.dataWidgetWidth/2, self.dataWidgetHeight)
-        header.setFixedSize(self.dataWidgetWidth/2, 40)
-
-    def addSpectralPlotWindow(self, newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, mineral, plotSpec, plotDepth, xMin, xMax, unit):
-        """
-         adds spectral plot to dataArea
-         
-         Parms:
-         gc - flag to indicate if data belongs to geochemistry set
-        """
-
-        self.clearLayout(newDataWindowLayout)
-        self.clearLayout(windowHeaderLayout)
-
-        newDataWindow.setFixedSize(self.dataWidgetWidth/2,self.dataWidgetHeight)
-
-        # create plot figure and canvas
-        plotFig = Figure(figsize=(self.dataWidgetWidth/100, (self.dataWidgetHeight-40)/100), dpi=100, facecolor = '#000000')
-        plotCanvas = FigureCanvas(plotFig)
-        plotCanvas.draw()
-        plotCanvas.setMouseTracking(True)
-
-        # make plot tooltip to display cursor coordinates and plot info
-        plotCanvas.mouseMoveEvent = lambda event: self.makePlotToolTip(event, newDataWindow, 0, xMax, plotDepth[0], plotDepth[-1], unit, 'spec', ' ')
-
-        # add widget to dataAera
-        newDataWindowLayout.addWidget(plotCanvas)
-        newDataWindowLayout.setSpacing(0)
-        newDataWindowLayout.setContentsMargins(0,20,0,0)
-        
-        # draw plot and add slot which redraws if mineral color changes
-        drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral], self.meterVals)
-        self.minColorChanged.connect(lambda: drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral], self.meterVals))
-
-        # add plot header to headerArea
-        if unit == '%':
-            xMax = xMax * 100
-
-        self.addHeader(windowHeader, windowHeaderLayout, mineral, self.dataWidgetWidth/2, newDataWindow, "{:.1f}".format(xMin), "{:.1f}".format(xMax) +' ' + unit)
-
-    def onClickedCBox(self):
-        """
-         keeps track of which check boxes are checked for drawing stacked plots
-        """
-
-        self.checkedList = []
-        for i in range(len(self.cBoxes)):
-            if self.cBoxes[i].isChecked():
-                self.checkedList.append(self.cBoxes[i].text())
-    
-    def initStackPlotWindow(self):
+    def initStackPlotWidget(self):
         # check to see that data has been loaded from csv
         if self.minData:
-            # create container widget for plot
-            newDataWindow = QWidget(self.dataArea)
-            newDataWindowLayout = QVBoxLayout(newDataWindow)
-            newDataWindowLayout.setSpacing(0)
-            newDataWindowLayout.setContentsMargins(0,20,0,0)
-
-            newDataWindow.setVisible(False)
-            self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWindow)
-            newDataWindow.setVisible(True)
-
-            # create container widget for header
-            windowHeader = QWidget(self.headerArea)
-            windowHeaderLayout = QVBoxLayout(windowHeader)
-            windowHeaderLayout.setSpacing(0)
-            windowHeaderLayout.setContentsMargins(0,0,0,0)
-
-            if self.headerAreaLayout.count() == 0:
-                self.headerAreaLayout.addWidget(windowHeader)
-                self.headerAreaLayout.addStretch()
-            else:
-                self.headerAreaLayout.insertWidget(self.headerAreaLayout.count()-1,windowHeader)
-
             # create a temporary array to hold data from checked check boxes
             tempSpec = np.zeros([self.minMeter.shape[0],1])
 
@@ -1147,48 +938,74 @@ class mainWindow(QMainWindow):
                     plotColor.append(self.plotColors[self.minList.index(self.cBoxes[i].text())])
                     plotMinNames.append(self.cBoxes[i].text())
 
-            self.addStackPlotWindow(newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, plotSpec, specDim, plotColor, plotMinNames)
-            self.zoomChanged.connect(lambda: self.resizePlotWindow(newDataWindow, windowHeader))
+            # create dataWidget
+            newDataWidget = DataWidget(self.dataArea, 
+                                    widget_type='stack_plot',
+                                    width = self.dataWidgetWidth/2, 
+                                    height = self.dataWidgetHeight, 
+                                    data = plotSpec,
+                                    dimensions = specDim,
+                                    color = plotColor,
+                                    min_names = plotMinNames,
+                                    depth = self.minMeter,
+                                    meter_values = self.meterVals
+                                    )
+
+            # connect signals/slots of widget functions
+            resizeWidget = lambda: newDataWidget.update_size(self.dataWidgetWidth/2, self.dataWidgetHeight)
+            moveHeader = lambda: newDataWidget.move_header(self.mainScroll.verticalScrollBar().value())
+            self.zoomChanged.connect(resizeWidget)
+            self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
+            newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+
+            # insert widget in dataArea
+            if self.dataAreaLayout.count() == 0:
+                self.dataAreaLayout.addWidget(newDataWidget)
+                self.dataAreaLayout.addStretch()
+            else:
+                self.dataAreaLayout.insertWidget(self.dataAreaLayout.count()-1, newDataWidget)
 
         else:
+            # throw area if data has not been loaded
             self.throwError('No Drill Hole Open')
 
-    def addStackPlotWindow(self, newDataWindow, newDataWindowLayout, windowHeader, windowHeaderLayout, plotSpec, specDim, plotColor, plotMinNames):
+    def remove_widget(self, widget, resizeWidget, moveHeader):
+        self.zoomChanged.disconnect(resizeWidget)
+        self.mainScroll.verticalScrollBar().valueChanged.disconnect(moveHeader)
+        self.dataAreaLayout.removeWidget(widget)
+        widget.deleteLater()
+
+    def closeOverlay(self, overlayBG, overlayMain, overlayCloseButton):
         """
-         adds stacked plot to dataArea, only uses data from percentage metrics
+         general close function used to close overlay specified by input arguements and
+         set open flags to False
         """
 
-        self.clearLayout(newDataWindowLayout)
-        self.clearLayout(windowHeaderLayout)
+        self.zoomOpen = False
+        #self.dHViewOpen = False
+        self.overlayWinOpen = False
+        self.errorThrown = False
+        overlayBG.deleteLater()
+        overlayMain.deleteLater()
+        overlayCloseButton.deleteLater()
+        overlayBG = None
+        overlayMain = None
+        overlayCloseButton = None
 
-        # create a legend for the toolTip
-        tag = ' '
-        for i in range(len(plotMinNames)):
-            tag = tag  + '<font color="' + plotColor[i] + '">■</font> ' + plotMinNames[i]
-            if i != len(plotMinNames)-1:
-                tag = tag + '<br>'
+    def resizePlotWindow(self, dataWindow, header):
+        dataWindow.setFixedSize(self.dataWidgetWidth/2, self.dataWidgetHeight)
+        header.setFixedSize(self.dataWidgetWidth/2, 40)
 
-        # check to see that data has been loaded from csv
-        newDataWindow.setFixedSize(self.dataWidgetWidth/2,self.dataWidgetHeight)
+    def onClickedCBox(self):
+        """
+         keeps track of which check boxes are checked for drawing stacked plots
+        """
 
-        # create plot figure and canvas
-        plotFig = Figure(figsize=(self.dataWidgetWidth/100, (self.dataWidgetHeight-40)/100),dpi=100,facecolor ='#000000')
-        plotCanvas = FigureCanvas(plotFig)
-        plotCanvas.draw()
-
-        plotCanvas.setMouseTracking(True)
-        plotCanvas.mouseMoveEvent = lambda event: self.makePlotToolTip(event, plotCanvas, 0, 100, self.minMeter[0], self.minMeter[-1], '%', 'stack', tag)
-
-        # add widget to dataArea
-        newDataWindowLayout.addWidget(plotCanvas)
-
-        # add plot header to headerArea
-        self.addHeader(windowHeader, windowHeaderLayout, ' ', self.dataWidgetWidth/2, newDataWindow, '0', '100 %')
-
-        # draw plot and add slot which redraws if mineral color changes
-        drawStackPlot(plotFig, plotCanvas, plotSpec, specDim, plotColor, plotMinNames, self.minMeter, self.meterVals)
-        self.minColorChanged.connect(lambda: drawStackPlot(plotFig, plotCanvas, plotSpec, specDim, plotColor, plotMinNames, self.minMeter, self.meterVals))
-
+        self.checkedList = []
+        for i in range(len(self.cBoxes)):
+            if self.cBoxes[i].isChecked():
+                self.checkedList.append(self.cBoxes[i].text())
+    
     def makePlotToolTip(self, event, parent, minX, maxX, minY, maxY, unit, plotType, legend):
         """
          displays depth and plot values in tooltip, takes axis ranges, plot units, type,
