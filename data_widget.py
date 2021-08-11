@@ -15,8 +15,10 @@ class DataWidget(QWidget):
     def __init__(self, parent=None, **kwargs):
         super().__init__()
 
-        self.width = kwargs["width"]
-        self.height = kwargs["height"]
+        self.kwargs = kwargs
+
+        self.width = self.kwargs["width"]
+        self.height = self.kwargs["height"]
 
         self.setFixedSize(self.width,self.height)
 
@@ -25,22 +27,22 @@ class DataWidget(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0,20,0,0)
 
-        self.widget_type = kwargs["widget_type"]
+        self.widget_type = self.kwargs["widget_type"]
         
         if self.widget_type == 'core_images':
-            title = kwargs["title"]
+            title = self.kwargs["title"]
             axis_limit_label = ['','']
         elif self.widget_type == 'spec_plot':
-            title = kwargs["title"]
-            axis_limit_label = kwargs['axis_limits']
-            if kwargs['unit'] == '%':
+            title = self.kwargs["title"]
+            axis_limit_label = self.kwargs['axis_limits']
+            if self.kwargs['unit'] == '%':
                 axis_limit_label = [str(x*100) for x in axis_limit_label] 
-            #self.color_changed = kwargs["color_signal"]
         elif self.widget_type == 'stack_plot':
             title = " "
             axis_limit_label = ["0", "100"]
+            self.minColorChanged = []
 
-        self.make_body(title, kwargs)
+        self.make_body(title)
         self.make_header(title, axis_limit_label)
     
     def make_header(self, title, axis_limits):
@@ -107,49 +109,22 @@ class DataWidget(QWidget):
         self.header.setGeometry(0,0,self.width,self.height)
         self.header.raise_()
         
-    def make_body(self, title, args):
+    def make_body(self, title):
         
         # create container widget for body
-        body = QWidget(self)
-        bodyLayout = QVBoxLayout(body)
-        bodyLayout.setSpacing(0)
-        bodyLayout.setContentsMargins(0,0,0,0)
+        self.body = QWidget(self)
+        self.bodyLayout = QVBoxLayout(self.body)
+        self.bodyLayout.setSpacing(0)
+        self.bodyLayout.setContentsMargins(0,0,0,0)
 
         if self.widget_type == 'core_images':
-            ims = args["images"]
-            content = drawCoreImages(body, bodyLayout, title, ims)
+            self.addCoreIms(title)
         elif self.widget_type == 'spec_plot':
-            data = args["data"]
-            axis_limits = args["axis_limits"]
-            depth = args["depth"] 
-            color = args["color"] 
-            meter_values = args["meter_values"] 
-            unit = args["unit"]  
-            content = drawSpecPlot(self.width, self.height, data, axis_limits, depth, color, meter_values)
-            content.mouseMoveEvent = lambda event: self.makePlotToolTip(event, content, axis_limits[0], axis_limits[1], depth[0], depth[-1], unit, 'spec', ' ')
-
+            self.addSpecPlot(self.kwargs["color"])
         elif self.widget_type == 'stack_plot':
-            data = args["data"]
-            dimensions = args["dimensions"]
-            color = args["color"]
-            min_names = args["min_names"]
-            depth = args["depth"]
-            meter_values = args["meter_values"]
-
-            # create a legend for the toolTip
-            tag = ' '
-            for i in range(len(min_names)):
-                tag = tag  + '<font color="' + color[i] + '">■</font> ' + min_names[i]
-                if i != len(min_names)-1:
-                    tag = tag + '<br>'
-            
-            content = drawStackPlot(self.width, self.height, data, dimensions, color, depth, meter_values)
-            content.mouseMoveEvent = lambda event: self.makePlotToolTip(event, content, 0, 100, depth[0], depth[-1], '%', 'stack', tag)
-
-        #self.minColorChanged.connect(lambda: drawSpecPlot(plotFig, plotCanvas, plotSpec, xMin, xMax, plotDepth, self.plotColorDict[mineral], self.meterVals))
+            self.addStackPlot(self.kwargs["color"])
         
-        bodyLayout.addWidget(content)
-        self.layout.addWidget(body)
+        self.layout.addWidget(self.body)
         
     def update_size(self, width, height):
         self.width = width
@@ -176,5 +151,55 @@ class DataWidget(QWidget):
             elif plotType == 'stack':
                 parent.setToolTip("{:.1f}".format(yPos) + ' m, ' + "{:.1f}".format(xPos) + ' ' + unit + '<br>' + legend)
 
+    def addCoreIms(self, title):
+        ims = self.kwargs["images"]
+        content = drawCoreImages(self.body, title, ims)
+        self.bodyLayout.addWidget(content)
+
+    def addSpecPlot(self,color):
+        if self.bodyLayout is not None:
+            while self.bodyLayout.count():
+                item = self.bodyLayout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+
+        data = self.kwargs["data"]
+        axis_limits = self.kwargs["axis_limits"]
+        depth = self.kwargs["depth"] 
+        meter_values = self.kwargs["meter_values"] 
+        unit = self.kwargs["unit"]  
+        content = drawSpecPlot(self.width, self.height, data, axis_limits, depth, color, meter_values)
+        content.mouseMoveEvent = lambda event: self.makePlotToolTip(event, content, axis_limits[0], axis_limits[1], depth[0], depth[-1], unit, 'spec', ' ')
+
+        self.bodyLayout.addWidget(content)
+
+    def addStackPlot(self, color):
+        if self.bodyLayout is not None:
+            while self.bodyLayout.count():
+                item = self.bodyLayout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+
+        data = self.kwargs["data"]
+        dimensions = self.kwargs["dimensions"]
+        min_names = self.kwargs["min_names"]
+        depth = self.kwargs["depth"]
+        meter_values = self.kwargs["meter_values"]
+
+        plotColor = [color[mineral] for mineral in min_names]
+
+        # create a legend for the toolTip
+        tag = ' '
+        for i in range(len(min_names)):
+            tag = tag  + '<font color="' + plotColor[i] + '">■</font> ' + min_names[i]
+            if i != len(min_names)-1:
+                tag = tag + '<br>'
+            
+        content = drawStackPlot(self.width, self.height, data, dimensions, plotColor, depth, meter_values)
+        content.mouseMoveEvent = lambda event: self.makePlotToolTip(event, content, 0, 100, depth[0], depth[-1], '%', 'stack', tag)
+
+        self.bodyLayout.addWidget(content)
 
 

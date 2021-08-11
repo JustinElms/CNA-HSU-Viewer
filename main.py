@@ -879,8 +879,8 @@ class mainWindow(QMainWindow):
                                     axis_limits = [xMin, xMax],
                                     unit = unit,
                                     color = self.plotColorDict[mineral], 
-                                    meter_values = self.meterVals,
-                                    )#color_signal = self.minColorChanged)
+                                    meter_values = self.meterVals
+                                    )
 
             # connect signals/slots of widget functions
             resizeWidget = lambda: newDataWidget.update_size(self.dataWidgetWidth/2, self.dataWidgetHeight)
@@ -888,6 +888,8 @@ class mainWindow(QMainWindow):
             self.zoomChanged.connect(resizeWidget)
             self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
             newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+            self.minColorChanged.connect(lambda: newDataWidget.addSpecPlot(self.plotColorDict[mineral]))
+
 
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
@@ -929,13 +931,10 @@ class mainWindow(QMainWindow):
                 else:
                     plotSpec[:,i] = np.ones([specDim[0]])
 
-            plotColor = []
             plotMinNames = []
-
             # get list of colors for plots
             for i in range(len(self.cBoxes)):
                 if self.cBoxes[i].isChecked():
-                    plotColor.append(self.plotColors[self.minList.index(self.cBoxes[i].text())])
                     plotMinNames.append(self.cBoxes[i].text())
 
             # create dataWidget
@@ -945,7 +944,7 @@ class mainWindow(QMainWindow):
                                     height = self.dataWidgetHeight, 
                                     data = plotSpec,
                                     dimensions = specDim,
-                                    color = plotColor,
+                                    color = self.plotColorDict,
                                     min_names = plotMinNames,
                                     depth = self.minMeter,
                                     meter_values = self.meterVals
@@ -957,6 +956,7 @@ class mainWindow(QMainWindow):
             self.zoomChanged.connect(resizeWidget)
             self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
             newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+            self.minColorChanged.connect(lambda: newDataWidget.addStackPlot(self.plotColorDict))
 
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
@@ -1074,7 +1074,7 @@ class mainWindow(QMainWindow):
 
             # create color options widget
             colorMenu = QWidget(self)
-            colorMenu.setFixedSize(self.dataWidgetWidth, int(self.dataWidgetWidth/3))
+            colorMenu.setFixedSize(300,150)
             colorMenuLayout = QVBoxLayout(colorMenu)
             colorMenuLayout.setSpacing(0)
             colorMenuLayout.setContentsMargins(0,0,0,0)
@@ -1147,7 +1147,7 @@ class mainWindow(QMainWindow):
             defaultButton.setText('Restore Default')
             defaultButton.clicked.connect(lambda: self.restoreDefaultColor(rSlider,gSlider,bSlider,idx))
 
-            # add button to apply chagnes to all widgets
+            # add button to apply changes to all widgets
             applyButton = QPushButton(buttonArea)
             applyButton.setText('Apply')
             applyButton.clicked.connect(lambda: self.applyColorChange(rSlider.value(),gSlider.value(),bSlider.value(),idx,colorMenu))

@@ -70,7 +70,7 @@ def drawMeter(depthValues, width, height):
 
         return pixmap
 
-def drawCoreImages(parent, parentLayout, title, ims):
+def drawCoreImages(parent, title, ims):
     """
         draws coreImages on dataWidget
     """
@@ -91,7 +91,6 @@ def drawCoreImages(parent, parentLayout, title, ims):
     coreFrameLayout.setContentsMargins(0,0,0,0)
     coreFrame.setToolTip(title)         # tooltip displays min name when hovering mouse over widget
 
-    #parentLayout.addWidget(coreFrame)
     return coreFrame
 
 def drawSpecPlot(width, height, plotSpec, axisLims, plotDepth, plotColor, meterVals):
