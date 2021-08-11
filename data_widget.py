@@ -118,9 +118,7 @@ class DataWidget(QWidget):
         self.bodyLayout.setContentsMargins(0,0,0,0)
 
         if self.widget_type == 'core_images':
-            ims = self.kwargs["images"]
-            content = drawCoreImages(self.body, title, ims)
-            self.bodyLayout.addWidget(content)
+            self.addCoreIms(title)
         elif self.widget_type == 'spec_plot':
             self.addSpecPlot(self.kwargs["color"])
         elif self.widget_type == 'stack_plot':
@@ -153,8 +151,12 @@ class DataWidget(QWidget):
             elif plotType == 'stack':
                 parent.setToolTip("{:.1f}".format(yPos) + ' m, ' + "{:.1f}".format(xPos) + ' ' + unit + '<br>' + legend)
 
-    def addSpecPlot(self,color):
+    def addCoreIms(self, title):
+        ims = self.kwargs["images"]
+        content = drawCoreImages(self.body, title, ims)
+        self.bodyLayout.addWidget(content)
 
+    def addSpecPlot(self,color):
         if self.bodyLayout is not None:
             while self.bodyLayout.count():
                 item = self.bodyLayout.takeAt(0)
