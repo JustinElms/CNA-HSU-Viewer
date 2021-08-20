@@ -292,10 +292,10 @@ class mainWindow(QMainWindow):
         newProject.clicked.connect(self.newProject)
 
         # add 'Open Core Overlay' button
-        newOverlayButton = QPushButton(drawerVFrame)
-        newOverlayButton.setText('Open Core Overlay')
-        newOverlayButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        newOverlayButton.clicked.connect(lambda: self.openOverlayView())
+        # newOverlayButton = QPushButton(drawerVFrame)
+        # newOverlayButton.setText('Open Core Overlay')
+        # newOverlayButton.setStyleSheet("background-color: grey; font: bold 12pt")
+        # newOverlayButton.clicked.connect(lambda: self.openOverlayView())
 
         # group box for 'Add Spectral Images' functions
         newCoreGroupBox = QGroupBox("Add Spectral Images",drawerVFrame)
@@ -368,14 +368,12 @@ class mainWindow(QMainWindow):
 
         # add widgets to vertical layout
         drawerVLayout.addWidget(self.projBanner)
-        #drawerVLayout.addWidget(zoomButtonFrame)
         drawerVLayout.addWidget(newProject)
         drawerVLayout.addWidget(newCoreGroupBox)
         drawerVLayout.addWidget(newSpecPlotGroupBox)
         drawerVLayout.addWidget(newGcPlotGroupBox)
         drawerVLayout.addWidget(newStackPlotGroupBox)
-        #drawerVLayout.addWidget(newDHViewButton)
-        drawerVLayout.addWidget(newOverlayButton)
+        #drawerVLayout.addWidget(newOverlayButton)
         
         # add mineral legend to bottom of drawer
         self.minColorButtonGroup = QButtonGroup()        # button group for mineral color swatches
@@ -879,8 +877,8 @@ class mainWindow(QMainWindow):
                                     axis_limits = [xMin, xMax],
                                     unit = unit,
                                     color = self.plotColorDict[mineral], 
-                                    meter_values = self.meterVals,
-                                    )#color_signal = self.minColorChanged)
+                                    meter_values = self.meterVals
+                                    )
 
             # connect signals/slots of widget functions
             resizeWidget = lambda: newDataWidget.update_size(self.dataWidgetWidth/2, self.dataWidgetHeight)
@@ -888,6 +886,8 @@ class mainWindow(QMainWindow):
             self.zoomChanged.connect(resizeWidget)
             self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
             newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+            self.minColorChanged.connect(lambda: newDataWidget.addSpecPlot(self.plotColorDict[mineral]))
+
 
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
@@ -929,13 +929,10 @@ class mainWindow(QMainWindow):
                 else:
                     plotSpec[:,i] = np.ones([specDim[0]])
 
-            plotColor = []
             plotMinNames = []
-
             # get list of colors for plots
             for i in range(len(self.cBoxes)):
                 if self.cBoxes[i].isChecked():
-                    plotColor.append(self.plotColors[self.minList.index(self.cBoxes[i].text())])
                     plotMinNames.append(self.cBoxes[i].text())
 
             # create dataWidget
@@ -945,7 +942,7 @@ class mainWindow(QMainWindow):
                                     height = self.dataWidgetHeight, 
                                     data = plotSpec,
                                     dimensions = specDim,
-                                    color = plotColor,
+                                    color = self.plotColorDict,
                                     min_names = plotMinNames,
                                     depth = self.minMeter,
                                     meter_values = self.meterVals
@@ -957,6 +954,7 @@ class mainWindow(QMainWindow):
             self.zoomChanged.connect(resizeWidget)
             self.mainScroll.verticalScrollBar().valueChanged.connect(moveHeader)
             newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
+            self.minColorChanged.connect(lambda: newDataWidget.addStackPlot(self.plotColorDict))
 
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
@@ -1022,44 +1020,44 @@ class mainWindow(QMainWindow):
             elif plotType == 'stack':
                 parent.setToolTip("{:.1f}".format(yPos) + ' m, ' + "{:.1f}".format(xPos) + ' ' + unit + '<br>' + legend)
 
-    def openOverlayView(self):
-        """
-         Opens a mineral overaly view window when the 'Overlay View' button is clicked
-        """
+    # def openOverlayView(self):
+    #     """
+    #      Opens a mineral overaly view window when the 'Overlay View' button is clicked
+    #     """
 
-        # check to see that data has been loaded
-        if self.intMinList or self.compMinList:
+    #     # check to see that data has been loaded
+    #     if self.intMinList or self.compMinList:
 
-            # draw semi transparent background for splash window
-            self.overlayBG = QWidget(self)
-            self.overlayBG.setGeometry(0,0,self.width(),self.height())
-            self.overlayBG.setStyleSheet('Background-Color: rgba(0,0,0,200)')
-            self.overlayBG.show()
+    #         # draw semi transparent background for splash window
+    #         self.overlayBG = QWidget(self)
+    #         self.overlayBG.setGeometry(0,0,self.width(),self.height())
+    #         self.overlayBG.setStyleSheet('Background-Color: rgba(0,0,0,200)')
+    #         self.overlayBG.show()
 
-            # add close button to top right of app, just outside down-hole view window
-            self.overlayCloseButton = QPushButton(self.overlayBG)
-            self.overlayCloseButton.setText('x')
-            self.overlayCloseButton.setStyleSheet('Background-Color: Transparent; font: 32pt')
-            self.overlayCloseButton.setFixedSize(50,50)
-            self.overlayCloseButton.move(self.width()-50,0)
-            self.overlayCloseButton.show()
+    #         # add close button to top right of app, just outside down-hole view window
+    #         self.overlayCloseButton = QPushButton(self.overlayBG)
+    #         self.overlayCloseButton.setText('x')
+    #         self.overlayCloseButton.setStyleSheet('Background-Color: Transparent; font: 32pt')
+    #         self.overlayCloseButton.setFixedSize(50,50)
+    #         self.overlayCloseButton.move(self.width()-50,0)
+    #         self.overlayCloseButton.show()
 
-            # add overlay view window over applicaiton
-            self.overlayWin = overlayView(self)
-            # get colors of overlay minerals
-            overlayColors = []
-            for i in range(len(self.compMinList)):
-                overlayColors.append(self.plotColors[self.minList.index(self.compMinList[i])])
-            self.overlayWin.setMinColors(overlayColors)         # pass colors to overlayView class
-            self.overlayWin.setGeometry(50,50,self.width()-100, self.height()-100)
-            self.overlayWinOpen = True
-            self.overlayWin.addCoreIms(self.medResIms, self.compMinList, self.compIms, self.numCoresPerBox)  # pass images and names to overlayView class
-            self.overlayWin.show()
+    #         # add overlay view window over applicaiton
+    #         self.overlayWin = overlayView(self)
+    #         # get colors of overlay minerals
+    #         overlayColors = []
+    #         for i in range(len(self.compMinList)):
+    #             overlayColors.append(self.plotColors[self.minList.index(self.compMinList[i])])
+    #         self.overlayWin.setMinColors(overlayColors)         # pass colors to overlayView class
+    #         self.overlayWin.setGeometry(50,50,self.width()-100, self.height()-100)
+    #         self.overlayWinOpen = True
+    #         self.overlayWin.addCoreIms(self.medResIms, self.compMinList, self.compIms, self.numCoresPerBox)  # pass images and names to overlayView class
+    #         self.overlayWin.show()
 
-            # connect the close button
-            self.overlayCloseButton.clicked.connect(lambda: self.closeOverlay(self.overlayBG, self.overlayWin, self.overlayCloseButton))
-        else:
-            self.throwError('No Drill Hole Open')
+    #         # connect the close button
+    #         self.overlayCloseButton.clicked.connect(lambda: self.closeOverlay(self.overlayBG, self.overlayWin, self.overlayCloseButton))
+    #     else:
+    #         self.throwError('No Drill Hole Open')
 
     def changeMinColor(self, idx):
         """
@@ -1074,7 +1072,7 @@ class mainWindow(QMainWindow):
 
             # create color options widget
             colorMenu = QWidget(self)
-            colorMenu.setFixedSize(self.dataWidgetWidth, int(self.dataWidgetWidth/3))
+            colorMenu.setFixedSize(300,150)
             colorMenuLayout = QVBoxLayout(colorMenu)
             colorMenuLayout.setSpacing(0)
             colorMenuLayout.setContentsMargins(0,0,0,0)
@@ -1147,7 +1145,7 @@ class mainWindow(QMainWindow):
             defaultButton.setText('Restore Default')
             defaultButton.clicked.connect(lambda: self.restoreDefaultColor(rSlider,gSlider,bSlider,idx))
 
-            # add button to apply chagnes to all widgets
+            # add button to apply changes to all widgets
             applyButton = QPushButton(buttonArea)
             applyButton.setText('Apply')
             applyButton.clicked.connect(lambda: self.applyColorChange(rSlider.value(),gSlider.value(),bSlider.value(),idx,colorMenu))
