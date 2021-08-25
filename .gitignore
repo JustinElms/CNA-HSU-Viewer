@@ -1,1 +1,6 @@
-BE-11-05
+/BE-11-05
+/__pycache__
+/.vscode
+/build
+/dist
+/main.spec
