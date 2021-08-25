@@ -1227,12 +1227,6 @@ class mainWindow(QMainWindow):
                 self.update()
 
 if __name__ == '__main__':
-    # Handle high resolution displays:
-    if hasattr(Qt, 'AA_EnableHighDpiScaling'):
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
-
     app = QApplication(sys.argv)
     ex = mainWindow()
     app.exec_()
