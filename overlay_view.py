@@ -86,9 +86,6 @@ class overlayView(QWidget):
         self.cbAreaLayout.addWidget(self.coreBoxIm)
         self.cbAreaLayout.addStretch()
 
-        # initialize the number of core images per core box
-        self.numCoresPerBox = 0
-
         # add container widgets to window layout
         layout.addWidget(self.cbArea)
         layout.addWidget(controlArea)
@@ -144,7 +141,7 @@ class overlayView(QWidget):
         self.opSliderVals[i].setText(str(self.opSliders[i].value()) + '%')
         self.overlayIms()
 
-    def addCoreIms(self, coreBoxIms, compMinList, compIms, coresPerBox):
+    def addCoreIms(self, coreBoxIms, compMinList, compIms):
         """
          addCoreIms is called from the mainWindow class and used to pass corebox and core
          spectral images to the overlayView class
@@ -157,7 +154,6 @@ class overlayView(QWidget):
         self.compIms = compIms
         for i in range(len(coreBoxIms)):                    # adds list of indices for coreboxes to boxCB
             self.boxCB.addItem(str(i+1))
-        self.numCoresPerBox = coresPerBox                   # makes coresPerBox global within class
 
         # create lists of widgets for mineral overlay sliders, labels and buttons
         idx = []                                            # index of mineral
@@ -171,17 +167,17 @@ class overlayView(QWidget):
             opsWidgets.append(QWidget(self.minArea))
             opsLayouts.append(QGridLayout(opsWidgets[i]))
 
-            # popMinWidget adds sldiers labesl and buttons to opsWidgets[i]
-            self.popMinWidget(opsWidgets[i], opsLayouts[i], i)
+            # pupulateMinWidget adds sldiers labesl and buttons to opsWidgets[i]
+            self.pupulateMinWidget(opsWidgets[i], opsLayouts[i], i)
 
             self.minAreaLayout.addWidget(opsWidgets[i])
 
         self.minAreaLayout.addStretch()
         self.overlayIms()
 
-    def popMinWidget(self, parent, layout, idx):
+    def pupulateMinWidget(self, parent, layout, idx):
         """
-         popMinWidget adds sldiers labesl and buttons to opsWidgets[i]
+         pupulateMinWidget adds sldiers labesl and buttons to opsWidgets[i]
          need to do this in separate function so that the signals from buttons and opSliders
          remain separate
         """
@@ -214,16 +210,13 @@ class overlayView(QWidget):
     def overlayIms(self):
         """
          overlayIms draws the overlay pixmap on coreBoxIm using the corebox and mineral Images
-         for current version of HSU view there are many spectral images for each corebox as
-         given by numCoresPerBox
         """
 
         # get index of  comp spectral images
-        startIdx = self.boxCB.currentIndex()*self.numCoresPerBox
-        endIdx = startIdx + self.numCoresPerBox
+        idx = self.boxCB.currentIndex()
 
         # get core box image
-        cbIm = self.cbIms[self.boxCB.currentIndex()].toImage()
+        cbIm = (self.cbIms[self.boxCB.currentIndex()].scaledToWidth(self.width()-350)).toImage()
         cbFormat = cbIm.format()
 
         # convert core box image to numpy array
@@ -244,23 +237,22 @@ class overlayView(QWidget):
                 if self.opSliders[i].value() > maxSliderVal:    # change maxSliderVal if current slider larger
                     maxSliderVal = self.opSliders[i].value()
 
-                for j in range(startIdx, endIdx):
-                    minIm =  self.compIms[i][j]                            # get comp spec image
-                    minIm = minIm.scaledToWidth(cbDim[1]).toImage()        # scale to core box image width
-                    minIm = qimage2ndarray.rgb_view(minIm)                 # convert to ndarray
-                    minIm = minIm/np.amax(minIm)                           # normalize minIm dynamic range from 0-1
-                    minIm[minIm < 0.1] = 0                                 # remove overly dark pixels
+                minIm = self.compIms[self.compMinList[i]]['Images'][idx]   # get comp spec image
+                minIm = minIm.scaledToWidth(cbDim[1]).toImage()        # scale to core box image width
+                minIm = qimage2ndarray.rgb_view(minIm)                 # convert to ndarray
+                minIm = minIm/np.amax(minIm)                           # normalize minIm dynamic range from 0-1
+                minIm[minIm < 0.1] = 0                                 # remove overly dark pixels
 
-                    minDim = minIm.shape                                   # get dimension of comp spec image
+                minDim = minIm.shape                                   # get dimension of comp spec image
 
-                    # multiply minIm by slider value % and the mineral's color rgb value
-                    minImOl = (self.opSliders[i].value()/100)*np.multiply(minIm,self.colors[i][:])
+                # multiply minIm by slider value % and the mineral's color rgb value
+                minImOl = (self.opSliders[i].value()/100)*np.multiply(minIm,self.colors[i][:])
 
-                    # add minIm to the overlay
-                    overlay[startRow:startRow + minDim[0],:,:]  = overlay[startRow:startRow + minDim[0],:,:] + minImOl
+                # add minIm to the overlay
+                overlay[startRow:startRow + minDim[0],:,:]  = overlay[startRow:startRow + minDim[0],:,:] + minImOl
 
-                    # get starting point for next comp spec image
-                    startRow = startRow + minDim[0] + 1
+                # get starting point for next comp spec image
+                startRow = startRow + minDim[0] + 1
 
         # need to dim the pixels of core box images underneath the overlay
         flatIm = cbIm.min(axis=2)                                      # flatten the corebox image to get grayscale image
