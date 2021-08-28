@@ -15,7 +15,7 @@ from PySide2.QtWidgets import (QApplication, QButtonGroup, QCheckBox,
 try:
     # Include in try/except block if you're also targeting Mac/Linux
     from PySide2.QtWinExtras import QtWin
-    myappid = 'CNA.HSUViewer.0.27'
+    myappid = 'CNA.HSUViewer'
     QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
     pass
@@ -117,7 +117,7 @@ class mainWindow(QMainWindow):
         """
 
         os.chdir(self.rootDir)
-        self.setWindowTitle("CNA Core Viewer v0.27")
+        self.setWindowTitle("CNA Core Viewer")
 
         # create main widget and layout
         self.main = QWidget(self)
@@ -292,10 +292,10 @@ class mainWindow(QMainWindow):
         newProject.clicked.connect(self.newProject)
 
         # add 'Open Core Overlay' button
-        # newOverlayButton = QPushButton(drawerVFrame)
-        # newOverlayButton.setText('Open Core Overlay')
-        # newOverlayButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        # newOverlayButton.clicked.connect(lambda: self.openOverlayView())
+        newOverlayButton = QPushButton(drawerVFrame)
+        newOverlayButton.setText('Open Core Overlay')
+        newOverlayButton.setStyleSheet("background-color: grey; font: bold 12pt")
+        newOverlayButton.clicked.connect(lambda: self.openOverlayView())
 
         # group box for 'Add Spectral Images' functions
         newCoreGroupBox = QGroupBox("Add Spectral Images",drawerVFrame)
@@ -373,7 +373,7 @@ class mainWindow(QMainWindow):
         drawerVLayout.addWidget(newSpecPlotGroupBox)
         drawerVLayout.addWidget(newGcPlotGroupBox)
         drawerVLayout.addWidget(newStackPlotGroupBox)
-        #drawerVLayout.addWidget(newOverlayButton)
+        drawerVLayout.addWidget(newOverlayButton)
         
         # add mineral legend to bottom of drawer
         self.minColorButtonGroup = QButtonGroup()        # button group for mineral color swatches
@@ -1020,44 +1020,62 @@ class mainWindow(QMainWindow):
             elif plotType == 'stack':
                 parent.setToolTip("{:.1f}".format(yPos) + ' m, ' + "{:.1f}".format(xPos) + ' ' + unit + '<br>' + legend)
 
-    # def openOverlayView(self):
-    #     """
-    #      Opens a mineral overaly view window when the 'Overlay View' button is clicked
-    #     """
+    def openOverlayView(self):
+        """
+         Opens a mineral overaly view window when the 'Overlay View' button is clicked
+        """
 
-    #     # check to see that data has been loaded
-    #     if self.intMinList or self.compMinList:
+        # check to see that data has been loaded
+        if self.imDict["Photos"] and self.imDict["Composition"]:  
 
-    #         # draw semi transparent background for splash window
-    #         self.overlayBG = QWidget(self)
-    #         self.overlayBG.setGeometry(0,0,self.width(),self.height())
-    #         self.overlayBG.setStyleSheet('Background-Color: rgba(0,0,0,200)')
-    #         self.overlayBG.show()
+            # draw semi transparent background for splash window
+            self.overlayBG = QWidget(self)
+            self.overlayBG.setGeometry(0,0,self.width(),self.height())
+            self.overlayBG.setStyleSheet('Background-Color: rgba(0,0,0,200)')
+            self.overlayBG.show()
 
-    #         # add close button to top right of app, just outside down-hole view window
-    #         self.overlayCloseButton = QPushButton(self.overlayBG)
-    #         self.overlayCloseButton.setText('x')
-    #         self.overlayCloseButton.setStyleSheet('Background-Color: Transparent; font: 32pt')
-    #         self.overlayCloseButton.setFixedSize(50,50)
-    #         self.overlayCloseButton.move(self.width()-50,0)
-    #         self.overlayCloseButton.show()
+            # add close button to top right of app, just outside down-hole view window
+            self.overlayCloseButton = QPushButton(self.overlayBG)
+            self.overlayCloseButton.setText('x')
+            self.overlayCloseButton.setStyleSheet('Background-Color: Transparent; font: 32pt')
+            self.overlayCloseButton.setFixedSize(50,50)
+            self.overlayCloseButton.move(self.width()-50,0)
+            self.overlayCloseButton.show()
 
-    #         # add overlay view window over applicaiton
-    #         self.overlayWin = overlayView(self)
-    #         # get colors of overlay minerals
-    #         overlayColors = []
-    #         for i in range(len(self.compMinList)):
-    #             overlayColors.append(self.plotColors[self.minList.index(self.compMinList[i])])
-    #         self.overlayWin.setMinColors(overlayColors)         # pass colors to overlayView class
-    #         self.overlayWin.setGeometry(50,50,self.width()-100, self.height()-100)
-    #         self.overlayWinOpen = True
-    #         self.overlayWin.addCoreIms(self.medResIms, self.compMinList, self.compIms, self.numCoresPerBox)  # pass images and names to overlayView class
-    #         self.overlayWin.show()
+            # add overlay view window over applicaiton
+            self.overlayWin = overlayView(self)
+            
+            # get core box images
+            imList = list(self.imDict['Composition'].keys())
+            # determine which resoltion to import (highest res gets priority)
+            if any('High' in string for string in list(self.imDict["Photos"].keys())): 
+                imRes = [match for match in self.imDict["Photos"].keys() if "High" in match][0]
+            elif 'Medium' in self.imDict["Photos"].keys():
+                imRes = [match for match in self.imDict["Photos"].keys() if "Medium" in match][0]
+            elif 'Low' in self.imDict["Photos"].keys():
+                imRes = [match for match in self.imDict["Photos"].keys() if "Low" in match][0]
 
-    #         # connect the close button
-    #         self.overlayCloseButton.clicked.connect(lambda: self.closeOverlay(self.overlayBG, self.overlayWin, self.overlayCloseButton))
-    #     else:
-    #         self.throwError('No Drill Hole Open')
+            # check to see that data has been loaded
+            for i in range (len(imList)):
+                if not self.imDict['Composition'][imList[i]]['Images']:
+                    self.imDict = importMineralImages(self.imDict, 'Composition', imList[i])
+                if not self.imDict['Photos'][imRes]['Images']:
+                    self.imDict = importMineralImages(self.imDict, 'Photos', imRes)
+
+            # get colors of overlay minerals
+            overlayColors = []
+            for i in range(len(imList)):
+                overlayColors.append(self.plotColors[self.minList.index(imList[i])])
+            self.overlayWin.setMinColors(overlayColors)         # pass colors to overlayView class
+            self.overlayWin.setGeometry(50,50,self.width()-100, self.height()-100)
+            self.overlayWinOpen = True
+            self.overlayWin.addCoreIms(self.imDict['Photos'][imRes]['Images'], imList, self.imDict['Composition'])  # pass images and names to overlayView class
+            self.overlayWin.show()
+
+            # connect the close button
+            self.overlayCloseButton.clicked.connect(lambda: self.closeOverlay(self.overlayBG, self.overlayWin, self.overlayCloseButton))
+        else:
+            self.throwError('No Drill Hole Open')
 
     def changeMinColor(self, idx):
         """
