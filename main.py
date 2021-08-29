@@ -1026,7 +1026,7 @@ class mainWindow(QMainWindow):
         """
 
         # check to see that data has been loaded
-        if self.imDict["Photos"] and self.imDict["Composition"]:  
+        if "Photos" in list(self.imDict.keys()) and "Composition" in list(self.imDict.keys()):  
 
             # draw semi transparent background for splash window
             self.overlayBG = QWidget(self)
@@ -1074,6 +1074,9 @@ class mainWindow(QMainWindow):
 
             # connect the close button
             self.overlayCloseButton.clicked.connect(lambda: self.closeOverlay(self.overlayBG, self.overlayWin, self.overlayCloseButton))
+
+        elif not "Composition" in list(self.imDict.keys()):
+            self.throwError('Composition images required to use Core Overlay.')
         else:
             self.throwError('No Drill Hole Open')
 
