@@ -8,7 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 
 
-def drawMeter(depthValues, width, height):
+def drawMeter(depthValues, width, height, meterLoaded):
         """
          draws pixmaps for down-hole meter. Maximum pixmap size is 32767 px so multiple pixmaps
          may be needed depending on depth of drill hole and image sizes
@@ -46,7 +46,7 @@ def drawMeter(depthValues, width, height):
         qp.setPen(QColor(222,222,222))
 
         # # draw meter pixmaps
-        for i in range(len(depthValues)):
+        for i in range(len(depthValues+1)):
             if i*tickSpace > (pxNum+1)*32767:
                 pxNum = pxNum + 1
                 if pxNum == (numPixmaps - 1):
@@ -62,11 +62,16 @@ def drawMeter(depthValues, width, height):
 
             if i == 0 and pxNum == 0:                                   # starting major tick and text
                 qp.drawRect(int(0.25*width), 20, int(0.75*width), 1)
-                qp.drawText(QPoint(0, 17), "{:.1f}".format(depthValues[i]) + ' m')
-             #elif i%numCoresPerBox == 0:                                            # other major ticks and text
+                if meterLoaded:
+                    qp.drawText(QPoint(0, 17), "{:.1f}".format(depthValues[i]) + ' m')
+                else:
+                    qp.drawText(QPoint(0, 17), "{:.0f}".format(depthValues[i]))
             else:
                 qp.drawRect(int(0.25*width), i*tickSpace+20-pxNum*32767, int(0.75*width), 1)
-                qp.drawText(QPoint(0, i*tickSpace-pxNum*32767+17), "{:.1f}".format(depthValues[i]) + ' m')
+                if meterLoaded:
+                    qp.drawText(QPoint(0, i*tickSpace-pxNum*32767+17), "{:.1f}".format(depthValues[i]) + ' m')
+                else:
+                    qp.drawText(QPoint(0, i*tickSpace-pxNum*32767+17), "{:.0f}".format(depthValues[i]))
 
         return pixmap
 

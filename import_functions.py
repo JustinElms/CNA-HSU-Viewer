@@ -38,6 +38,12 @@ def loadCsvData(mainDir, projName):
     minMeter = getMeter('Meter_mineral', specData, dataNames)
     gcMeter = getMeter('Meter_Geochemistry', specData, dataNames)
 
+    if len(minMeter)==0:
+        minMeter = getMeter('Info_Line_number', specData, dataNames)
+        meterLoaded = False
+    else:
+        meterLoaded = True
+
     minerals = natsorted(list(set(minerals)))
     minDataTypes = natsorted(list(set(minDataTypes)))
 
@@ -47,7 +53,7 @@ def loadCsvData(mainDir, projName):
     minData = nestedDict(specData, dataNames, 'mineral_', minerals, minDataTypes, units, minVals, maxVals)
     gcMinData = nestedDict(specData, dataNames, 'Geochemistry_', gcMinerals, gcMinDataTypes, units, minVals, maxVals)
 
-    return minData, gcMinData, minMeter, gcMeter
+    return minData, gcMinData, minMeter, gcMeter, meterLoaded
 
 def nestedDict(data, dataList, dataType, minerals, minDataTypes, units, minVals, maxVals):
     """

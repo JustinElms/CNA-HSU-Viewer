@@ -562,7 +562,7 @@ class mainWindow(QMainWindow):
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             # load spectral metric data from _DATA.csv
-            self.minData, self.gcMinData, self.minMeter, self.gcMeter = loadCsvData(self.mainDir, self.projName)
+            self.minData, self.gcMinData, self.minMeter, self.gcMeter, self.meterLoaded = loadCsvData(self.mainDir, self.projName)
             self.minList = list(self.minData.keys()) + list(self.gcMinData.keys())                                              # can this global var be removed? 
 
             self.imDict = makeImDict(self.mainDir)
@@ -734,7 +734,7 @@ class mainWindow(QMainWindow):
         self.meterLabel.setStyleSheet('Background-Color: rgb(0,0,0)')
         
         # produce pixmap of meter
-        meter = drawMeter(self.meterVals, self.meterWidth, self.dataWidgetHeight)
+        meter = drawMeter(self.meterVals, self.meterWidth, self.dataWidgetHeight, self.meterLoaded)
 
         # set pixmap of meterLabel to meter pixmap
         self.meterLabel.setPixmap(meter[0])
@@ -780,6 +780,8 @@ class mainWindow(QMainWindow):
         meterVals = np.arange(self.minMeter[0],self.minMeter[-1],(self.minMeter[-1]-self.minMeter[0])/(np.floor(numPoints)-1))
         meterVals = np.append(meterVals,self.minMeter[-1])
 
+        if not self.meterLoaded:
+            meterVals = np.floor(meterVals).astype(int)
         return meterVals
 
     def initCoreWidget(self, imType, mineral):
