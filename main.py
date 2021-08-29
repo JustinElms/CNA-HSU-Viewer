@@ -91,10 +91,6 @@ class mainWindow(QMainWindow):
         self.imDict = []
 
         # intialize lists for data, mineral names, and images
-        self.intIms = []
-        self.intMinList = []
-        self.compIms = []
-        self.compMinList = []
         self.minMeter = []
         
         # default colors for minerals in plots and overlay
@@ -423,11 +419,6 @@ class mainWindow(QMainWindow):
     def syncScrollBars(self):   
 
         width = self.width()-self.mainScroll.verticalScrollBar().width()-self.drawer.width()-20
-        #self.headerAreaScroll.setFixedWidth(width-self.meterWidth)
-
-        # set maximum value of each scroll bar so that they scroll evenly together
-        #self.mainScroll.horizontalScrollBar().setMaximum(1000)
-        #self.headerAreaScroll.horizontalScrollBar().setMaximum(1000)
 
         # sync main and meter scroll areas
         self.mainScroll.verticalScrollBar().valueChanged.connect(self.meterScroll.verticalScrollBar().setValue)
@@ -436,10 +427,6 @@ class mainWindow(QMainWindow):
         # sync main and lineoverlay scroll areas
         self.mainScroll.verticalScrollBar().valueChanged.connect(self.lineOverlayScroll.verticalScrollBar().setValue)
         self.lineOverlayScroll.verticalScrollBar().valueChanged.connect(self.mainScroll.verticalScrollBar().setValue)
-
-        # sync main and header overlay scroll areas
-        #self.mainScroll.horizontalScrollBar().valueChanged.connect(self.headerAreaScroll.horizontalScrollBar().setValue)
-        #self.headerAreaScroll.horizontalScrollBar().valueChanged.connect(self.mainScroll.horizontalScrollBar().setValue)
 
     def resizeOverlays(self):
         """
@@ -533,22 +520,18 @@ class mainWindow(QMainWindow):
         if self.mainDir:
             #clear data from previous drill hole
             self.clearLayout(self.dataAreaLayout)
-            #self.clearLayout(self.headerAreaLayout)
             self.clearLayout(self.legendAreaLayout)
-
-            # initilize lists for mineral images, mineral names, and spectral metrics
-            self.intIms = []
-            self.intMinList = []
-            self.compIms = []
-            self.compMinList = []
 
             # intialize lists for Stacked Spectral plot checkboxes
             self.checkedList = []
             self.cBoxes = []
 
             # clear data from comboboxes
+            self.coreTypeCB.clear()
             self.newCoreWindowCB.clear()
+            self.specPlotTypeCB.clear()
             self.newSpecPlotWindowCB.clear()
+            self.gcPlotTypeCB.clear()
             self.newGcPlotWindowCB.clear()
 
             # clear previous stack plot checkboxes
@@ -591,8 +574,6 @@ class mainWindow(QMainWindow):
 
                 # populate comoboxes
                 self.coreTypeCB.addItems(list(self.imDict.keys()))
-                self.newCoreWindowCB.addItems(list(self.imDict[self.coreTypeCB.currentText()].keys()))
-                self.newCoreWindowCB.addItems(self.intMinList)
                 self.newSpecPlotWindowCB.addItems(list(self.minData.keys()))
                 self.newGcPlotWindowCB.addItems(list(self.gcMinData.keys()))
 
@@ -792,7 +773,6 @@ class mainWindow(QMainWindow):
             params:
             imType - core image type as read from directory name
             mineral - mineral type as read from directory name
-
         """
 
         if imType and mineral:            
@@ -890,7 +870,6 @@ class mainWindow(QMainWindow):
             newDataWidget.closeButton.clicked.connect(lambda: self.remove_widget(newDataWidget, resizeWidget, moveHeader))
             self.minColorChanged.connect(lambda: newDataWidget.addSpecPlot(self.plotColorDict[mineral]))
 
-
             # insert widget in dataArea
             if self.dataAreaLayout.count() == 0:
                 self.dataAreaLayout.addWidget(newDataWidget)
@@ -982,7 +961,6 @@ class mainWindow(QMainWindow):
         """
 
         self.zoomOpen = False
-        #self.dHViewOpen = False
         self.overlayWinOpen = False
         self.errorThrown = False
         overlayBG.deleteLater()
