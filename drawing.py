@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib.ticker import NullFormatter
-from PySide2.QtCore import Qt, QPoint
-from PySide2.QtGui import QColor, QPainter, QPixmap
-from PySide2.QtWidgets import QFrame, QGridLayout, QLabel
+from PySide6.QtCore import Qt, QPoint
+from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure

@@ -1,8 +1,8 @@
 import numpy as np
 import qimage2ndarray
-from PySide2.QtCore import Qt
-from PySide2.QtGui import QPixmap
-from PySide2.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout,
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout,
                                QLabel, QPushButton, QSlider, QVBoxLayout,
                                QWidget)
 

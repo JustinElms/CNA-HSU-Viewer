@@ -4,9 +4,9 @@ import sys
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
-from PySide2.QtCore import QPoint, Qt, Signal
-from PySide2.QtGui import QIcon, QMouseEvent
-from PySide2.QtWidgets import (QApplication, QButtonGroup, QCheckBox,
+from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtGui import QIcon, QMouseEvent, QScreen
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox,
                                QComboBox, QFileDialog, QFrame, QGridLayout,
                                QGroupBox, QHBoxLayout, QLabel, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy, QSlider,
@@ -14,7 +14,7 @@ from PySide2.QtWidgets import (QApplication, QButtonGroup, QCheckBox,
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
-    from PySide2.QtWinExtras import QtWin
+    from PySide6.QtWinExtras import QtWin
     myappid = 'CNA.HSUViewer'
     QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
@@ -84,7 +84,7 @@ class mainWindow(QMainWindow):
                 """)
 
         self.rootDir = os.getcwd()                                  # save the apps root directory for future reference
-        screenGeometry = app.desktop().availableGeometry(self)      # gets screen resolution
+        screenGeometry = QScreen.availableGeometry(QApplication.primaryScreen())     # gets screen resolution
         self.meterWidth = 60                                        # sets width of down hole meter to 3% of screen width
         self.startHeight = screenGeometry.height()-60 
         self.dataWidgetHeight = self.startHeight  

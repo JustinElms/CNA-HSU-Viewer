@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 from natsort import natsorted, ns
-from PySide2.QtGui import QPixmap
+from PySide6.QtGui import QPixmap
 
 
 def loadCsvData(mainDir, projName):
