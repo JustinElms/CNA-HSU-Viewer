@@ -1,20 +1,7 @@
-from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QIcon, QMouseEvent
 from PySide6.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QComboBox,
-    QFileDialog,
-    QFrame,
-    QGridLayout,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QSlider,
     QVBoxLayout,
     QWidget,
 )

@@ -1,8 +1,7 @@
 import os
-import sys
 
 import numpy as np
-from natsort import natsorted, ns
+from natsort import natsorted
 from PySide6.QtGui import QPixmap
 
 

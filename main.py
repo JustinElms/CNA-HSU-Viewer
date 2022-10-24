@@ -2,8 +2,6 @@ import os
 import sys
 
 import numpy as np
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-from matplotlib.figure import Figure
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import QIcon, QMouseEvent, QScreen
 from PySide6.QtWidgets import (
