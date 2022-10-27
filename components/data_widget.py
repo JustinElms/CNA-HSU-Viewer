@@ -1,9 +1,16 @@
-from PySide6 import QtWidgets
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from drawing import *
+
+from plotters.drawing import *
 
 
-class DataWidget(QtWidgets.QWidget):
+class DataWidget(QWidget):
     def __init__(self, parent=None, **kwargs):
         super().__init__()
 
@@ -15,7 +22,7 @@ class DataWidget(QtWidgets.QWidget):
         self.setFixedSize(self.width, self.height)
 
         # configure widget layout
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout = QVBoxLayout(self)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 20, 0, 0)
 
@@ -40,30 +47,30 @@ class DataWidget(QtWidgets.QWidget):
     def make_header(self, title, axis_limits):
 
         # create container widget for header
-        self.header = QtWidgets.QWidget(self)
+        self.header = QWidget(self)
         self.header.setFixedHeight(40)
         self.header.setStyleSheet("Background-Color: transparent")
-        headerLayout = QtWidgets.QVBoxLayout(self.header)
+        headerLayout = QVBoxLayout(self.header)
         headerLayout.setSpacing(0)
         headerLayout.setContentsMargins(0, 0, 0, 0)
 
         # container for header title
-        titleArea = QtWidgets.QWidget(self.header)
+        titleArea = QWidget(self.header)
         titleArea.setFixedHeight(20)
         titleArea.setStyleSheet("Background-Color: rgba(100,100,100,150)")
-        titleAreaLayout = QtWidgets.QHBoxLayout(titleArea)
+        titleAreaLayout = QHBoxLayout(titleArea)
         titleAreaLayout.setSpacing(0)
         titleAreaLayout.setContentsMargins(0, 0, 0, 0)
 
         # label for header title
-        titleLabel = QtWidgets.QLabel(titleArea)
+        titleLabel = QLabel(titleArea)
         titleLabel.setFixedHeight(20)
         titleLabel.setText(title)
         titleLabel.setStyleSheet(
             "background-color: transparent; font: bold 10pt; border: transparent"
         )
 
-        self.closeButton = QtWidgets.QPushButton(titleArea)
+        self.closeButton = QPushButton(titleArea)
         self.closeButton.setText("X")
         self.closeButton.setFixedSize(20, 20)
         self.closeButton.setStyleSheet(
@@ -76,14 +83,14 @@ class DataWidget(QtWidgets.QWidget):
         titleAreaLayout.addWidget(self.closeButton)
 
         # area for axis limits
-        axisLabelArea = QtWidgets.QWidget(self.header)
+        axisLabelArea = QWidget(self.header)
         axisLabelArea.setFixedHeight(20)
-        axisLabelAreaLayout = QtWidgets.QHBoxLayout(axisLabelArea)
+        axisLabelAreaLayout = QHBoxLayout(axisLabelArea)
         axisLabelAreaLayout.setSpacing(0)
         axisLabelAreaLayout.setContentsMargins(0, 0, 0, 0)
 
         # label for axis minimum
-        axisStartLabel = QtWidgets.QLabel(axisLabelArea)
+        axisStartLabel = QLabel(axisLabelArea)
         axisStartLabel.setFixedHeight(20)
         axisStartLabel.setStyleSheet(
             "background-color: transparent; font: bold 10pt; border: transparent"
@@ -91,7 +98,7 @@ class DataWidget(QtWidgets.QWidget):
         axisStartLabel.setText(str(axis_limits[0]))
 
         # label for axis maximum
-        axisEndLabel = QtWidgets.QLabel(axisLabelArea)
+        axisEndLabel = QLabel(axisLabelArea)
         axisEndLabel.setFixedHeight(20)
         axisEndLabel.setStyleSheet(
             "background-color: transparent; font: bold 10pt; border: transparent"
@@ -112,8 +119,8 @@ class DataWidget(QtWidgets.QWidget):
     def make_body(self, title):
 
         # create container widget for body
-        self.body = QtWidgets.QWidget(self)
-        self.bodyLayout = QtWidgets.QVBoxLayout(self.body)
+        self.body = QWidget(self)
+        self.bodyLayout = QVBoxLayout(self.body)
         self.bodyLayout.setSpacing(0)
         self.bodyLayout.setContentsMargins(0, 0, 0, 0)
 
