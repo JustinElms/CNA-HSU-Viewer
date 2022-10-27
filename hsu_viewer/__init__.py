@@ -41,11 +41,11 @@ class HSUViewer(QtWidgets.QMainWindow):
 
         self.setStyleSheet(
             """
-            QtWidgets.QWidget{
+            QWidget{
                 background-color: rgb(10,15,20);
                 color: rgb(222, 222, 222)
             }
-            QtWidgets.QWidget#drawer{
+            QWidget#drawer{
                 background-color: rgb(10,15,20);
                 border: 1px transparent;
                 color: rgb(222, 222, 222)
@@ -56,18 +56,19 @@ class HSUViewer(QtWidgets.QMainWindow):
                 color: rgb(222, 222, 222)
             }
 
-            QtWidgets.QMainWindow{
+            QMainWindow{
                 background-color: rgb(10,15,20);
                 border: 1px transparent;
                 color: rgb(222, 222, 222)
             }
 
-            QtWidgets.QGroupBox#drawer{
+            QGroupBox#drawer{
                 background-color: rgb(10,15,20);
                 border: 1px solid rgb(222,222,222);
                 margin-top: 0.5em;
             }
-            QtWidgets.QGroupBox#drawer::title {
+
+            QGroupBox#drawer::title {
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 3px 0 3px;
