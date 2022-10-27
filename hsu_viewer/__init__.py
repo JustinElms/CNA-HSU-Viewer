@@ -1,47 +1,25 @@
 import os
 
 import numpy as np
-from PySide6.QtCore import QPoint, Qt, Signal
-from PySide6.QtGui import QIcon, QMouseEvent, QScreen
-from PySide6.QtWidgets import (
-    QApplication,
-    QButtonGroup,
-    QCheckBox,
-    QComboBox,
-    QFileDialog,
-    QFrame,
-    QGridLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QLabel,
-    QMainWindow,
-    QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QSlider,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6 import QtCore, QtGui, QtWidgets
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
-    from PySide6.QtWinExtras import QtWin
+    from ctypes import windll  # Only exists on Windows.
 
     myappid = "CNA.HSUViewer"
-    QtWin.setCurrentProcessExplicitAppUserModelID(myappid)
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
     pass
 
 from drawing import *
-from import_functions import *
-from overlay_view import *
-
-from data_widget import DataWidget
-
-from resources import *
+from data.import_functions import *
+from static.resources import *
+from widgets.overlay_view import *
+from widgets.data_widget import DataWidget
 
 
-class HSUViewer(QMainWindow):
+class HSUViewer(QtWidgets.QMainWindow):
     """
     mainWindow is the main class of the application.
     main window consists of an options drawer, down-hole meter, and data area (dashboard)
@@ -49,57 +27,57 @@ class HSUViewer(QMainWindow):
     area
     """
 
-    minColorChanged = Signal()  # signal for when a minerals color is changed
-    zoomChanged = Signal()  # signal for when zoom level is changed
+    minColorChanged = (
+        QtCore.Signal()
+    )  # QtCore.Signal for when a minerals color is changed
+    zoomChanged = QtCore.Signal()  # QtCore.Signal for when zoom level is changed
 
     def __init__(self):
         super().__init__()
         """
-         initializes widget sylesheets, image sizes, and lists of minerals and images.
-         calls self.initUI() to create widgets
+        initializes widget sylesheets, image sizes, and lists of minerals and images.
+        calls self.initUI() to create widgets
         """
 
         self.setStyleSheet(
             """
-                    QWidget{
-                        background-color: rgb(10,15,20);
-                        color: rgb(222, 222, 222)
-                    }
-                    QWidget#drawer{
-                       background-color: rgb(10,15,20);
-                       border: 1px transparent;
-                       color: rgb(222, 222, 222)
-                    }
-                    QToolTip{
-                       background-color: rgb(10,15,20);
-                       border: 1px solid rgb(222, 222, 222);
-                       color: rgb(222, 222, 222)
-                    }
+            QtWidgets.QWidget{
+                background-color: rgb(10,15,20);
+                color: rgb(222, 222, 222)
+            }
+            QtWidgets.QWidget#drawer{
+                background-color: rgb(10,15,20);
+                border: 1px transparent;
+                color: rgb(222, 222, 222)
+            }
+            QToolTip{
+                background-color: rgb(10,15,20);
+                border: 1px solid rgb(222, 222, 222);
+                color: rgb(222, 222, 222)
+            }
 
-                    QMainWindow{
-                       background-color: rgb(10,15,20);
-                       border: 1px transparent;
-                       color: rgb(222, 222, 222)
-                    }
+            QtWidgets.QMainWindow{
+                background-color: rgb(10,15,20);
+                border: 1px transparent;
+                color: rgb(222, 222, 222)
+            }
 
-                    QGroupBox#drawer{
-                        background-color: rgb(10,15,20);
-                        border: 1px solid rgb(222,222,222);
-                        margin-top: 0.5em;
-                    }
-                    QGroupBox#drawer::title {
-                        subcontrol-origin: margin;
-                        left: 10px;
-                        padding: 0 3px 0 3px;
-                    }
-
-
-                """
+            QtWidgets.QGroupBox#drawer{
+                background-color: rgb(10,15,20);
+                border: 1px solid rgb(222,222,222);
+                margin-top: 0.5em;
+            }
+            QtWidgets.QGroupBox#drawer::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 3px 0 3px;
+            }
+            """
         )
 
         self.rootDir = os.getcwd()  # save the apps root directory for future reference
-        screenGeometry = QScreen.availableGeometry(
-            QApplication.primaryScreen()
+        screenGeometry = QtGui.QScreen.availableGeometry(
+            QtWidgets.QApplication.primaryScreen()
         )  # gets screen resolution
         self.meterWidth = 60  # sets width of down hole meter to 3% of screen width
         self.startHeight = screenGeometry.height() - 60
@@ -127,7 +105,7 @@ class HSUViewer(QMainWindow):
             "#17becf",
         ]
         self.plotColors = self.defaultColors.copy()
-        self.setWindowIcon(QIcon(":/Icon.ico"))
+        self.setWindowIcon(QtGui.QIcon(":/Icon.ico"))
 
         # set minimum size of app
         self.setMinimumSize(1000, 750)
@@ -147,35 +125,35 @@ class HSUViewer(QMainWindow):
         self.setWindowTitle("CNA Core Viewer")
 
         # create main widget and layout
-        self.main = QWidget(self)
+        self.main = QtWidgets.QWidget(self)
         self.setCentralWidget(self.main)
-        mainLayout = QHBoxLayout(self.main)
+        mainLayout = QtWidgets.QHBoxLayout(self.main)
 
         # widget for options drawer
-        self.drawer = QWidget(self.main)
-        self.drawerLayout = QHBoxLayout(self.drawer)
+        self.drawer = QtWidgets.QWidget(self.main)
+        self.drawerLayout = QtWidgets.QHBoxLayout(self.drawer)
         self.drawerLayout.setSpacing(0)
         self.drawerLayout.setContentsMargins(0, 0, 0, 0)
 
         # widget to contain drawer open/close button
-        self.drawerButtonArea = QWidget(self.main)
-        self.drawerButtonAreaLayout = QVBoxLayout(self.drawerButtonArea)
+        self.drawerButtonArea = QtWidgets.QWidget(self.main)
+        self.drawerButtonAreaLayout = QtWidgets.QVBoxLayout(self.drawerButtonArea)
         self.drawerButtonArea.setStyleSheet("background-color: rgb(10,15,20)")
         self.drawerButtonArea.setFixedWidth(20)
         self.drawerButtonAreaLayout.setSpacing(5)
         self.drawerButtonAreaLayout.setContentsMargins(0, 20, 0, 0)
 
-        zoomInButton = QPushButton("+")
+        zoomInButton = QtWidgets.QPushButton("+")
         zoomInButton.clicked.connect(lambda: self.scaleDataWidgets(1))
         zoomInButton.setFixedSize(20, 20)
         zoomInButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        zoomOutButton = QPushButton("-")
+        zoomOutButton = QtWidgets.QPushButton("-")
         zoomOutButton.clicked.connect(lambda: self.scaleDataWidgets(-1))
         zoomOutButton.setStyleSheet("background-color: grey; font: bold 12pt")
         zoomOutButton.setFixedSize(20, 20)
 
         # create button to toggle drawer
-        self.drawerButton = QPushButton(self.drawerButtonArea)
+        self.drawerButton = QtWidgets.QPushButton(self.drawerButtonArea)
         self.drawerButton.setText(">")
         self.drawerButton.setFixedSize(10, 500)
         self.drawerButton.clicked.connect(lambda: self.toggleDrawer())
@@ -189,21 +167,23 @@ class HSUViewer(QMainWindow):
         )
 
         # create area to display data
-        self.contents = QWidget()
-        contentsLayout = QHBoxLayout(self.contents)
+        self.contents = QtWidgets.QWidget()
+        contentsLayout = QtWidgets.QHBoxLayout(self.contents)
         contentsLayout.setSpacing(0)
         contentsLayout.setContentsMargins(0, 0, 0, 0)
         self.contents.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            QtWidgets.QSizePolicy(
+                QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+            )
         )
 
         # contentsScroll is used to keep widgets from getting compressed when app size changes, not scroll over contents.
         # mainScroll is used to scroll over widgets within contents
-        self.contentsScroll = QScrollArea(self.main)
+        self.contentsScroll = QtWidgets.QScrollArea(self.main)
         self.contentsScroll.setWidget(self.contents)
         self.contentsScroll.setWidgetResizable(True)
-        self.contentsScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.contentsScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.contentsScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.contentsScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
         # add widgets to main app
         mainLayout.addWidget(self.drawer)
@@ -211,65 +191,67 @@ class HSUViewer(QMainWindow):
         mainLayout.addWidget(self.contentsScroll)
 
         # neter area will contain the down-hole meter
-        self.meterArea = QWidget()
-        self.meterAreaLayout = QVBoxLayout(self.meterArea)
+        self.meterArea = QtWidgets.QWidget()
+        self.meterAreaLayout = QtWidgets.QVBoxLayout(self.meterArea)
         self.meterArea.setStyleSheet(
             "Background-Color: rgb(0,0,0); border: transparent"
         )
 
         # dataArea is nested inside contents, used to contain data widgets
-        self.dataArea = QWidget()
-        self.dataAreaLayout = QHBoxLayout(self.dataArea)
+        self.dataArea = QtWidgets.QWidget()
+        self.dataAreaLayout = QtWidgets.QHBoxLayout(self.dataArea)
         self.dataAreaLayout.setSpacing(5)
         self.dataAreaLayout.setContentsMargins(0, 0, 0, 0)
         self.dataAreaLayout.addStretch()
         self.dataArea.setStyleSheet("Background-Color: rgb(0,0,0)")
 
         # lineOverlay covers the entire contentsScroll area. used to display depth marker when meter is clicked
-        self.lineOverlay = QWidget()
-        self.lineOverlayLayout = QVBoxLayout(self.lineOverlay)
+        self.lineOverlay = QtWidgets.QWidget()
+        self.lineOverlayLayout = QtWidgets.QVBoxLayout(self.lineOverlay)
         self.lineOverlayLayout.setSpacing(0)
         self.lineOverlayLayout.setContentsMargins(0, 0, 0, 0)
-        self.lineOverlay.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.lineOverlay.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         self.lineOverlay.setStyleSheet("Background-Color: transparent")
 
         # creates a label that the depth marker can be drawn onto
-        self.lineLabel = QLabel(self.lineOverlay)
+        self.lineLabel = QtWidgets.QLabel(self.lineOverlay)
         self.lineLabel.setGeometry(0, 0, self.lineOverlay.geometry().width(), 3)
         self.lineLabel.setStyleSheet("Background-Color: rgba(255,0,0,100)")
         self.lineLabel.hide()
 
         # scroll area for the down-hole meter
-        self.meterScroll = QScrollArea(self.contents)
+        self.meterScroll = QtWidgets.QScrollArea(self.contents)
         self.meterScroll.setWidget(self.meterArea)
         self.meterScroll.setWidgetResizable(True)
         self.meterScroll.setFixedWidth(self.meterWidth)
-        self.meterScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.meterScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.meterScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.meterScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.meterScroll.setStyleSheet("border: 1px solid rgb(10, 10, 10)")
         contentsLayout.addWidget(self.meterScroll)
 
         # main scroll area for the data area
-        self.mainScroll = QScrollArea(self.contents)
+        self.mainScroll = QtWidgets.QScrollArea(self.contents)
         self.mainScroll.setWidget(self.dataArea)
         self.mainScroll.setWidgetResizable(True)
-        self.mainScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.mainScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.mainScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.mainScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.mainScroll.setStyleSheet(
             "Background-Color: black; border: 1px transparent"
         )
         contentsLayout.addWidget(self.mainScroll)
 
         # scroll area for the meter line overlay
-        self.lineOverlayScroll = QScrollArea(self.contents)
+        self.lineOverlayScroll = QtWidgets.QScrollArea(self.contents)
         self.lineOverlayScroll.setWidget(self.lineOverlay)
         self.lineOverlayScroll.setGeometry(self.mainScroll.viewport().geometry())
         self.lineOverlayScroll.setWidgetResizable(True)
-        self.lineOverlayScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.lineOverlayScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.lineOverlayScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.lineOverlayScroll.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAlwaysOff
+        )
         self.lineOverlayScroll.show()
         self.lineOverlayScroll.raise_()
-        self.lineOverlayScroll.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.lineOverlayScroll.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
         self.lineOverlayScroll.setStyleSheet(
             "Background-Color: transparent; border: 1px transparent"
         )
@@ -301,50 +283,52 @@ class HSUViewer(QMainWindow):
         """
 
         # container for vertially stacked drawer widgets
-        drawerVFrame = QFrame()
+        drawerVFrame = QtWidgets.QFrame()
         drawerVFrame.setObjectName("drawer")
-        drawerVLayout = QVBoxLayout(drawerVFrame)
+        drawerVLayout = QtWidgets.QVBoxLayout(drawerVFrame)
         drawerVLayout.setSpacing(10)
 
         # scroll area to keep widgets from getting compressed when app changes size or if monitor is too small.
         # can be scrolled with mousewheel
-        drawerScroll = QScrollArea(self.drawer)
+        drawerScroll = QtWidgets.QScrollArea(self.drawer)
         drawerScroll.setObjectName("drawer")
         drawerScroll.setWidget(drawerVFrame)
         drawerScroll.setWidgetResizable(True)
         drawerScroll.horizontalScrollBar().setEnabled(False)
-        drawerScroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        drawerScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        drawerScroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        drawerScroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.drawerLayout.addWidget(drawerScroll)
 
         # placeholder for drill hole identifier at top of drawer
-        self.projBanner = QLabel(drawerVFrame, alignment=Qt.AlignCenter)
+        self.projBanner = QtWidgets.QLabel(
+            drawerVFrame, alignment=QtCore.Qt.AlignCenter
+        )
         self.projBanner.setFixedHeight(50)
         self.projBanner.setText(" ")
 
         # add 'open drill hole button'
-        newProject = QPushButton(drawerVFrame)
+        newProject = QtWidgets.QPushButton(drawerVFrame)
         newProject.setText("Open Drill Hole")
         newProject.setStyleSheet("background-color: green; font: bold 12pt")
         newProject.clicked.connect(self.newProject)
 
         # add 'Open Core Overlay' button
-        newOverlayButton = QPushButton(drawerVFrame)
+        newOverlayButton = QtWidgets.QPushButton(drawerVFrame)
         newOverlayButton.setText("Open Core Overlay")
         newOverlayButton.setStyleSheet("background-color: grey; font: bold 12pt")
         newOverlayButton.clicked.connect(lambda: self.openOverlayView())
 
         # group box for 'Add Spectral Images' functions
-        newCoreGroupBox = QGroupBox("Add Spectral Images", drawerVFrame)
-        newCoreGroupBoxLayout = QVBoxLayout(newCoreGroupBox)
+        newCoreGroupBox = QtWidgets.QGroupBox("Add Spectral Images", drawerVFrame)
+        newCoreGroupBoxLayout = QtWidgets.QVBoxLayout(newCoreGroupBox)
 
         # comboboxes for the spectral image type options
-        self.newCoreWindowCB = QComboBox(newCoreGroupBox)
-        self.coreTypeCB = QComboBox(newCoreGroupBox)
+        self.newCoreWindowCB = QtWidgets.QComboBox(newCoreGroupBox)
+        self.coreTypeCB = QtWidgets.QComboBox(newCoreGroupBox)
         self.coreTypeCB.currentTextChanged.connect(lambda: self.changeCoreType())
 
         # button adds core images to contents widget
-        addCoreButton = QPushButton("Add", drawerVFrame)
+        addCoreButton = QtWidgets.QPushButton("Add", drawerVFrame)
         addCoreButton.clicked.connect(
             lambda: self.initCoreWidget(
                 self.coreTypeCB.currentText(), self.newCoreWindowCB.currentText()
@@ -360,12 +344,12 @@ class HSUViewer(QMainWindow):
         newCoreGroupBoxLayout.addWidget(addCoreButton)
 
         # group box for 'Add Spectral Plot' options
-        newSpecPlotGroupBox = QGroupBox("Add Spectral Plot", drawerVFrame)
-        newSpecPlotGroupLayout = QVBoxLayout(newSpecPlotGroupBox)
+        newSpecPlotGroupBox = QtWidgets.QGroupBox("Add Spectral Plot", drawerVFrame)
+        newSpecPlotGroupLayout = QtWidgets.QVBoxLayout(newSpecPlotGroupBox)
 
         # combobox used to select plot type
-        self.newSpecPlotWindowCB = QComboBox(newSpecPlotGroupBox)
-        self.specPlotTypeCB = QComboBox(newSpecPlotGroupBox)
+        self.newSpecPlotWindowCB = QtWidgets.QComboBox(newSpecPlotGroupBox)
+        self.specPlotTypeCB = QtWidgets.QComboBox(newSpecPlotGroupBox)
         self.newSpecPlotWindowCB.currentTextChanged.connect(
             lambda: self.changeSpecPlotMin(
                 self.minData,
@@ -375,7 +359,7 @@ class HSUViewer(QMainWindow):
         )
 
         # button adds plot widget to dashboard/main area
-        addSpecPlotButton = QPushButton("Add", newSpecPlotGroupBox)
+        addSpecPlotButton = QtWidgets.QPushButton("Add", newSpecPlotGroupBox)
         addSpecPlotButton.clicked.connect(lambda: self.initSpectralPlotWidget(False))
         addSpecPlotButton.setStyleSheet(
             "background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);"
@@ -386,19 +370,19 @@ class HSUViewer(QMainWindow):
         newSpecPlotGroupLayout.addWidget(addSpecPlotButton)
 
         # group box for 'Add Geochemistry Plot' plot options
-        newGcPlotGroupBox = QGroupBox("Add Geochemistry Plot", drawerVFrame)
-        newGcPlotGroupLayout = QVBoxLayout(newGcPlotGroupBox)
+        newGcPlotGroupBox = QtWidgets.QGroupBox("Add Geochemistry Plot", drawerVFrame)
+        newGcPlotGroupLayout = QtWidgets.QVBoxLayout(newGcPlotGroupBox)
 
         # comoboxes to select plot type
-        self.newGcPlotWindowCB = QComboBox(newGcPlotGroupBox)
-        self.gcPlotTypeCB = QComboBox(newGcPlotGroupBox)
+        self.newGcPlotWindowCB = QtWidgets.QComboBox(newGcPlotGroupBox)
+        self.gcPlotTypeCB = QtWidgets.QComboBox(newGcPlotGroupBox)
         self.newGcPlotWindowCB.currentTextChanged.connect(
             lambda: self.changeSpecPlotMin(
                 self.gcMinData, self.newGcPlotWindowCB.currentText(), self.gcPlotTypeCB
             )
         )
 
-        addGcPlotButton = QPushButton("Add", newGcPlotGroupBox)
+        addGcPlotButton = QtWidgets.QPushButton("Add", newGcPlotGroupBox)
         addGcPlotButton.clicked.connect(lambda: self.initSpectralPlotWidget(True))
         addGcPlotButton.setStyleSheet(
             "background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);"
@@ -409,15 +393,17 @@ class HSUViewer(QMainWindow):
         newGcPlotGroupLayout.addWidget(addGcPlotButton)
 
         # group box for 'Add Stacked Spectral Plot' options
-        newStackPlotGroupBox = QGroupBox("Add Stacked Spectral Plot", drawerVFrame)
-        self.newStackPlotGroupLayout = QVBoxLayout(newStackPlotGroupBox)
+        newStackPlotGroupBox = QtWidgets.QGroupBox(
+            "Add Stacked Spectral Plot", drawerVFrame
+        )
+        self.newStackPlotGroupLayout = QtWidgets.QVBoxLayout(newStackPlotGroupBox)
 
         # initialize mineral list for stack plots
         self.checkedList = []
         self.cBoxes = []
 
         # button adds plot widget to dashboard/main area
-        addStackPlotButton = QPushButton("Add", newStackPlotGroupBox)
+        addStackPlotButton = QtWidgets.QPushButton("Add", newStackPlotGroupBox)
         addStackPlotButton.clicked.connect(lambda: self.initStackPlotWidget())
         addStackPlotButton.setStyleSheet(
             "background-color: rgb(10,15,20); border: 1px solid rgb(222, 222, 222);"
@@ -436,12 +422,12 @@ class HSUViewer(QMainWindow):
 
         # add mineral legend to bottom of drawer
         self.minColorButtonGroup = (
-            QButtonGroup()
+            QtWidgets.QButtonGroup()
         )  # button group for mineral color swatches
-        legendGroupBox = QGroupBox("Mineral Legend", drawerVFrame)
-        legendGroupBoxlayout = QVBoxLayout(legendGroupBox)
-        self.legendArea = QFrame(legendGroupBox)
-        self.legendAreaLayout = QGridLayout(self.legendArea)
+        legendGroupBox = QtWidgets.QGroupBox("Mineral Legend", drawerVFrame)
+        legendGroupBoxlayout = QtWidgets.QVBoxLayout(legendGroupBox)
+        self.legendArea = QtWidgets.QFrame(legendGroupBox)
+        self.legendAreaLayout = QtWidgets.QGridLayout(self.legendArea)
         legendGroupBoxlayout.addWidget(self.legendArea)
         drawerVLayout.addWidget(legendGroupBox)
 
@@ -480,8 +466,8 @@ class HSUViewer(QMainWindow):
             self.overlayWin.setGeometry(50, 50, self.width() - 100, self.height() - 100)
         if self.colorMenuOpen:
             self.minColorButtonGroup.button(idx).mapToGlobal(
-                QPoint(10, 10)
-            ) - self.main.mapToGlobal(QPoint(0, 0))
+                QtCore.QPoint(10, 10)
+            ) - self.main.mapToGlobal(QtCore.QPoint(0, 0))
 
     def syncScrollBars(self):
 
@@ -575,22 +561,22 @@ class HSUViewer(QMainWindow):
         """
 
         self.errorThrown = True
-        self.overlayBG = QWidget(self)
+        self.overlayBG = QtWidgets.QWidget(self)
         self.overlayBG.setGeometry(0, 0, self.width(), self.height())
         self.overlayBG.setStyleSheet("Background-Color: rgba(0,0,0,200)")
         self.overlayBG.show()
-        self.errorWin = QFrame(self.overlayBG)
+        self.errorWin = QtWidgets.QFrame(self.overlayBG)
         self.errorWin.setFixedSize(400, 150)
         self.errorWin.setStyleSheet("Background-Color: rgb(10,15,20)")
-        self.errorWinLayout = QVBoxLayout(self.errorWin)
-        self.errorWinMessage = QLabel(self.errorWin)
+        self.errorWinLayout = QtWidgets.QVBoxLayout(self.errorWin)
+        self.errorWinMessage = QtWidgets.QLabel(self.errorWin)
         self.errorWinMessage.setText(message)
         self.errorWinMessage.setStyleSheet(
             "Color: white; Background-Color: transparent; font: 16px"
         )
-        self.errorWinMessage.setAlignment(Qt.AlignCenter)
+        self.errorWinMessage.setAlignment(QtCore.Qt.AlignCenter)
         self.errorWinLayout.addWidget(self.errorWinMessage)
-        self.overlayCloseButton = QPushButton(self.overlayBG)
+        self.overlayCloseButton = QtWidgets.QPushButton(self.overlayBG)
         self.overlayCloseButton.setText("x")
         self.overlayCloseButton.setStyleSheet(
             "Background-Color: Transparent; font: 32pt"
@@ -632,14 +618,14 @@ class HSUViewer(QMainWindow):
             self.newGcPlotWindowCB.clear()
 
             # clear previous stack plot checkboxes
-            checkBoxes = self.newStackPlotGroupLayout.findChildren(QCheckBox)
+            checkBoxes = self.newStackPlotGroupLayout.findChildren(QtWidgets.QCheckBox)
 
             if checkBoxes:
                 for i in range(len(checkBoxes)):
                     self.newStackPlotGroupLayout.removeWidget(checkBoxes[i])
 
             # change cursor to wait
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 
             # load spectral metric data from _DATA.csv
             (
@@ -688,7 +674,7 @@ class HSUViewer(QMainWindow):
                 # add checkboxes to Stacked Plot groupbox
                 perSpecList = self.getPerSpecList()
                 for i in range(len(perSpecList)):
-                    specCBox = QCheckBox()
+                    specCBox = QtWidgets.QCheckBox()
                     specCBox.setText(perSpecList[i])
                     specCBox.setChecked(True)
                     specCBox.min = perSpecList[i]
@@ -702,10 +688,10 @@ class HSUViewer(QMainWindow):
                 for i in range(len(list(self.minData.keys()))):
                     self.makeLegend(
                         i
-                    )  # need to use function for each mineral to keep button signals seperate
+                    )  # need to use function for each mineral to keep button QtCore.Signals seperate
 
                 # restore the cursor and change directory back to root
-                QApplication.restoreOverrideCursor()
+                QtWidgets.QApplication.restoreOverrideCursor()
                 os.chdir(self.rootDir)
 
                 try:
@@ -761,7 +747,9 @@ class HSUViewer(QMainWindow):
         prompts user to slect the project directory and gets name of drill hole from directory
         """
 
-        tempDir = str(QFileDialog.getExistingDirectory(self, "Select Main Directory"))
+        tempDir = str(
+            QtWidgets.QFileDialog.getExistingDirectory(self, "Select Main Directory")
+        )
         if tempDir:  # check for valid directory
             tempName = tempDir.split("/")
             tempName = tempName[-1]
@@ -781,10 +769,10 @@ class HSUViewer(QMainWindow):
         """
         creates entries for the mineral legend in the options drawer including color swatch
         buttons.
-        keep as seperate function so that signals remain unique
+        keep as seperate function so that QtCore.Signals remain unique
         idx is the index of the mineral in minList
         """
-        colorButton = QPushButton()
+        colorButton = QtWidgets.QPushButton()
         colorButton.setStyleSheet(
             "background-color:"
             + self.plotColorDict[self.minList[idx]]
@@ -792,7 +780,7 @@ class HSUViewer(QMainWindow):
         )
         colorButton.setFixedSize(10, 10)
         colorButton.clicked.connect(lambda: self.changeMinColor(idx))
-        legendLabel = QLabel(self.legendArea)
+        legendLabel = QtWidgets.QLabel(self.legendArea)
         legendLabel.setText(self.minList[idx])
         self.legendAreaLayout.addWidget(colorButton, idx, 0)
         self.legendAreaLayout.addWidget(legendLabel, idx, 1)
@@ -832,7 +820,7 @@ class HSUViewer(QMainWindow):
 
         # get numbers for meter ticks
         self.meterVals = self.getMeterDepths()
-        self.meterLabel = QLabel(self.meterArea)
+        self.meterLabel = QtWidgets.QLabel(self.meterArea)
         # self.meterLabel.setFixedWidth(self.meterWidth)
         self.meterLabel.setFixedSize(self.meterWidth, self.dataWidgetHeight)
         self.meterLabel.setStyleSheet("Background-Color: rgb(0,0,0)")
@@ -852,7 +840,7 @@ class HSUViewer(QMainWindow):
             self.dataWidgetHeight
         )  # set height of meter line overlay
 
-        spacer = QWidget(self.meterArea)
+        spacer = QtWidgets.QWidget(self.meterArea)
         spacer.setFixedHeight(5)
 
         # add label to meterArea and connect mouse click event
@@ -868,7 +856,7 @@ class HSUViewer(QMainWindow):
 
         if self.meterClicked == False:
             self.meterClicked = True
-            self.meterPos = QMouseEvent.y(event)
+            self.meterPos = QtGui.QMouseEvent.y(event)
             self.lineLabel.setGeometry(
                 0, self.meterPos, self.lineOverlay.geometry().width(), 3
             )
@@ -931,7 +919,7 @@ class HSUViewer(QMainWindow):
                 images=ims,
             )
 
-            # connect signals/slots of widget functions
+            # connect QtCore.Signals/slots of widget functions
             resizeWidget = lambda: newDataWidget.update_size(
                 self.dataWidgetWidth, self.dataWidgetHeight
             )
@@ -1008,7 +996,7 @@ class HSUViewer(QMainWindow):
                 meter_values=self.meterVals,
             )
 
-            # connect signals/slots of widget functions
+            # connect QtCore.Signals/slots of widget functions
             resizeWidget = lambda: newDataWidget.update_size(
                 self.dataWidgetWidth / 2, self.dataWidgetHeight
             )
@@ -1092,7 +1080,7 @@ class HSUViewer(QMainWindow):
                 meter_values=self.meterVals,
             )
 
-            # connect signals/slots of widget functions
+            # connect QtCore.Signals/slots of widget functions
             resizeWidget = lambda: newDataWidget.update_size(
                 self.dataWidgetWidth / 2, self.dataWidgetHeight
             )
@@ -1198,13 +1186,13 @@ class HSUViewer(QMainWindow):
         ):
 
             # draw semi transparent background for splash window
-            self.overlayBG = QWidget(self)
+            self.overlayBG = QtWidgets.QWidget(self)
             self.overlayBG.setGeometry(0, 0, self.width(), self.height())
             self.overlayBG.setStyleSheet("Background-Color: rgba(0,0,0,200)")
             self.overlayBG.show()
 
             # add close button to top right of app, just outside down-hole view window
-            self.overlayCloseButton = QPushButton(self.overlayBG)
+            self.overlayCloseButton = QtWidgets.QPushButton(self.overlayBG)
             self.overlayCloseButton.setText("x")
             self.overlayCloseButton.setStyleSheet(
                 "Background-Color: Transparent; font: 32pt"
@@ -1283,50 +1271,50 @@ class HSUViewer(QMainWindow):
             )  # convert hex to rgb
 
             # create color options widget
-            colorMenu = QWidget(self)
+            colorMenu = QtWidgets.QWidget(self)
             colorMenu.setFixedSize(300, 150)
-            colorMenuLayout = QVBoxLayout(colorMenu)
+            colorMenuLayout = QtWidgets.QVBoxLayout(colorMenu)
             colorMenuLayout.setSpacing(0)
             colorMenuLayout.setContentsMargins(0, 0, 0, 0)
 
             # area for rgb sliders
-            sliderArea = QWidget(colorMenu)
-            sliderAreaLayout = QGridLayout(sliderArea)
+            sliderArea = QtWidgets.QWidget(colorMenu)
+            sliderAreaLayout = QtWidgets.QGridLayout(sliderArea)
 
             # area for two buttons
-            buttonArea = QWidget(colorMenu)
-            buttonAreaLayout = QHBoxLayout(buttonArea)
+            buttonArea = QtWidgets.QWidget(colorMenu)
+            buttonAreaLayout = QtWidgets.QHBoxLayout(buttonArea)
 
             # labels for sldiers
-            rLabel = QLabel(sliderArea)
+            rLabel = QtWidgets.QLabel(sliderArea)
             rLabel.setText("R")
-            gLabel = QLabel(sliderArea)
+            gLabel = QtWidgets.QLabel(sliderArea)
             gLabel.setText("G")
-            bLabel = QLabel(sliderArea)
+            bLabel = QtWidgets.QLabel(sliderArea)
             bLabel.setText("B")
 
             # create rgb sliders
-            rSlider = QSlider(Qt.Horizontal, sliderArea)
+            rSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, sliderArea)
             rSlider.setMinimum(0)
             rSlider.setMaximum(255)
             rSlider.setValue(rgb[0])
 
-            gSlider = QSlider(Qt.Horizontal, sliderArea)
+            gSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, sliderArea)
             gSlider.setMinimum(0)
             gSlider.setMaximum(255)
             gSlider.setValue(rgb[1])
 
-            bSlider = QSlider(Qt.Horizontal, sliderArea)
+            bSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal, sliderArea)
             bSlider.setMinimum(0)
             bSlider.setMaximum(255)
             bSlider.setValue(rgb[2])
 
             # create labels to indicate current sldier value
-            rValueLabel = QLabel(sliderArea)
+            rValueLabel = QtWidgets.QLabel(sliderArea)
             rValueLabel.setText(str(rSlider.value()))
-            gValueLabel = QLabel(sliderArea)
+            gValueLabel = QtWidgets.QLabel(sliderArea)
             gValueLabel.setText(str(gSlider.value()))
-            bValueLabel = QLabel(sliderArea)
+            bValueLabel = QtWidgets.QLabel(sliderArea)
             bValueLabel.setText(str(bSlider.value()))
 
             # connect sldiers to sliderColorChanged function
@@ -1378,18 +1366,18 @@ class HSUViewer(QMainWindow):
 
             # get current location of bottom right of color swatch
             pos = self.minColorButtonGroup.button(idx).mapToGlobal(
-                QPoint(10, 10)
-            ) - self.main.mapToGlobal(QPoint(0, 0))
+                QtCore.QPoint(10, 10)
+            ) - self.main.mapToGlobal(QtCore.QPoint(0, 0))
 
             # add buton to restore default mineral color
-            defaultButton = QPushButton(buttonArea)
+            defaultButton = QtWidgets.QPushButton(buttonArea)
             defaultButton.setText("Restore Default")
             defaultButton.clicked.connect(
                 lambda: self.restoreDefaultColor(rSlider, gSlider, bSlider, idx)
             )
 
             # add button to apply changes to all widgets
-            applyButton = QPushButton(buttonArea)
+            applyButton = QtWidgets.QPushButton(buttonArea)
             applyButton.setText("Apply")
             applyButton.clicked.connect(
                 lambda: self.applyColorChange(
@@ -1454,7 +1442,7 @@ class HSUViewer(QMainWindow):
 
     def applyColorChange(self, r, g, b, idx, colorMenu):
         """
-        function sends signal to data widgets when a mineral's plot color is changeSlider
+        function sends QtCore.Signal to data widgets when a mineral's plot color is changeSlider
         inputs are rgb values of new color, index of the affected mineral, and references
         the the color menu
         """
@@ -1465,7 +1453,7 @@ class HSUViewer(QMainWindow):
             self.minList[i]: self.plotColors[i] for i in range(len(self.minList))
         }
 
-        # delete the color menu, change the colorMenuOpen flag, and emit the color changed signal
+        # delete the color menu, change the colorMenuOpen flag, and emit the color changed QtCore.Signal
         colorMenu.deleteLater()
         self.colorMenuOpen = False
         self.minColorChanged.emit()
