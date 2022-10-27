@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-from drawing import *
+from plotting.drawing import *
 from data.import_functions import *
 from static.resources import *
 from widgets.overlay_view import *
