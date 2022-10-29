@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import matplotlib
-matplotlib.use('tkagg')
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 try:
@@ -19,6 +19,8 @@ from data.import_functions import *
 from static.resources import *
 from components.overlay_view import *
 from components.data_widget import DataWidget
+
+matplotlib.use("tkagg")
 
 
 class HSUViewer(QtWidgets.QMainWindow):
