@@ -1,6 +1,8 @@
 import os
 
 import numpy as np
+import matplotlib
+matplotlib.use('tkagg')
 from PySide6 import QtCore, QtGui, QtWidgets
 
 try:
@@ -12,11 +14,11 @@ try:
 except ImportError:
     pass
 
-from plotting.drawing import *
+from plotters.drawing import *
 from data.import_functions import *
 from static.resources import *
-from widgets.overlay_view import *
-from widgets.data_widget import DataWidget
+from components.overlay_view import *
+from components.data_widget import DataWidget
 
 
 class HSUViewer(QtWidgets.QMainWindow):
