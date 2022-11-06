@@ -1,4 +1,3 @@
-import csv
 import json
 import numpy as np
 from pathlib import Path
@@ -23,20 +22,20 @@ class DatasetConfig:
 
         dataset = {}
         dataset_path = Path(dataset_path)
-        dataset_name = dataset_path.name       
+        dataset_name = dataset_path.name
 
-        spec_images = self.__list_image_directories(dataset_path.joinpath("Core"))
-        core_images = self.__list_image_directories(dataset_path.joinpath("Photo"))
+        spec_images = self.__get_spec_image_data(dataset_path.joinpath("Core"))
+        core_images = self.__get_core_image_data(dataset_path.joinpath("Photo"))
 
-        csv_files = list(dataset_path.glob("*.csv"))
-
-        # csv_data = np.genfromtxt(
-        #     csv_files[0], delimiter=",", max_rows=4, dtype="str", comments=None
-        # )
+        csv_files = list(dataset_path.glob("*_DATA.csv"))
+        if len(csv_files) > 0:
+            csv_data = self.__parse_csv_data(csv_files[0])
 
         dataset[dataset_name] = {
-            "Spectral Images" : spec_images,
-            "Core Box Images" : core_images,
+            "path": dataset_path.as_posix(),
+            "spectral_images": spec_images,
+            "corebox_images": core_images,
+            **csv_data,
         }
 
         if self._config:
@@ -45,35 +44,92 @@ class DatasetConfig:
             self._config = dataset
 
         with open(self._config_path, "w") as f:
-                json.dump(self._config, f)
+            json.dump(self._config, f)
 
+    def __get_spec_image_data(self, dataset_path: Path) -> list:
 
+        spec_im_dict = {}
+        if dataset_path.is_dir():
+            for path in dataset_path.iterdir():
+                if path.is_dir():
 
-        return
+                    dir_info = path.name.split("_")
+                    image_type = dir_info[0]
 
-    def __list_image_directories(self, dataset_path: Path) -> list:
+                    meta_data = {
+                        "name": "_".join(dir_info[1:]),
+                        "path": path.as_posix(),
+                    }
+
+                    if spec_im_dict.get(image_type):
+                        spec_im_dict[image_type][path.name] = meta_data
+                    else:
+                        spec_im_dict[image_type] = {path.name: meta_data}
+
+        return spec_im_dict
+
+    def __get_core_image_data(self, dataset_path: Path) -> list:
 
         core_im_dict = {}
         if dataset_path.is_dir():
             for path in dataset_path.iterdir():
                 if path.is_dir():
 
-                    meta_data = path.name.split("_")
-                    mineral_type = meta_data[0]
-                    mineral_name = "_".join(meta_data[1:])
+                    meta_data = {"name": path.name, "path": path.as_posix()}
 
-                    if core_im_dict.get(mineral_type):
-                        core_im_dict[mineral_type].append(mineral_name)
-                    else:
-                        core_im_dict[mineral_type] = [mineral_name]
+                    core_im_dict[path.name] = meta_data
 
         return core_im_dict
 
-    def __parse_csv(self, csv_path: Path) -> list:
-        return
+    def __parse_csv_data(self, csv_path: Path) -> list:
 
+        csv_data_dict = {}
+        csv_data_dict["spectral_data"] = {}
+        csv_data = np.genfromtxt(
+            csv_path, delimiter=",", max_rows=5, dtype="str", comments=None
+        )
 
-# TODO remove when finished
-if __name__ == "__main__":
-    dataset_config = DatasetConfig("hsu-datasets.cfg")
-    dataset_config.add_dataset("C:/Users/justi/Desktop/HSU Viewer/New Format/PB-77-013")
+        skip_cols = [
+            "filename",
+            "info_line_number",
+            "Hole_ID",
+            "box_number",
+            "row_number",
+            "meter_from",
+            "meter_to",
+            "None",
+        ]
+
+        for idx, col in enumerate(csv_data[1]):
+            if col not in skip_cols:
+                col_info = col.split("_")
+
+                data_type = "_".join(col_info[:2])
+                meta_data = {
+                    "name": "_".join(col_info[2:]),
+                    "unit": csv_data[2, idx],
+                    "min_value": csv_data[3, idx],
+                    "max_value": csv_data[4, idx],
+                    "column": idx,
+                }
+
+                if csv_data_dict["spectral_data"].get(data_type):
+                    csv_data_dict["spectral_data"][data_type][col] = meta_data
+                else:
+                    csv_data_dict["spectral_data"][data_type] = {col: meta_data}
+            elif "meter_from" in col or "meter_to" in col:
+                data = np.genfromtxt(
+                    csv_path,
+                    delimiter=",",
+                    usecols=idx,
+                    skip_header=5,
+                    dtype=float,
+                    comments=None,
+                )
+                csv_data_dict[col] = {
+                    "column": idx,
+                    "min_value": data[0],
+                    "max_value": data[-1],
+                }
+
+        return csv_data_dict
