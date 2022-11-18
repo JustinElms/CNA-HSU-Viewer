@@ -13,10 +13,10 @@ class DatasetConfig:
         cwd = Path(__file__).parent
 
         try:
-            with open(cwd.joinpath(self._config_path, "r")) as f:
-                self._config = json.load(f)
+            with open(cwd.joinpath(self._config_path), "r") as f:
+                return json.load(f)
         except FileNotFoundError:
-            self._config = None
+            return {}
 
     def add_dataset(self, dataset_path: str) -> None:
 
@@ -45,6 +45,28 @@ class DatasetConfig:
 
         with open(self._config_path, "w") as f:
             json.dump(self._config, f)
+
+    def datasets(self) -> list:
+        if self._config:
+            return list(self._config.keys())
+        else:
+            return []
+
+    def data_types(self, dataset: str = None) -> dict:
+        skip_types = ["path", "meter_to", "meter_from"]
+        if dataset:
+            data_types = list(self._config[dataset].keys())
+            data_types = [dt for dt in data_types if dt not in skip_types]
+            return {dt: list(self._config[dataset][dt].keys()) for dt in data_types}
+        else:
+            return {}
+
+    def data_options(
+        self, dataset: str = None, product_group: str = None, datatype: str = None
+    ) -> list:
+        if dataset and product_group and datatype:
+            options = list(self._config[dataset][product_group][datatype])
+        return options
 
     def __get_spec_image_data(self, dataset_path: Path) -> list:
 
