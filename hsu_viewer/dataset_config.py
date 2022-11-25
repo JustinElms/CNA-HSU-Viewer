@@ -1,6 +1,7 @@
 import json
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 
 class DatasetConfig:
@@ -67,6 +68,15 @@ class DatasetConfig:
         if dataset and product_group and datatype:
             options = list(self._config[dataset][product_group][datatype])
         return options
+
+    def data(
+        self,
+        dataset: str = None,
+        product_group: str = None,
+        datatype: str = None,
+        selection: str = None,
+    ):
+        return self._config[dataset][product_group][datatype][selection]
 
     def __get_spec_image_data(self, dataset_path: Path) -> list:
 

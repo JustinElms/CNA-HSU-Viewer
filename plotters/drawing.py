@@ -1,11 +1,11 @@
 import numpy as np
-from matplotlib.ticker import NullFormatter
-from PySide6.QtCore import Qt, QPoint
-from PySide6.QtGui import QColor, QPainter, QPixmap
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel
 
 # from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.ticker import NullFormatter
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel
 
 
 def drawMeter(depthValues, width, height, meterLoaded):

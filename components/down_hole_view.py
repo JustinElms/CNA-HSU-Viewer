@@ -1,35 +1,19 @@
-from PySide6.QtWidgets import (
-    QWidget,
-    QFrame,
-    QVBoxLayout,
-    QHBoxLayout,
-    QScrollArea,
-    QLabel,
-    QComboBox,
-    QPushButton,
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-)
-from PySide6.QtGui import (
-    QPixmap,
-    QColor,
-    QBrush,
-    QPixmap,
-    QPainter,
-    QColor,
-    QFont,
-    QTransform,
-)
-from PySide6.QtCore import (
-    Qt,
-    Signal,
-    QPoint,
-    QRect,
-    QRectF,
-    QMargins,
-)
 import numpy as np
+from PySide6.QtCore import QMargins, QPoint, QRect, QRectF, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPixmap, QTransform
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+    QGraphicsView,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class dhView(QWidget):

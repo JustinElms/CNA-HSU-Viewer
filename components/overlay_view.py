@@ -22,7 +22,7 @@ class overlayView(QWidget):
     """
 
     def __init__(self, parent):
-        super(overlayView, self).__init__(parent)
+        super().__init__(parent)
         """
          initializes widgets used in the overlayView class
         """
