@@ -49,8 +49,10 @@ class DatasetSelector(Modal):
         button_panel = QWidget(info_panel)
         add_button = QPushButton("Add", button_panel)
         add_button.setStyleSheet("border: 1px solid rgb(222, 222, 222);")
+        add_button.clicked.connect(self._add_data)
         close_button = QPushButton("Close", button_panel)
         close_button.setStyleSheet("border: 1px solid rgb(222, 222, 222);")
+        close_button.clicked.connect(self._close)
         button_panel_layout = QHBoxLayout(button_panel)
         button_panel_layout.addWidget(close_button)
         button_panel_layout.addWidget(add_button)
@@ -105,6 +107,7 @@ class DatasetSelector(Modal):
     def _add_dataset(self) -> None:
         dataset_path = QFileDialog.getExistingDirectory(self, "Select Main Directory")
         self.dataset_config.add_dataset(dataset_path)
+        self.dataset_list.clear_list()
         self.dataset_list.set_items(self.dataset_config.datasets())
 
     def _set_options_label(self) -> None:
@@ -127,3 +130,9 @@ class DatasetSelector(Modal):
             )
 
             self.meta_table.add_items(meta_data)
+
+    def _close(self):
+        super()._close()
+
+    def _add_data(self):
+        super()._close()
