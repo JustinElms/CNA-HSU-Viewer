@@ -1,8 +1,8 @@
 import os
+from pathlib import Path
 
-import numpy as np
 import matplotlib
-
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 try:
@@ -14,13 +14,62 @@ try:
 except ImportError:
     pass
 
-from plotters.drawing import *
-from data.import_functions import *
-from static.resources import *
-from components.overlay_view import *
 from components.data_widget import DataWidget
+from components.dataset_selector import DatasetSelector
+from components.overlay_view import *
+from data.import_functions import *
+from plotters.drawing import *
+from static.resources import *
 
 matplotlib.use("tkagg")
+
+HSU_STYLES = """
+    QWidget{
+        background-color: rgb(10,15,20);
+        color: rgb(222, 222, 222)
+    }
+    QWidget#drawer{
+        background-color: rgb(10,15,20);
+        border: 1px transparent;
+        color: rgb(222, 222, 222)
+    }
+    QToolTip{
+        background-color: rgb(10,15,20);
+        border: 1px solid rgb(222, 222, 222);
+        color: rgb(222, 222, 222)
+    }
+
+    QMainWindow{
+        background-color: rgb(10,15,20);
+        border: 1px transparent;
+        color: rgb(222, 222, 222)
+    }
+
+    QGroupBox#drawer{
+        background-color: rgb(10,15,20);
+        border: 1px solid rgb(222,222,222);
+        margin-top: 0.5em;
+    }
+
+    QGroupBox#drawer::title {
+        subcontrol-origin: margin;
+        left: 10px;
+        padding: 0 3px 0 3px;
+    }
+"""
+
+DEFAULT_COLORS = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+]
 
 
 class HSUViewer(QtWidgets.QMainWindow):
@@ -31,10 +80,10 @@ class HSUViewer(QtWidgets.QMainWindow):
     area
     """
 
-    minColorChanged = (
-        QtCore.Signal()
-    )  # QtCore.Signal for when a minerals color is changed
-    zoomChanged = QtCore.Signal()  # QtCore.Signal for when zoom level is changed
+    # Signal for when a minerals color is changed
+    minColorChanged = QtCore.Signal()
+    # Signal for when zoom level is changed
+    zoomChanged = QtCore.Signal()
 
     def __init__(self):
         super().__init__()
@@ -43,48 +92,13 @@ class HSUViewer(QtWidgets.QMainWindow):
         calls self.initUI() to create widgets
         """
 
-        self.setStyleSheet(
-            """
-            QWidget{
-                background-color: rgb(10,15,20);
-                color: rgb(222, 222, 222)
-            }
-            QWidget#drawer{
-                background-color: rgb(10,15,20);
-                border: 1px transparent;
-                color: rgb(222, 222, 222)
-            }
-            QToolTip{
-                background-color: rgb(10,15,20);
-                border: 1px solid rgb(222, 222, 222);
-                color: rgb(222, 222, 222)
-            }
-
-            QMainWindow{
-                background-color: rgb(10,15,20);
-                border: 1px transparent;
-                color: rgb(222, 222, 222)
-            }
-
-            QGroupBox#drawer{
-                background-color: rgb(10,15,20);
-                border: 1px solid rgb(222,222,222);
-                margin-top: 0.5em;
-            }
-
-            QGroupBox#drawer::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 3px 0 3px;
-            }
-            """
-        )
+        self.setStyleSheet(HSU_STYLES)
 
         self.rootDir = os.getcwd()  # save the apps root directory for future reference
         screenGeometry = QtGui.QScreen.availableGeometry(
             QtWidgets.QApplication.primaryScreen()
         )  # gets screen resolution
-        self.meterWidth = 60  # sets width of down hole meter to 3% of screen width
+        self.meterWidth = 60
         self.startHeight = screenGeometry.height() - 60
         self.dataWidgetHeight = self.startHeight
         self.startWidth = []
@@ -97,18 +111,7 @@ class HSUViewer(QtWidgets.QMainWindow):
         self.minMeter = []
 
         # default colors for minerals in plots and overlay
-        self.defaultColors = [
-            "#1f77b4",
-            "#ff7f0e",
-            "#2ca02c",
-            "#d62728",
-            "#9467bd",
-            "#8c564b",
-            "#e377c2",
-            "#7f7f7f",
-            "#bcbd22",
-            "#17becf",
-        ]
+        self.defaultColors = DEFAULT_COLORS
         self.plotColors = self.defaultColors.copy()
         self.setWindowIcon(QtGui.QIcon(":/Icon.ico"))
 
@@ -195,7 +198,7 @@ class HSUViewer(QtWidgets.QMainWindow):
         mainLayout.addWidget(self.drawerButtonArea)
         mainLayout.addWidget(self.contentsScroll)
 
-        # neter area will contain the down-hole meter
+        # meter area will contain the down-hole meter
         self.meterArea = QtWidgets.QWidget()
         self.meterAreaLayout = QtWidgets.QVBoxLayout(self.meterArea)
         self.meterArea.setStyleSheet(
@@ -310,6 +313,12 @@ class HSUViewer(QtWidgets.QMainWindow):
         )
         self.projBanner.setFixedHeight(50)
         self.projBanner.setText(" ")
+
+        # add 'new data widget'
+        newProject = QtWidgets.QPushButton(drawerVFrame)
+        newProject.setText("Add Data")
+        newProject.setStyleSheet("background-color: green; font: bold 12pt")
+        newProject.clicked.connect(self.add_data)
 
         # add 'open drill hole button'
         newProject = QtWidgets.QPushButton(drawerVFrame)
@@ -596,6 +605,16 @@ class HSUViewer(QtWidgets.QMainWindow):
         )
         self.errorWin.move(int(self.width() / 2 - 200), int(self.height() / 2 - 75))
         self.errorWin.show()
+
+    def add_data(self):
+
+        data_selector = DatasetSelector(
+            self, config_path=Path.cwd().joinpath("hsu_datasets.cfg")
+        )
+        data_selector.show()
+        return
+
+    """ TODO REMOVE newProject function"""
 
     def newProject(self):
         """
