@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -16,6 +17,9 @@ from hsu_viewer.dataset_config import DatasetConfig
 
 
 class DatasetSelector(Modal):
+
+    data_selected = Signal(str, str, str, str)
+
     def __init__(self, parent: QWidget = None, config_path: str = None) -> None:
         super().__init__(parent=parent, text="Select Dataset")
 
@@ -135,4 +139,10 @@ class DatasetSelector(Modal):
         super()._close()
 
     def _add_data(self):
+        self.data_selected.emit(
+            self.selected_dataset,
+            self.selected_datatype,
+            self.selected_subtype,
+            self.selected_data,
+        )
         super()._close()
