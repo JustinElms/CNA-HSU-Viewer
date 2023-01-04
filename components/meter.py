@@ -32,6 +32,6 @@ class Meter(QWidget):
         for tile in tiles:
             label = QLabel(self)
             label.setPixmap(tile)
-
             self.layout.addWidget(label)
-            self.layout.addStretch()
+
+        self.layout.addStretch()

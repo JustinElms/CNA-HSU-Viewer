@@ -41,8 +41,6 @@ def draw_meter_tiles(zoom_level: int, depth: int) -> QPixmap:
     ticks = dict(zip(tick_pos, tick_values))
 
     tiles = []
-    px_offset = 0
-    depth_offset = 0
     for n in range(n_tiles):
         if n_tiles == 1:
             pm_height = tile_height + 10
@@ -55,7 +53,9 @@ def draw_meter_tiles(zoom_level: int, depth: int) -> QPixmap:
 
         start_px = n * tile_height
         end_px = start_px + pm_height
-        tile_ticks = [t for t in ticks.items() if t[0] >= start_px and t[0] <= end_px]
+        tile_ticks = [
+            t for t in ticks.items() if t[0] >= start_px and t[0] <= end_px
+        ]
 
         pixmap = QPixmap(60, pm_height)
 
@@ -68,9 +68,7 @@ def draw_meter_tiles(zoom_level: int, depth: int) -> QPixmap:
         for tick in tile_ticks:
             tick_pos = tick[0] - n * tile_height
             qp.drawRect(15, tick_pos, 45, 1)
-            qp.drawText(
-                QPoint(0, tick_pos + 17), "{:.1f}".format(tick[1]) + " m"
-            )
+            qp.drawText(QPoint(2, tick_pos + 17), "{:.1f}".format(tick[1]) + " m")
 
         tiles.append(pixmap)
 
