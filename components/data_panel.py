@@ -14,6 +14,7 @@ class DataPanel(QWidget):
 
         self.setStyleSheet("background-color: blue;")
 
+        self.text = text
         label = QLabel(self)
         label.setText(text)
 
@@ -23,19 +24,6 @@ class DataPanel(QWidget):
         self.setLayout(self.layout)
 
         self.layout.addWidget(label)
-
-    @Slot()
-    def drag_event(self) -> None:
-        print("dragging")
-        drag = QDrag(self)
-        mime = QMimeData()
-        drag.setMimeData(mime)
-
-        pixmap = QPixmap(self.size())
-        self.render(pixmap)
-        drag.setPixmap(pixmap)
-
-        drag.exec(Qt.MoveAction)        
 
     def plot(self):
         return

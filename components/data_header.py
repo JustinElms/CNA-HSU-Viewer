@@ -1,11 +1,10 @@
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from PySide6.QtCore import Qt, QMimeData, Signal
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QDrag, QPixmap
 
 
 class DataHeader(QWidget):
 
-    header_drag = Signal()
 
     def __init__(self, parent=None, text=None) -> None:
         super().__init__(parent=parent)
@@ -38,4 +37,3 @@ class DataHeader(QWidget):
 
             drag.exec(Qt.MoveAction)
 
-            # self.header_drag.emit()

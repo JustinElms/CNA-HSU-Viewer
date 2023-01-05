@@ -1,11 +1,12 @@
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget, QPushButton
-from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QDrag, QPixmap
+from PySide6.QtWidgets import  QHBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal, Slot
 
 from components.data_panel import DataPanel
 
 
 class DraggableContainer(QWidget):
+    widget_dragged = Signal(int, int)
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
@@ -25,23 +26,24 @@ class DraggableContainer(QWidget):
     def dropEvent(self, e) -> None:
         pos = e.position().toPoint()
         widget = e.source()
+        start_index = None
+        end_index = None
 
-        for n in range(self.layout.count()):
-            # TODO add functionality for outside widgets
-            # Get the widget at each index in turn.
+        for n in range(self.layout.count()-1):
             w = self.layout.itemAt(n).widget()
-            print(pos.x())
-            print(w.x() + w.size().width() / 2)
-            if pos.x() < w.x() + w.size().width() / 2:
+            if w == e.source():
+                start_index = n
+            if w.x() < pos.x() and pos.x() < w.x() + w.size().width():
                 # We didn't drag past this widget.
-                # insert to the left of it.
-                self.layout.insertWidget(n, widget)
-                break
+                # Insert to the left of it.
+                end_index = n
 
+        self.layout.insertWidget(end_index, widget)
+        self.widget_dragged.emit(start_index, end_index)
         e.accept()
 
-    def add_data_panel(self) -> None:  # , dataset, datatype, subtype, data) -> None:
-        panel = DataPanel(self, self.geometry().height())  # dataset, datatype, subtype, data)
+    def add_data_panel(self) -> None:
+        panel = DataPanel(self, self.geometry().height())
         self.insert_panel(panel)
 
 
@@ -53,3 +55,9 @@ class DraggableContainer(QWidget):
             self.layout.insertWidget(
                 self.layout.count() - 1, panel
             )
+
+    @Slot(int, int)
+    def insert_dragged_widget(self, start_index, end_index):
+        widget = self.layout.itemAt(start_index).widget()
+        self.layout.insertWidget(end_index, widget)
+

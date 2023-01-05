@@ -54,6 +54,8 @@ class Dashboard(QScrollArea):
         
         self.data_container = DraggableContainer(data_content)
 
+        self.header_container.widget_dragged.connect(self.data_container.insert_dragged_widget)
+
         data_content_layout.addWidget(self.meter)
         data_content_layout.addWidget(self.data_container)
 
@@ -74,18 +76,15 @@ class Dashboard(QScrollArea):
         # self.data_container.add_data_panel()
         panel = DataPanel(self.data_container, self.meter.geometry().height(), "test1")  # dataset, datatype, subtype, data)
         header = DataHeader(self.header_container, "test1")
-        header.header_drag.connect(lambda: panel.drag_event())
         self.data_container.insert_panel(panel)
         self.header_container.insert_panel(header)
 
         panel2 = DataPanel(self.data_container, self.meter.geometry().height(), "test2")  # dataset, datatype, subtype, data)
         header2 = DataHeader(self.header_container, "test2")
-        header2.header_drag.connect(lambda: panel2.drag_event())
         self.data_container.insert_panel(panel2)
         self.header_container.insert_panel(header2)
 
         panel3 = DataPanel(self.data_container, self.meter.geometry().height(), "test3")  # dataset, datatype, subtype, data)
         header3 = DataHeader(self.header_container, "test3")
-        header3.header_drag.connect(lambda: panel2.drag_event())
         self.data_container.insert_panel(panel3)
         self.header_container.insert_panel(header3)          
