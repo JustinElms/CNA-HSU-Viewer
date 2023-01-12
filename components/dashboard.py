@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
+from components.data_header import DataHeader
+from components.data_panel import DataPanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
 
@@ -17,8 +19,13 @@ class Dashboard(QScrollArea):
 
         layout = QVBoxLayout(self)
 
+        header_content = QWidget()
+        header_content.setFixedHeight(60)
+
+        header_spacer = QWidget()
+        header_spacer.setFixedWidth(60)
         self.header_container = DraggableContainer(self)
-        self.header_container.setStyleSheet("background-color: purple")
+        self.header_container.setStyleSheet("background-color: purple") 
 
         header_scroll = QScrollArea(self)
         header_scroll.setWidget(self.header_container)
@@ -27,30 +34,57 @@ class Dashboard(QScrollArea):
         header_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         header_scroll.setFixedHeight(60)
 
-        # create area to display data
-        content = QWidget()
-        content.setStyleSheet("background-color: white;")
-        content_layout = QHBoxLayout(content)
-        content_layout.setSpacing(0)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        header_content_layout = QHBoxLayout(header_content)
+        header_content_layout.setSpacing(0)
+        header_content_layout.setContentsMargins(0, 0, 0, 0)
+        header_content_layout.addWidget(header_spacer)
+        header_content_layout.addWidget(header_scroll)          
 
-        self.meter = Meter(content)
+        # create area to display data
+        data_content = QWidget()
+        data_content.setStyleSheet("background-color: green;")
+        data_content_layout = QHBoxLayout(data_content)
+        data_content_layout.setSpacing(0)
+        data_content_layout.setContentsMargins(0, 0, 0, 0)
+        data_content.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+
+        self.meter = Meter(data_content)
         self.meter.setFixedWidth(60)
         self.meter.setStyleSheet("background-color: green")
-        self.data_container = DraggableContainer(content)
-        self.data_container.setStyleSheet("background-color: blue")
+        
+        self.data_container = DraggableContainer(data_content)
 
-        content_layout.addWidget(self.meter)
-        content_layout.addWidget(self.data_container)
+        self.header_container.widget_dragged.connect(self.data_container.insert_dragged_widget)
 
-        content_scroll = QScrollArea(self)
-        content_scroll.setWidget(content)
-        content_scroll.setWidgetResizable(True)
-        content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        data_content_layout.addWidget(self.meter)
+        data_content_layout.addWidget(self.data_container)
 
-        layout.addWidget(header_scroll)
-        layout.addWidget(content_scroll)
+        data_content_scroll = QScrollArea(self)
+        data_content_scroll.setWidget(data_content)
+        data_content_scroll.setWidgetResizable(True)
+        data_content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        data_content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
+        layout.addWidget(header_content)
+        layout.addWidget(data_content_scroll)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
+
+        self.test_data_widget()
+
+    def test_data_widget(self):
+        # self.data_container.add_data_panel()
+        panel = DataPanel(self.data_container, self.meter.geometry().height(), "test1")  # dataset, datatype, subtype, data)
+        header = DataHeader(self.header_container, "test1")
+        self.data_container.insert_panel(panel)
+        self.header_container.insert_panel(header)
+
+        panel2 = DataPanel(self.data_container, self.meter.geometry().height(), "test2")  # dataset, datatype, subtype, data)
+        header2 = DataHeader(self.header_container, "test2")
+        self.data_container.insert_panel(panel2)
+        self.header_container.insert_panel(header2)
+
+        panel3 = DataPanel(self.data_container, self.meter.geometry().height(), "test3")  # dataset, datatype, subtype, data)
+        header3 = DataHeader(self.header_container, "test3")
+        self.data_container.insert_panel(panel3)
+        self.header_container.insert_panel(header3)          
