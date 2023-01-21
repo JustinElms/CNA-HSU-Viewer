@@ -5,9 +5,12 @@ import numpy as np
 
 
 class DatasetConfig:
-    def __init__(self, config_path: str = None) -> None:
+    def __init__(self, config_path: Path | str = None) -> None:
 
-        self._config_path: str = config_path
+        config_path = (
+            config_path if isinstance(config_path, Path) else Path(config_path)
+        )
+        self._config_path: Path = config_path
         self._config: dict = self.__get_dataset_config()
 
     def __get_dataset_config(self) -> dict:
@@ -26,7 +29,9 @@ class DatasetConfig:
         dataset_name = dataset_path.name
 
         spec_images = self.__get_spec_image_data(dataset_path.joinpath("Core"))
-        core_images = self.__get_core_image_data(dataset_path.joinpath("Photo"))
+        core_images = self.__get_core_image_data(
+            dataset_path.joinpath("Photo")
+        )
 
         csv_files = list(dataset_path.glob("*_DATA.csv"))
         if len(csv_files) > 0:
@@ -34,6 +39,7 @@ class DatasetConfig:
 
         dataset[dataset_name] = {
             "path": dataset_path.as_posix(),
+            "csv_path": csv_files[0].as_posix(),
             "Spectral Images": spec_images,
             "Corebox Images": core_images,
             **csv_data,
@@ -53,17 +59,21 @@ class DatasetConfig:
         else:
             return []
 
-    def data_types(self, dataset: str = None) -> dict:
+    def data_types(self, dataset: str | None = None) -> dict:
         skip_types = ["path", "meter_to", "meter_from"]
         if dataset:
             data_types = list(self._config[dataset].keys())
             data_types = [dt for dt in data_types if dt not in skip_types]
-            return {dt: list(self._config[dataset][dt].keys()) for dt in data_types}
+            return {
+                dt: list(self._config[dataset][dt].keys()) for dt in data_types
+            }
         else:
             return {}
 
     def data_options(
-        self, dataset: str = None, product_group: str = None, datatype: str = None
+        self, dataset: str | None = None,
+        product_group: str | None = None,
+        datatype: str | None = None
     ) -> list:
         if dataset and product_group and datatype:
             options = list(self._config[dataset][product_group][datatype])
@@ -71,10 +81,10 @@ class DatasetConfig:
 
     def data(
         self,
-        dataset: str = None,
-        product_group: str = None,
-        datatype: str = None,
-        selection: str = None,
+        dataset: str | None = None,
+        product_group: str | None = None,
+        datatype: str | None = None,
+        selection: str | None = None,
     ):
         return self._config[dataset][product_group][datatype][selection]
 
@@ -145,7 +155,7 @@ class DatasetConfig:
             ):  
 
                 data_type = [dt for dt in data_types if dt in col.lower()][0]
-                name = col.replace(data_type,"").split("_")[1:]
+                name = col.replace(data_type, "").split("_")[1:]
                 name = " ".join(name)
 
                 meta_data = {
@@ -163,11 +173,12 @@ class DatasetConfig:
                 elif data_type == "position_":
                     data_type = "Position"
 
-
                 if csv_data_dict["Spectral Data"].get(data_type):
                     csv_data_dict["Spectral Data"][data_type][name] = meta_data
                 else:
-                    csv_data_dict["Spectral Data"][data_type] = {name: meta_data}
+                    csv_data_dict["Spectral Data"][data_type] = {
+                        name: meta_data
+                    }
             elif "meter_from" in col or "meter_to" in col:
                 data = np.genfromtxt(
                     csv_path,
@@ -184,3 +195,19 @@ class DatasetConfig:
                 }
 
         return csv_data_dict
+
+    def meter(self, dataset: str):
+
+        meter_from = self._config[dataset]["meter_from"]
+        meter_to = self._config[dataset]["meter_to"]
+        csv_path = self._config[dataset]["csv_path"]
+
+        meter_data = np.genfromtxt(
+            csv_path, delimiter=",",
+            dtype="float",
+            comments=None,
+            skip_header=5,
+            usecols=[int(meter_from["column"]), int(meter_to["column"])]
+        )
+
+        return meter_data

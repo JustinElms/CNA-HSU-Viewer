@@ -17,6 +17,8 @@ class Dashboard(QScrollArea):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
+        self.zoom_level = 0
+
         layout = QVBoxLayout(self)
 
         header_content = QWidget()
@@ -25,7 +27,7 @@ class Dashboard(QScrollArea):
         header_spacer = QWidget()
         header_spacer.setFixedWidth(60)
         self.header_container = DraggableContainer(self)
-        self.header_container.setStyleSheet("background-color: purple") 
+        self.header_container.setStyleSheet("background-color: purple")
 
         header_scroll = QScrollArea(self)
         header_scroll.setWidget(self.header_container)
@@ -38,7 +40,7 @@ class Dashboard(QScrollArea):
         header_content_layout.setSpacing(0)
         header_content_layout.setContentsMargins(0, 0, 0, 0)
         header_content_layout.addWidget(header_spacer)
-        header_content_layout.addWidget(header_scroll)          
+        header_content_layout.addWidget(header_scroll)
 
         # create area to display data
         data_content = QWidget()
@@ -46,15 +48,19 @@ class Dashboard(QScrollArea):
         data_content_layout = QHBoxLayout(data_content)
         data_content_layout.setSpacing(0)
         data_content_layout.setContentsMargins(0, 0, 0, 0)
-        data_content.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
+        data_content.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        )
 
-        self.meter = Meter(data_content)
+        self.meter = Meter(data_content, self.zoom_level)
         self.meter.setFixedWidth(60)
         self.meter.setStyleSheet("background-color: green")
-        
+
         self.data_container = DraggableContainer(data_content)
 
-        self.header_container.widget_dragged.connect(self.data_container.insert_dragged_widget)
+        self.header_container.widget_dragged.connect(
+            self.data_container.insert_dragged_widget
+        )
 
         data_content_layout.addWidget(self.meter)
         data_content_layout.addWidget(self.data_container)
@@ -70,21 +76,34 @@ class Dashboard(QScrollArea):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.test_data_widget()
+        self.test_add_panel()
 
-    def test_data_widget(self):
-        # self.data_container.add_data_panel()
-        panel = DataPanel(self.data_container, self.meter.geometry().height(), "test1")  # dataset, datatype, subtype, data)
-        header = DataHeader(self.header_container, "test1")
-        self.data_container.insert_panel(panel)
+    def add_data_panel(self, kwargs: dict) -> None:
+
+        dataset = kwargs.get("dataset")
+        datatype = kwargs.get("datatype")
+        datasubtype = kwargs.get("datasubtype")
+        dataname = kwargs.get("dataname")
+
+        panel = DataPanel(self.data_container, **kwargs)
+        header = DataHeader(
+            self.header_container, dataset, dataname, panel.width
+        )
+
         self.header_container.insert_panel(header)
+        self.data_container.insert_panel(panel)
 
-        panel2 = DataPanel(self.data_container, self.meter.geometry().height(), "test2")  # dataset, datatype, subtype, data)
-        header2 = DataHeader(self.header_container, "test2")
-        self.data_container.insert_panel(panel2)
-        self.header_container.insert_panel(header2)
-
-        panel3 = DataPanel(self.data_container, self.meter.geometry().height(), "test3")  # dataset, datatype, subtype, data)
-        header3 = DataHeader(self.header_container, "test3")
-        self.data_container.insert_panel(panel3)
-        self.header_container.insert_panel(header3)          
+    def test_add_panel(self):
+        # kwargs = {
+        #     "dataset": "PB-77-013",
+        #     "datatype": "Spectral Images",
+        #     "datasubtype": "Chemistry",
+        #     "dataname": "Biotite",
+        # }
+        kwargs = {
+            "dataset": "PB-77-013",
+            "datatype": "Corebox Images",
+            "datasubtype": "High-Res",
+            "dataname": "High-Res",
+        }
+        self.add_data_panel(kwargs)

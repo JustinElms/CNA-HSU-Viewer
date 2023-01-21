@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -18,9 +20,9 @@ from hsu_viewer.dataset_config import DatasetConfig
 
 class DatasetSelector(Modal):
 
-    data_selected = Signal(str, str, str, str)
+    data_selected = Signal(dict)
 
-    def __init__(self, parent: QWidget = None, config_path: str = None) -> None:
+    def __init__(self, parent: QWidget = None, config_path: Path | str = None) -> None:
         super().__init__(parent=parent, text="Select Dataset")
 
         self.config_path = config_path
@@ -36,11 +38,11 @@ class DatasetSelector(Modal):
         self.selected_dataset = None
         self.selected_datatype = None
         self.selected_subtype = None
-        self.selected_data = None
+        self.selected_dataname = None
 
         self.dataset_list = FilterList(self, self._dataset_changed)
         self.datatypes_list = FilterList(self, self._datatype_changed)
-        self.data_list = FilterList(self, self._data_changed)
+        self.data_list = FilterList(self, self._dataname_changed)
 
         self.dataset_list.set_items(self.dataset_config.datasets())
 
@@ -103,8 +105,8 @@ class DatasetSelector(Modal):
         self.data_list.clear_list()
         self.data_list.set_items(data)
 
-    def _data_changed(self, selected: QListWidgetItem) -> None:
-        self.selected_data = selected
+    def _dataname_changed(self, selected: QListWidgetItem) -> None:
+        self.selected_dataname = selected
         self._set_options_label()
         self._update_table()
 
@@ -116,7 +118,7 @@ class DatasetSelector(Modal):
 
     def _set_options_label(self) -> None:
         self.options_label.setText(
-            f"{self.selected_datatype}/{self.selected_subtype}/{self.selected_data}"
+            f"{self.selected_datatype}/{self.selected_subtype}/{self.selected_dataname}"
         )
 
     def _update_table(self) -> None:
@@ -124,25 +126,26 @@ class DatasetSelector(Modal):
             self.selected_dataset
             and self.selected_datatype
             and self.selected_subtype
-            and self.selected_data
+            and self.selected_dataname
         ):
             meta_data = self.dataset_config.data(
                 self.selected_dataset,
                 self.selected_datatype,
                 self.selected_subtype,
-                self.selected_data,
+                self.selected_dataname,
             )
 
             self.meta_table.add_items(meta_data)
 
-    def _close(self):
+    def _close(self) -> None:
         super()._close()
 
-    def _add_data(self):
-        self.data_selected.emit(
-            self.selected_dataset,
-            self.selected_datatype,
-            self.selected_subtype,
-            self.selected_data,
-        )
+    def _add_data(self) -> None:
+        args = {
+            "dataset": self.selected_dataset,
+            "datatype": self.selected_datatype,
+            "datasubtype": self.selected_subtype,
+            "dataname": self.selected_dataname,
+        }       
+        self.data_selected.emit(args)
         super()._close()

@@ -2,32 +2,23 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 
 from plotters.meter import draw_meter_tiles
 
-# resolution of each zoom level, zoom level: m/10px
-METER_RES_LEVELS = {
-    0: 20,
-    1: 40,
-    2: 60,
-    3: 80,
-    4: 100,
-}
-
 
 class Meter(QWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, zoom_level: int = 0) -> None:
         super().__init__(parent=parent)
 
-        self.zoom_level = 1
+        self.zoom_level = zoom_level
 
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
-        self._plot(self.zoom_level)
+        self._plot()
 
-    def _plot(self, zoom_level: int, max_depth: int = 500) -> None:
+    def _plot(self, max_depth: int = 100) -> None:
 
-        tiles = draw_meter_tiles(zoom_level, max_depth)
+        tiles = draw_meter_tiles(self.zoom_level, max_depth)
 
         for tile in tiles:
             label = QLabel(self)

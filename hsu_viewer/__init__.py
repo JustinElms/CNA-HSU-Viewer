@@ -150,7 +150,6 @@ class HSUViewer(QMainWindow):
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
 
-
     def _open_dataset_selector(self) -> None:
 
         data_selector = DatasetSelector(
@@ -159,7 +158,5 @@ class HSUViewer(QMainWindow):
         data_selector.data_selected.connect(self._add_data)
         data_selector.show()
 
-    def _add_data(self, dataset, datatype, subtype, data) -> None:
-        self.dashboard.data_container.add_data_panel(
-            dataset, datatype, subtype, data
-        )
+    def _add_data(self, kwargs) -> None:
+        self.dashboard.add_data_panel(kwargs)
