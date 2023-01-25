@@ -12,6 +12,12 @@ from components.data_panel import DataPanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
 
+"""
+TODO:
+- pass kwargs to data_header obj
+
+"""
+
 
 class Dashboard(QScrollArea):
     def __init__(self, parent=None) -> None:
@@ -80,14 +86,9 @@ class Dashboard(QScrollArea):
 
     def add_data_panel(self, kwargs: dict) -> None:
 
-        dataset = kwargs.get("dataset")
-        datatype = kwargs.get("datatype")
-        datasubtype = kwargs.get("datasubtype")
-        dataname = kwargs.get("dataname")
-
         panel = DataPanel(self.data_container, **kwargs)
         header = DataHeader(
-            self.header_container, dataset, dataname, panel.width
+            self.header_container, panel.width, **kwargs
         )
 
         self.header_container.insert_panel(header)

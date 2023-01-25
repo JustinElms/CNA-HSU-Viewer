@@ -22,7 +22,9 @@ class DatasetSelector(Modal):
 
     data_selected = Signal(dict)
 
-    def __init__(self, parent: QWidget = None, config_path: Path | str = None) -> None:
+    def __init__(
+        self, parent: QWidget = None, config_path: Path | str = None
+    ) -> None:
         super().__init__(parent=parent, text="Select Dataset")
 
         self.config_path = config_path
@@ -48,7 +50,9 @@ class DatasetSelector(Modal):
 
         info_panel = QWidget(self)
         add_dataset_button = QPushButton("Add Dataset", info_panel)
-        add_dataset_button.setStyleSheet("border: 1px solid rgb(222, 222, 222);")
+        add_dataset_button.setStyleSheet(
+            "border: 1px solid rgb(222, 222, 222);"
+        )
         add_dataset_button.clicked.connect(self._add_dataset)
         self.meta_table = MetadataTable(info_panel)
 
@@ -101,7 +105,9 @@ class DatasetSelector(Modal):
         self.selected_subtype = selected
         self.selected_data = None
         self._set_options_label()
-        data = self.dataset_config.data_options(self.selected_dataset, group, selected)
+        data = self.dataset_config.data_options(
+            self.selected_dataset, group, selected
+        )
         self.data_list.clear_list()
         self.data_list.set_items(data)
 
@@ -111,14 +117,18 @@ class DatasetSelector(Modal):
         self._update_table()
 
     def _add_dataset(self) -> None:
-        dataset_path = QFileDialog.getExistingDirectory(self, "Select Main Directory")
+        dataset_path = QFileDialog.getExistingDirectory(
+            self, "Select Main Directory"
+        )
         self.dataset_config.add_dataset(dataset_path)
         self.dataset_list.clear_list()
         self.dataset_list.set_items(self.dataset_config.datasets())
 
     def _set_options_label(self) -> None:
         self.options_label.setText(
-            f"{self.selected_datatype}/{self.selected_subtype}/{self.selected_dataname}"
+            f"{self.selected_datatype}/\
+                {self.selected_subtype}/\
+                    {self.selected_dataname}"
         )
 
     def _update_table(self) -> None:

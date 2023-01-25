@@ -12,11 +12,13 @@ from PySide6.QtGui import QDrag, QPixmap
 class DataHeader(QWidget):
     def __init__(
         self, parent=None,
-        dataset: str = None,
-        dataname: str = None,
-        width: int = None
+        width: int = None,
+        **kwargs
     ) -> None:
         super().__init__(parent=parent)
+
+        dataset = kwargs.get("dataset")
+        dataname = kwargs.get("dataname")
 
         title_container = QWidget(self)
         title_container.setFixedHeight(20)

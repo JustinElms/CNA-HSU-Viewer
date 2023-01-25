@@ -62,10 +62,13 @@ class DataPanel(QWidget):
 
         image_dir = Path(data.get("path"))
         image_paths = os_sorted(image_dir.glob("*.png"))
-        meter = self.config.meter(self.dataset)
-        coreFrame = QWidget(self)
-        coreFrame.setStyleSheet("background-color: white;")
-        coreFrameLayout = QGridLayout(coreFrame)
+        if self.datatype == "Spectral Images":
+            meter = self.config.get_row_meter(self.dataset)
+        else:
+            meter = self.config.get_box_meter(self.dataset)
+        image_frame = QWidget(self)
+        image_frame.setStyleSheet("background-color: white;")
+        image_frame_layout = QGridLayout(image_frame)
 
         for index, path in enumerate(image_paths):
             pixmap = QPixmap(path)
@@ -76,14 +79,14 @@ class DataPanel(QWidget):
             pixmap = pixmap.scaledToHeight(pixel_depth)
             if pixmap.width() > self.width:
                 self.width = pixmap.width()
-            coreIm = QLabel(coreFrame)
-            coreIm.setScaledContents(True)
-            coreIm.setPixmap(pixmap)
-            coreFrameLayout.addWidget(coreIm, index, 1)
+            image = QLabel(image_frame)
+            image.setScaledContents(True)
+            image.setPixmap(pixmap)
+            image_frame_layout.addWidget(image, index, 1)
 
-        coreFrameLayout.setSpacing(0)
-        coreFrameLayout.setContentsMargins(0, 0, 0, 0)
+        image_frame_layout.setSpacing(0)
+        image_frame_layout.setContentsMargins(0, 0, 0, 0)
         # tooltip displays min name when hovering mouse over widget
-        coreFrame.setToolTip("title")
+        image_frame.setToolTip("title")
 
-        return coreFrame
+        return image_frame
