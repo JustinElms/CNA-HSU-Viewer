@@ -1,4 +1,3 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -26,14 +25,16 @@ class Drawer(QWidget):
         self.button_panel.setStyleSheet("background-color: blue;")
         self.button_panel.setFixedWidth(20)
 
-        zoomInButton = QPushButton("+")
-        # zoomInButton.clicked.connect(lambda: self.scaleDataWidgets(1))
-        zoomInButton.setFixedSize(20, 20)
-        zoomInButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        zoomOutButton = QPushButton("-")
-        # zoomOutButton.clicked.connect(lambda: self.scaleDataWidgets(-1))
-        zoomOutButton.setStyleSheet("background-color: grey; font: bold 12pt")
-        zoomOutButton.setFixedSize(20, 20)
+        self.zoom_in_button = QPushButton("+")
+        self.zoom_in_button.setFixedSize(20, 20)
+        self.zoom_in_button.setStyleSheet(
+            "background-color: grey; font: bold 12pt"
+        )
+        self.zoom_out_button = QPushButton("-")
+        self.zoom_out_button.setStyleSheet(
+            "background-color: grey; font: bold 12pt"
+        )
+        self.zoom_out_button.setFixedSize(20, 20)
 
         # create button to toggle drawer
         self.drawer_button = QPushButton(self.button_panel)
@@ -44,8 +45,8 @@ class Drawer(QWidget):
         self.button_panel_layout = QVBoxLayout(self.button_panel)
         self.button_panel_layout.setSpacing(5)
         self.button_panel_layout.setContentsMargins(0, 20, 0, 0)
-        self.button_panel_layout.addWidget(zoomInButton)
-        self.button_panel_layout.addWidget(zoomOutButton)
+        self.button_panel_layout.addWidget(self.zoom_in_button)
+        self.button_panel_layout.addWidget(self.zoom_out_button)
         self.button_panel_layout.addStretch()
         self.button_panel_layout.addWidget(self.drawer_button)
         self.button_panel_layout.addStretch()

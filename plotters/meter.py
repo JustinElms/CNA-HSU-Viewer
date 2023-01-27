@@ -2,18 +2,8 @@ import numpy as np
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor, QPainter, QPixmap
 
-# resolution of each zoom level, zoom level: px/m
-METER_RES_LEVELS = {
-    0: 10,
-    1: 20,
-    2: 40,
-    3: 60,
-    4: 80,
-    5: 100,
-}
 
-
-def draw_meter_tiles(zoom_level: int, depth: int) -> list:
+def draw_meter_tiles(resolution: int, depth: int) -> list:
     """
     draws pixmaps for down-hole meter. Maximum pixmap size is 32767 px so
     multiple pixmaps may be needed depending on depth of drill hole and
@@ -23,8 +13,7 @@ def draw_meter_tiles(zoom_level: int, depth: int) -> list:
     tile_height = 500  # height of tile in pixels
 
     # determine number of pixmaps needed for meterPos
-    res = METER_RES_LEVELS[zoom_level]  # px/m
-    px_height = np.ceil(res * depth)
+    px_height = np.ceil(resolution * depth)
 
     n_tiles = int(np.ceil(px_height / tile_height))
     stub_height = None  # length of last tile if shorter than others

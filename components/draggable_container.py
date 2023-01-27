@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import  QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, Signal, Slot
 
 from components.data_panel import DataPanel
@@ -45,7 +45,6 @@ class DraggableContainer(QWidget):
     def add_data_panel(self) -> None:
         panel = DataPanel(self, self.geometry().height())
         self.insert_panel(panel)
-
 
     def insert_panel(self, panel: DataPanel) -> None:
         if self.layout.count() == 0:

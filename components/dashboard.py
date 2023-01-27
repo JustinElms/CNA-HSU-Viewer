@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -14,12 +14,27 @@ from components.meter import Meter
 
 """
 TODO:
-- pass kwargs to data_header obj
-
+- docstrings
 """
+
+# resolution of each zoom level, zoom level: px/m
+METER_RES_LEVELS = {
+    0: 10,
+    1: 20,
+    2: 30,
+    3: 40,
+    4: 50,
+    5: 60,
+    6: 60,
+    7: 80,
+    8: 90,
+    9: 100,
+}
 
 
 class Dashboard(QScrollArea):
+    zoom_changed = Signal(int)
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
@@ -58,9 +73,9 @@ class Dashboard(QScrollArea):
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         )
 
-        self.meter = Meter(data_content, self.zoom_level)
+        self.meter = Meter(data_content, METER_RES_LEVELS[self.zoom_level])
         self.meter.setFixedWidth(60)
-        self.meter.setStyleSheet("background-color: green")
+        self.zoom_changed.connect(self.meter.zoom_changed)
 
         self.data_container = DraggableContainer(data_content)
 
@@ -86,21 +101,16 @@ class Dashboard(QScrollArea):
 
     def add_data_panel(self, kwargs: dict) -> None:
 
-        panel = DataPanel(self.data_container, **kwargs)
-        header = DataHeader(
-            self.header_container, panel.width, **kwargs
+        panel = DataPanel(
+            self.data_container, METER_RES_LEVELS[self.zoom_level], **kwargs
         )
+        self.zoom_changed.connect(panel.zoom_changed)
+        header = DataHeader(self.header_container, panel.width, **kwargs)
 
         self.header_container.insert_panel(header)
         self.data_container.insert_panel(panel)
 
     def test_add_panel(self):
-        # kwargs = {
-        #     "dataset": "PB-77-013",
-        #     "datatype": "Spectral Images",
-        #     "datasubtype": "Chemistry",
-        #     "dataname": "Biotite",
-        # }
         kwargs = {
             "dataset": "PB-77-013",
             "datatype": "Corebox Images",
@@ -108,3 +118,13 @@ class Dashboard(QScrollArea):
             "dataname": "High-Res",
         }
         self.add_data_panel(kwargs)
+
+    def zoom_in(self):
+        if self.zoom_level < 9:
+            self.zoom_level += 1
+            self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
+
+    def zoom_out(self):
+        if self.zoom_level > 0:
+            self.zoom_level -= 1
+            self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
