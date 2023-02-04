@@ -22,6 +22,8 @@ DATA_COLUMNS = [
 
 SKIP_COLUMNS = [
     "filename",
+    "path",
+    "csv_path",
     "info_line_number",
     "Hole_ID",
     "box_number",
@@ -88,6 +90,9 @@ class DatasetConfig:
 
         with open(self._config_path, "w") as f:
             json.dump(self._config, f)
+
+    def dataset(self, dataset: str) -> dict:
+        return self._config[dataset]
 
     def datasets(self) -> list:
         if self._config:
@@ -172,28 +177,26 @@ class DatasetConfig:
             if col in list(self._index_columns.keys())
         }
 
-        meter_data = np.genfromtxt(
-            csv_path,
-            dtype=str,
-            delimiter=",",
-            comments=None,
-            skip_header=5,
-            usecols=list(indexers.values()),
-            encoding=None,
+        csv_data_dict = {**csv_data_dict, **indexers}
+
+        meter_from_cols = (
+            indexers["meter_from"]
+            if isinstance(indexers["meter_from"], list)
+            else [indexers["meter_from"]]
         )
 
-        for col, indexer in enumerate(indexers):
-            csv_data_dict[indexer] = (
-                meter_data[:, col]
-                .astype(self._index_columns[indexer]).tolist()
-            )
+        meter_to_cols = (
+            indexers["meter_to"]
+            if isinstance(indexers["meter_to"], list)
+            else [indexers["meter_to"]]
+        )
 
         for idx, col in enumerate(columns):
             if (
                 any(d in col.lower() for d in DATA_COLUMNS)
                 and col.lower() not in SKIP_COLUMNS
             ):
-
+                meter_idx = np.searchsorted(meter_from_cols, [idx], "left") - 1
                 data_type = [dt for dt in DATA_COLUMNS if dt in col.lower()][0]
                 name = col.replace(data_type, "").split("_")[1:]
                 name = " ".join(name)
@@ -203,7 +206,9 @@ class DatasetConfig:
                     "unit": csv_data[2, idx],
                     "min_value": csv_data[3, idx],
                     "max_value": csv_data[4, idx],
-                    "column": str(idx),
+                    "meter_from": meter_from_cols[meter_idx[0]],
+                    "meter_to": meter_to_cols[meter_idx[0]],
+                    "column": idx,
                 }
 
                 if data_type == "mineral_per":
@@ -240,21 +245,44 @@ class DatasetConfig:
         return meter_data
 
     def get_row_meter(self, dataset: str):
-        meter_from = self._config[dataset].get("meter_from")
-        meter_to = self._config[dataset].get("meter_to")
+        meter_from_col = self._config[dataset].get("meter_from")
+        meter_to_col = self._config[dataset].get("meter_to")
 
-        return np.stack([meter_from, meter_to], axis=1)
+        csv_path = self._config[dataset]["csv_path"]
+
+        meter_data = np.genfromtxt(
+            csv_path,
+            delimiter=",",
+            dtype="float",
+            comments=None,
+            skip_header=5,
+            usecols=[meter_from_col, meter_to_col],
+        )
+
+        return meter_data
 
     def get_box_meter(self, dataset: str):
         meter_data = []
 
-        box_numbers = self._config[dataset].get("box_number")
-        meter_from = self._config[dataset].get("meter_from")
-        meter_to = self._config[dataset].get("meter_to")
+        box_numbers_col = self._config[dataset].get("box_number")
+        meter_from_col = self._config[dataset].get("meter_from")
+        meter_to_col = self._config[dataset].get("meter_to")
+
+        csv_path = self._config[dataset]["csv_path"]
+
+        [box_numbers, meter_from, meter_to] = np.genfromtxt(
+            csv_path,
+            delimiter=",",
+            dtype="float",
+            comments=None,
+            skip_header=5,
+            usecols=[box_numbers_col, meter_from_col, meter_to_col],
+        ).transpose()
 
         for num in list(set(box_numbers)):
             rows = [
-                idx for idx, box_number in enumerate(box_numbers)
+                idx
+                for idx, box_number in enumerate(box_numbers)
                 if num == box_number
             ]
             meter_data.append(

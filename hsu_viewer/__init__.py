@@ -21,7 +21,7 @@ from components.dashboard import Dashboard
 from components.dataset_selector import DatasetSelector
 from components.drawer import Drawer
 
-matplotlib.use("tkagg")
+matplotlib.use('Qt5Agg')
 
 HSU_STYLES = """
     QWidget{

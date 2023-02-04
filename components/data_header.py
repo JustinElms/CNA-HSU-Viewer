@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -10,11 +11,9 @@ from PySide6.QtGui import QDrag, QPixmap
 
 
 class DataHeader(QWidget):
-    def __init__(
-        self, parent=None,
-        width: int = None,
-        **kwargs
-    ) -> None:
+    close_panel = Signal()
+
+    def __init__(self, parent=None, width: int = None, **kwargs) -> None:
         super().__init__(parent=parent)
 
         dataset = kwargs.get("dataset")
@@ -40,7 +39,9 @@ class DataHeader(QWidget):
         self.close_button = QPushButton(title_container)
         self.close_button.setText("×")
         self.close_button.setFixedSize(20, 20)
+        self.close_button.clicked.connect(self.panel_closed)
         self.close_button.setStyleSheet(
+
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
@@ -111,6 +112,10 @@ class DataHeader(QWidget):
 
             drag.exec(Qt.MoveAction)
 
-    def resize(self, width: int, height: int) -> None:
+    @Slot(int)
+    def resize_header(self, width: int) -> None:
+        self.setFixedWidth(width)
 
-        self.setFixedSize(width, height)
+    def panel_closed(self):
+        self.close_panel.emit()
+        self.deleteLater()

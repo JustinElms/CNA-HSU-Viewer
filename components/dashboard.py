@@ -8,9 +8,10 @@ from PySide6.QtWidgets import (
 )
 
 from components.data_header import DataHeader
-from components.data_panel import DataPanel
+from components.core_image_panel import CoreImagePanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
+from components.spectral_plot_panel import SpectralPlotPanel
 
 """
 TODO:
@@ -18,17 +19,30 @@ TODO:
 """
 
 # resolution of each zoom level, zoom level: px/m
+# METER_RES_LEVELS = {
+#     0: 10,
+#     1: 20,
+#     2: 30,
+#     3: 40,
+#     4: 50,
+#     5: 60,
+#     6: 60,
+#     7: 80,
+#     8: 90,
+#     9: 100,
+# }
+
 METER_RES_LEVELS = {
-    0: 10,
-    1: 20,
-    2: 30,
-    3: 40,
-    4: 50,
-    5: 60,
-    6: 60,
-    7: 80,
-    8: 90,
-    9: 100,
+    0: 5,
+    1: 10,
+    2: 15,
+    3: 20,
+    4: 25,
+    5: 30,
+    6: 35,
+    7: 40,
+    8: 45,
+    9: 50,
 }
 
 
@@ -101,11 +115,29 @@ class Dashboard(QScrollArea):
 
     def add_data_panel(self, kwargs: dict) -> None:
 
-        panel = DataPanel(
-            self.data_container, METER_RES_LEVELS[self.zoom_level], **kwargs
-        )
-        self.zoom_changed.connect(panel.zoom_changed)
+        match kwargs.get("datatype"):
+            case "Spectral Images":
+                panel = CoreImagePanel(
+                    self.data_container,
+                    METER_RES_LEVELS[self.zoom_level],
+                    **kwargs
+                )
+            case "Corebox Images":
+                panel = CoreImagePanel(
+                    self.data_container,
+                    METER_RES_LEVELS[self.zoom_level],
+                    **kwargs
+                )
+            case "Spectral Data":
+                panel = SpectralPlotPanel(
+                    self.data_container,
+                    METER_RES_LEVELS[self.zoom_level],
+                    **kwargs
+                )
         header = DataHeader(self.header_container, panel.width, **kwargs)
+        self.zoom_changed.connect(panel.zoom_changed)
+        panel.resize_panel.connect(header.resize_header)
+        header.close_panel.connect(panel.close_panel)
 
         self.header_container.insert_panel(header)
         self.data_container.insert_panel(panel)
@@ -113,9 +145,9 @@ class Dashboard(QScrollArea):
     def test_add_panel(self):
         kwargs = {
             "dataset": "PB-77-013",
-            "datatype": "Corebox Images",
-            "datasubtype": "High-Res",
-            "dataname": "High-Res",
+            "datatype": "Spectral Data",
+            "datasubtype": "Mineral Percent",
+            "dataname": "Biotite",
         }
         self.add_data_panel(kwargs)
 
