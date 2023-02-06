@@ -71,7 +71,7 @@ class SpectralPlotPanel(DataPanel):
         # )
 
         xMin = float(self.meta_data.get("min_value"))
-        xMax = float(self.meta_data.get("min_value"))
+        xMax = float(self.meta_data.get("max_value"))
 
         plotFig.clear()
         plot = plotFig.add_axes([0, 0, 1, 1])
@@ -81,7 +81,7 @@ class SpectralPlotPanel(DataPanel):
         # plot.set_yticks(meterVals)
         plot.set_xticks([xMin, (xMax + xMin) / 2, xMax])
         plot.set_ylim(self.meter_end, self.meter_start)
-        plot.set_xlim([xMin, xMax])
+        plot.set_xlim(xMin, xMax)
         plot.set_frame_on(False)
         plot.grid(color="#323232")
         plot.xaxis.set_major_formatter(NullFormatter())
