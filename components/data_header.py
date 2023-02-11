@@ -41,9 +41,8 @@ class DataHeader(QWidget):
         self.close_button.setFixedSize(20, 20)
         self.close_button.clicked.connect(self.panel_closed)
         self.close_button.setStyleSheet(
-
             "background-color: transparent; \
-                font: bold 10pt; border: transparent"
+                font: bold 12pt; border: transparent"
         )
 
         title_container_layout.addStretch()

@@ -87,15 +87,19 @@ class Dashboard(QScrollArea):
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         )
 
-        self.meter = Meter(data_content, METER_RES_LEVELS[self.zoom_level])
-        self.meter.setFixedWidth(60)
-        self.zoom_changed.connect(self.meter.zoom_changed)
-
         self.data_container = DraggableContainer(data_content)
 
         self.header_container.widget_dragged.connect(
             self.data_container.insert_dragged_widget
         )
+
+        resolution = METER_RES_LEVELS[self.zoom_level]
+        depth = resolution * self.data_container.height()
+
+        self.meter = Meter(data_content, resolution, depth)
+        self.meter.setFixedWidth(60)
+        self.zoom_changed.connect(self.meter.zoom_changed)
+        self.data_container.resize_container.connect(self.meter.update_size)
 
         data_content_layout.addWidget(self.meter)
         data_content_layout.addWidget(self.data_container)

@@ -44,7 +44,9 @@ class DatasetSelector(Modal):
 
         self.dataset_list = FilterList(self, self._dataset_changed)
         self.datatypes_list = FilterList(self, self._datatype_changed)
-        self.data_list = FilterList(self, self._dataname_changed)
+        self.data_list = FilterList(
+            self, self._dataname_changed, multi_select=True
+        )
 
         self.dataset_list.set_items(self.dataset_config.datasets())
 
@@ -156,6 +158,6 @@ class DatasetSelector(Modal):
             "datatype": self.selected_datatype,
             "datasubtype": self.selected_subtype,
             "dataname": self.selected_dataname,
-        }       
+        }
         self.data_selected.emit(args)
         super()._close()

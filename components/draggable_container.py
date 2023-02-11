@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QResizeEvent
 
 from components.data_panel import DataPanel
 
 
 class DraggableContainer(QWidget):
     widget_dragged = Signal(int, int)
+    resize_container = Signal(int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
@@ -17,7 +19,7 @@ class DraggableContainer(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignTop)
-        
+
         self.setLayout(self.layout)
 
     def dragEnterEvent(self, e) -> None:
@@ -29,7 +31,7 @@ class DraggableContainer(QWidget):
         start_index = None
         end_index = None
 
-        for n in range(self.layout.count()-1):
+        for n in range(self.layout.count() - 1):
             w = self.layout.itemAt(n).widget()
             if w == e.source():
                 start_index = n
@@ -51,12 +53,15 @@ class DraggableContainer(QWidget):
             self.layout.addWidget(panel)
             self.layout.addStretch()
         else:
-            self.layout.insertWidget(
-                self.layout.count() - 1, panel
-            )
+            self.layout.insertWidget(self.layout.count() - 1, panel)
 
     @Slot(int, int)
     def insert_dragged_widget(self, start_index, end_index):
         widget = self.layout.itemAt(start_index).widget()
         self.layout.insertWidget(end_index, widget)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        print("resizing")
+        print(self.geometry())
+        self.resize_container.emit(self.height())
+        return super().resizeEvent(event)

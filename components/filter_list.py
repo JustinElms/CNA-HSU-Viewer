@@ -2,12 +2,21 @@ from typing import Callable
 
 from PySide6.QtCore import QModelIndex, QSortFilterProxyModel, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QLineEdit, QTreeView, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QLineEdit,
+    QTreeView,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class FilterList(QWidget):
     def __init__(
-        self, parent: QWidget = None, set_selected: Callable[[str], None] = None
+        self,
+        parent: QWidget = None,
+        set_selected: Callable[[str], None] = None,
+        multi_select: bool = False,
     ) -> None:
         super().__init__(parent=parent)
 
@@ -21,6 +30,10 @@ class FilterList(QWidget):
         self.filter_field.textChanged.connect(self._on_filter)
 
         self.options_list = QTreeView(self)
+        if multi_select:
+            self.options_list.setSelectionMode(
+                QAbstractItemView.MultiSelection
+            )
         self.options_list.setHeaderHidden(True)
         self.model = QStandardItemModel()
         self.proxyModel = QSortFilterProxyModel()
