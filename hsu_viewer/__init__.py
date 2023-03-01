@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import matplotlib
-from PySide6.QtGui import QIcon, QScreen
+from PySide6.QtGui import QIcon, QScreen, QResizeEvent
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QApplication
 from PySide6.QtCore import Signal
 
@@ -21,7 +21,7 @@ from components.dashboard import Dashboard
 from components.dataset_selector import DatasetSelector
 from components.drawer import Drawer
 
-matplotlib.use('Qt5Agg')
+matplotlib.use("Qt5Agg")
 
 HSU_STYLES = """
     QWidget{
@@ -58,19 +58,6 @@ HSU_STYLES = """
     }
 """
 
-DEFAULT_COLORS = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
-]
-
 
 class HSUViewer(QMainWindow):
     """
@@ -106,14 +93,7 @@ class HSUViewer(QMainWindow):
         self.dataWidgetWidth = (
             []
         )  # initialize variable, gets corrected when data is loaded
-        self.imDict = []
 
-        # intialize lists for data, mineral names, and images
-        self.minMeter = []
-
-        # default colors for minerals in plots and overlay
-        self.defaultColors = DEFAULT_COLORS
-        self.plotColors = self.defaultColors.copy()
         self.setWindowIcon(QIcon(":/Icon.ico"))
 
         # set minimum size of app
@@ -121,6 +101,9 @@ class HSUViewer(QMainWindow):
 
         # initialize app widgets
         self.initUI()
+
+        # track which overlays/modals are open
+        self.dataset_selector_open = False
 
         # display app
         self.show()
@@ -153,13 +136,19 @@ class HSUViewer(QMainWindow):
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        if self.dataset_selector_open:
+            self.dataset_selector.resize(self.width(), self.height())
+
     def _open_dataset_selector(self) -> None:
 
-        data_selector = DatasetSelector(
+        self.dataset_selector_open = True
+
+        self.dataset_selector = DatasetSelector(
             self, config_path=Path.cwd().joinpath("hsu_datasets.cfg")
         )
-        data_selector.data_selected.connect(self._add_data)
-        data_selector.show()
+        self.dataset_selector.data_selected.connect(self._add_data)
+        self.dataset_selector.show()
 
     def _add_data(self, kwargs) -> None:
         self.dashboard.add_data_panel(kwargs)

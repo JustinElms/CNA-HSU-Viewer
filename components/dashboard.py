@@ -18,20 +18,6 @@ TODO:
 - docstrings
 """
 
-# resolution of each zoom level, zoom level: px/m
-# METER_RES_LEVELS = {
-#     0: 10,
-#     1: 20,
-#     2: 30,
-#     3: 40,
-#     4: 50,
-#     5: 60,
-#     6: 60,
-#     7: 80,
-#     8: 90,
-#     9: 100,
-# }
-
 METER_RES_LEVELS = {
     0: 5,
     1: 10,
@@ -62,7 +48,6 @@ class Dashboard(QScrollArea):
         header_spacer = QWidget()
         header_spacer.setFixedWidth(60)
         self.header_container = DraggableContainer(self)
-        self.header_container.setStyleSheet("background-color: purple")
 
         header_scroll = QScrollArea(self)
         header_scroll.setWidget(self.header_container)
@@ -79,7 +64,6 @@ class Dashboard(QScrollArea):
 
         # create area to display data
         data_content = QWidget()
-        data_content.setStyleSheet("background-color: green;")
         data_content_layout = QHBoxLayout(data_content)
         data_content_layout.setSpacing(0)
         data_content_layout.setContentsMargins(0, 0, 0, 0)
@@ -88,6 +72,9 @@ class Dashboard(QScrollArea):
         )
 
         self.data_container = DraggableContainer(data_content)
+        self.data_container.setSizePolicy(
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        )
 
         self.header_container.widget_dragged.connect(
             self.data_container.insert_dragged_widget
@@ -158,9 +145,13 @@ class Dashboard(QScrollArea):
     def zoom_in(self):
         if self.zoom_level < 9:
             self.zoom_level += 1
+            print("zoom in")
+            print(self.zoom_level)
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def zoom_out(self):
         if self.zoom_level > 0:
             self.zoom_level -= 1
+            print("zoom out")
+            print(self.zoom_level)
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])

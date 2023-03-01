@@ -1,5 +1,6 @@
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtGui import QResizeEvent
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpacerItem
 
 from plotters.meter import draw_meter_tiles
 
@@ -19,6 +20,8 @@ class Meter(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
+        # self.setFixedHeight(self.parent().height())
+
         self.setStyleSheet("background-color: red;")
 
         self._plot()
@@ -35,20 +38,16 @@ class Meter(QWidget):
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.resolution = resolution
-        for i in reversed(range(self.layout.count() - 1)):
-            self.layout.itemAt(i).widget().deleteLater()
-
+        self._clear_meter()
         self._plot()
 
     @Slot(int)
     def update_size(self, height: float) -> None:
-        print("meter geom")
-        print(self.geometry())
-
         self.depth = self.resolution * height
-        for i in reversed(range(self.layout.count() - 1)):
-            self.layout.itemAt(i).widget().deleteLater()
-        # self._plot()
+        # self._remove_tiles()
+        # for i in reversed(range(self.layout.count() - 1)):
+        #     self.layout.itemAt(i).widget().deleteLater()
+        self._plot()
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.layout.count() == 0:
@@ -56,3 +55,7 @@ class Meter(QWidget):
             self.layout.addStretch()
         else:
             self.layout.insertWidget(self.layout.count() - 1, tile)
+
+    def _clear_meter(self):
+        for i in reversed(range(self.layout.count() - 1)):
+            self.layout.itemAt(i).widget().deleteLater()
