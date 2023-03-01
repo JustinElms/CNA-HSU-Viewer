@@ -12,6 +12,7 @@ class SpectralPlotPanel(DataPanel):
         super().__init__(parent=parent, resolution=resolution, **kwargs)
 
         self.width = 120
+        self.setFixedWidth(120)
         self.image_resolution = resolution
 
         self.meta_data = self.config.data(

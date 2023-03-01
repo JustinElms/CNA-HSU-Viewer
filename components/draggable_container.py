@@ -13,8 +13,6 @@ class DraggableContainer(QWidget):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
 
-        self.setStyleSheet("background-color: red;")
-
         self.layout = QHBoxLayout()
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -59,9 +57,3 @@ class DraggableContainer(QWidget):
     def insert_dragged_widget(self, start_index, end_index):
         widget = self.layout.itemAt(start_index).widget()
         self.layout.insertWidget(end_index, widget)
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        print("resizing")
-        print(self.geometry())
-        self.resize_container.emit(self.height())
-        return super().resizeEvent(event)

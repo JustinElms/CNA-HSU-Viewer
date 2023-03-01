@@ -1,4 +1,10 @@
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class Modal(QWidget):
@@ -11,11 +17,10 @@ class Modal(QWidget):
 
         self.content = QWidget(self.background)
         self.content.setStyleSheet("background-color: rgb(10,15,20)")
-        self.content.setMaximumWidth(parent.width() * 0.7)
-        self.content.setMaximumHeight(parent.width() * 0.7)
+        self.content.setMaximumWidth(parent.width() - 100)
+        self.content.setMaximumHeight(parent.height() - 100)
 
         button_bar = QWidget(self.content)
-        button_bar.setMinimumWidth(self.content.width())
         button_bar.setMaximumHeight(40)
         button_bar.setStyleSheet("background-Color: rgb(51,51,51)")
 

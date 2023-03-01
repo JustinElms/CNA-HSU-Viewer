@@ -33,8 +33,6 @@ class DatasetSelector(Modal):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.setGeometry(50, 50, 1000, 750)
-
         self.dataset_config = DatasetConfig(config_path)
 
         self.selected_dataset = None
@@ -42,16 +40,8 @@ class DatasetSelector(Modal):
         self.selected_subtype = None
         self.selected_dataname = None
 
-        self.dataset_list = FilterList(self, self._dataset_changed)
-        self.datatypes_list = FilterList(self, self._datatype_changed)
-        self.data_list = FilterList(
-            self, self._dataname_changed, multi_select=True
-        )
-
-        self.dataset_list.set_items(self.dataset_config.datasets())
-
         info_panel = QWidget(self)
-        add_dataset_button = QPushButton("Add Dataset", info_panel)
+        add_dataset_button = QPushButton("Import Dataset", info_panel)
         add_dataset_button.setStyleSheet(
             "border: 1px solid rgb(222, 222, 222);"
         )
@@ -85,6 +75,17 @@ class DatasetSelector(Modal):
         info_panel_layout.addStretch()
         info_panel_layout.addWidget(button_panel)
 
+        self.dataset_list = FilterList(self, self._dataset_changed)
+        self.datatypes_list = FilterList(self, self._datatype_changed)
+        self.data_list = FilterList(
+            self, self._dataname_changed, multi_select=True
+        )
+
+        self.dataset_list.set_items(self.dataset_config.datasets())
+
+        self.dataset_list.select(0)
+        self.datatypes_list.select([0, 0])
+
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.dataset_list)
         layout.addWidget(self.datatypes_list)
@@ -94,6 +95,11 @@ class DatasetSelector(Modal):
         self.setLayout(layout)
 
         super().add_content(self)
+
+    def resize(self, width: int, height: int) -> None:
+        self.background.setFixedSize(width, height)
+        self.content.setMaximumWidth(width - 100)
+        self.content.setMaximumHeight(height - 100)
 
     def _dataset_changed(self, selected: str) -> None:
         self.selected_dataset = selected

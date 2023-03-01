@@ -27,7 +27,6 @@ class CoreImagePanel(DataPanel):
         self.image_resolution = resolution
 
         image_frame = QWidget(self)
-        image_frame.setStyleSheet("background-color: white;")
         self.image_frame_layout = QGridLayout(image_frame)
         # tooltip displays min name when hovering mouse over widget
         image_frame.setToolTip(f"{self.dataset} {self.dataname}")
