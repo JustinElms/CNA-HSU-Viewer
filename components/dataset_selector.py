@@ -50,7 +50,9 @@ class DatasetSelector(Modal):
 
         button_panel = QWidget(info_panel)
         add_button = QPushButton("Add", button_panel)
-        add_button.setStyleSheet("border: 1px solid rgb(222, 222, 222);")
+        add_button.setStyleSheet(
+            "background-color: green; border: 1px solid rgb(222, 222, 222);"
+        )
         add_button.clicked.connect(self._add_data)
         close_button = QPushButton("Close", button_panel)
         close_button.setStyleSheet("border: 1px solid rgb(222, 222, 222);")
@@ -85,6 +87,7 @@ class DatasetSelector(Modal):
 
         self.dataset_list.select(0)
         self.datatypes_list.select([0, 0])
+        self.data_list.select(0)
 
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.dataset_list)
@@ -107,6 +110,7 @@ class DatasetSelector(Modal):
         datatypes = self.dataset_config.data_types(selected)
         self.datatypes_list.clear_list()
         self.datatypes_list.set_items(datatypes)
+        self.datatypes_list.select([0, 0])
 
     def _datatype_changed(self, group: str, selected: str) -> None:
         self.selected_datatype = group
@@ -118,6 +122,7 @@ class DatasetSelector(Modal):
         )
         self.data_list.clear_list()
         self.data_list.set_items(data)
+        self.data_list.select(0)
 
     def _dataname_changed(self, selected: QListWidgetItem) -> None:
         self.selected_dataname = selected

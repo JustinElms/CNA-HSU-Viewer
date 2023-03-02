@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QLabel,
@@ -9,6 +11,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QDrag, QPixmap
 
+from hsu_viewer.dataset_config import DatasetConfig
+
 
 class DataHeader(QWidget):
     close_panel = Signal()
@@ -16,8 +20,16 @@ class DataHeader(QWidget):
     def __init__(self, parent=None, width: int = None, **kwargs) -> None:
         super().__init__(parent=parent)
 
+        self.config = DatasetConfig(Path.cwd().joinpath("hsu_datasets.cfg"))
+
         dataset = kwargs.get("dataset")
+        datatype = kwargs.get("datatype")
+        datasubtype = kwargs.get("datasubtype")
         dataname = kwargs.get("dataname")
+
+        self.meta_data = self.config.data(
+            dataset, datatype, datasubtype, dataname
+        )
 
         title_container = QWidget(self)
         title_container.setFixedHeight(20)
@@ -58,6 +70,7 @@ class DataHeader(QWidget):
                 font: bold 10pt; border: transparent"
         )
 
+        axis_limits = self.axis_limits()
         # area for axis limits
         axis_limits_container = QWidget(self)
         axis_limits_container.setFixedHeight(20)
@@ -72,7 +85,7 @@ class DataHeader(QWidget):
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
-        axis_start_label.setText("0")  # str(axis_limits[0]))
+        axis_start_label.setText(axis_limits[0])
 
         # label for axis maximum
         axis_end_label = QLabel(axis_limits_container)
@@ -81,7 +94,7 @@ class DataHeader(QWidget):
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
-        axis_end_label.setText("1")  # str(axis_limits[1]))
+        axis_end_label.setText(axis_limits[1])
 
         axis_limits_layout.addWidget(axis_start_label)
         axis_limits_layout.addStretch()
@@ -118,3 +131,19 @@ class DataHeader(QWidget):
     def panel_closed(self):
         self.close_panel.emit()
         self.deleteLater()
+
+    def axis_limits(self) -> list:
+
+        try:
+            axis_min = self.meta_data.get("min_value")
+            axis_max = self.meta_data.get("max_value")
+        except ValueError:
+            if self.datasubtype == "Position":
+                [min, max] = self.dataname.split(" ")
+                axis_min = min
+                axis_max = max
+            else:
+                axis_min = ""
+                axis_max = ""
+
+        return [axis_min, axis_max]

@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QResizeEvent
 
 from components.data_panel import DataPanel
 
@@ -14,7 +13,7 @@ class DraggableContainer(QWidget):
         self.setAcceptDrops(True)
 
         self.layout = QHBoxLayout()
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(5)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignTop)
 
@@ -34,8 +33,6 @@ class DraggableContainer(QWidget):
             if w == e.source():
                 start_index = n
             if w.x() < pos.x() and pos.x() < w.x() + w.size().width():
-                # We didn't drag past this widget.
-                # Insert to the left of it.
                 end_index = n
 
         self.layout.insertWidget(end_index, widget)

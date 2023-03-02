@@ -8,7 +8,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QLineEdit,
     QTreeView,
     QVBoxLayout,
@@ -24,8 +23,6 @@ class FilterList(QWidget):
         multi_select: bool = False,
     ) -> None:
         super().__init__(parent=parent)
-
-        # self.setFixedWidth(parent.width() / 5)
 
         self.setMinimumWidth(100)
 
@@ -43,13 +40,15 @@ class FilterList(QWidget):
         self.proxy_model.setRecursiveFilteringEnabled(True)
         self.proxy_model.setSourceModel(self.model)
         self.model_view.setModel(self.proxy_model)
-        if multi_select:
-            self.model_view.setSelectionMode(QAbstractItemView.MultiSelection)
+        # if multi_select:
+        #     self.model_view.setSelectionMode(QAbstractItemView.MultiSelection)
         self.model_view.clicked[QModelIndex].connect(
             lambda index: self._on_changed(index)
         )
         self.selection_model = self.model_view.selectionModel()
         self.set_selected = set_selected
+
+        self.selected = None
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
@@ -61,10 +60,15 @@ class FilterList(QWidget):
 
     def _on_changed(self, index: QModelIndex) -> None:
         item = self.model.itemFromIndex(self.proxy_model.mapToSource(index))
-        if item.parent():
-            self.set_selected(item.parent().text(), item.text())
-        else:
-            self.set_selected(item.text())
+        if not item.hasChildren():
+            item.setBackground(Qt.blue)
+            if item.parent():
+                self.set_selected(item.parent().text(), item.text())
+            else:
+                self.set_selected(item.text())
+            if self.selected:
+                self.selected.setBackground(Qt.NoBrush)
+            self.selected = item
 
     def set_items(self, items: list | dict, filter_text: str = None) -> None:
         self.model_root = self.model.invisibleRootItem()
@@ -89,22 +93,29 @@ class FilterList(QWidget):
 
     def select(self, index: int | list) -> None:
         if isinstance(self.options, list):
-            selected = self.model.item(index)
+            item = self.model.item(index)
+            item.setBackground(Qt.blue)
             self.selection_model.setCurrentIndex(
-                self.model.indexFromItem(selected),
+                self.model.indexFromItem(item),
                 QItemSelectionModel.Select,
             )
-            self.set_selected(selected.text())
+            self.selected = item
+            self.set_selected(item.text())
+            
         elif isinstance(self.options, dict) and isinstance(index, list):
-            selected_category = self.model.item(index[0])
-            selected_row = selected_category.child(index[0], index[1])
+            idx = index[0]
+            while not self.model.item(idx).hasChildren():
+                idx = idx + 1
+            parent_item = self.model.item(idx)
+            child_item = parent_item.child(idx, index[1])
+            child_item.setBackground(Qt.blue)
 
             self.selection_model.select(
-                self.model.indexFromItem(selected_row),
+                self.model.indexFromItem(child_item),
                 QItemSelectionModel.Select,
             )
-
-            self.set_selected(selected_category.text(), selected_row.text())
+            self.selected = child_item
+            self.set_selected(parent_item.text(), child_item.text())
 
     def clear_list(self) -> None:
         if self.model.item(0):

@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.ticker import NullFormatter
 from PySide6.QtCore import Slot
@@ -41,6 +41,10 @@ class SpectralPlotPanel(DataPanel):
             ],
         )
 
+        if data[0, 0] >= 9999:
+            data[:,0] = np.arange(0, data.shape[0], 1)
+            data[:,1] = np.arange(1, data.shape[0]+1, 1)
+            
         self.meter = (data[:, 0] + data[:, 1]) / 2
         self.meter_start = data[0, 0]
         self.meter_end = data[-1, 1]
@@ -49,12 +53,12 @@ class SpectralPlotPanel(DataPanel):
     def _plot_spectral_data(self) -> None:
         # create plot figure and canvas
         height = (self.meter_end - self.meter_start) * self.resolution
-        plotFig = Figure(
+        plot_fig = Figure(
             figsize=(self.width / 100, height / 100),
             dpi=100,
             facecolor="#000000",
         )
-        plotCanvas = FigureCanvasQTAgg(plotFig)
+        plotCanvas = FigureCanvasQTAgg(plot_fig)
         plotCanvas.draw()
         plotCanvas.setMouseTracking(True)
 
@@ -63,7 +67,7 @@ class SpectralPlotPanel(DataPanel):
         #     event,
         #     newDataWindow,
         #     0,
-        #     xMax,
+        #     axis_max,
         #     plotDepth[0],
         #     plotDepth[-1],
         #     unit,
@@ -71,18 +75,27 @@ class SpectralPlotPanel(DataPanel):
         #     " ",
         # )
 
-        xMin = float(self.meta_data.get("min_value"))
-        xMax = float(self.meta_data.get("max_value"))
+        try:
+            axis_min = float(self.meta_data.get("min_value"))
+            axis_max = float(self.meta_data.get("max_value"))
+        except ValueError:
+            if self.datasubtype == "Position":
+                [min, max] = self.dataname.split(" ")
+                axis_min = float(min)
+                axis_max = float(max)
+            else:
+                axis_min = self.spectral_data.min()
+                axis_max = self.spectral_data.max()
 
-        plotFig.clear()
-        plot = plotFig.add_axes([0, 0, 1, 1])
+        plot_fig.clear()
+        plot = plot_fig.add_axes([0, 0, 1, 1])
         plot.fill_betweenx(
-            self.meter, xMin, self.spectral_data, facecolor="#ffffff"
+            self.meter, axis_min, self.spectral_data, facecolor="#ffffff"
         )
         # plot.set_yticks(meterVals)
-        plot.set_xticks([xMin, (xMax + xMin) / 2, xMax])
+        plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
         plot.set_ylim(self.meter_end, self.meter_start)
-        plot.set_xlim(xMin, xMax)
+        plot.set_xlim(axis_min, axis_max)
         plot.set_frame_on(False)
         plot.grid(color="#323232")
         plot.xaxis.set_major_formatter(NullFormatter())

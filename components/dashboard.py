@@ -102,7 +102,7 @@ class Dashboard(QScrollArea):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.test_add_panel()
+        self.setStyleSheet("background-color: rgb(0,0,0)")
 
     def add_data_panel(self, kwargs: dict) -> None:
 
@@ -133,25 +133,12 @@ class Dashboard(QScrollArea):
         self.header_container.insert_panel(header)
         self.data_container.insert_panel(panel)
 
-    def test_add_panel(self):
-        kwargs = {
-            "dataset": "PB-77-013",
-            "datatype": "Spectral Data",
-            "datasubtype": "Mineral Percent",
-            "dataname": "Biotite",
-        }
-        self.add_data_panel(kwargs)
-
     def zoom_in(self):
         if self.zoom_level < 9:
             self.zoom_level += 1
-            print("zoom in")
-            print(self.zoom_level)
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def zoom_out(self):
         if self.zoom_level > 0:
             self.zoom_level -= 1
-            print("zoom out")
-            print(self.zoom_level)
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
