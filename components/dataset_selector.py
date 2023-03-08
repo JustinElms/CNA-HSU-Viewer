@@ -164,11 +164,14 @@ class DatasetSelector(Modal):
         super()._close()
 
     def _add_data(self) -> None:
+        meta_data = self.dataset_config.dataset(self.selected_dataset)
         args = {
             "dataset": self.selected_dataset,
             "datatype": self.selected_datatype,
             "datasubtype": self.selected_subtype,
             "dataname": self.selected_dataname,
+            "meter_start": meta_data.get("meter_start"),
+            "meter_end": meta_data.get("meter_end"),
         }
         self.data_selected.emit(args)
         super()._close()

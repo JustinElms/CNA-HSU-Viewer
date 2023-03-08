@@ -7,12 +7,13 @@ from plotters.meter import draw_meter_tiles
 
 class Meter(QWidget):
     def __init__(
-        self, parent=None, resolution: int = 0, depth: int | float = 100
+        self, parent=None, resolution: int = 0, min_depth: int | float = 0, max_depth: int | float = 100
     ) -> None:
         super().__init__(parent=parent)
 
         self.resolution = resolution
-        self.depth = depth
+        self.min_depth = min_depth
+        self.max_depth = max_depth
 
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(0)
@@ -20,15 +21,13 @@ class Meter(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
-        # self.setFixedHeight(self.parent().height())
-
         self.setStyleSheet("background-color: red;")
 
         self._plot()
 
     def _plot(self) -> None:
 
-        tiles = draw_meter_tiles(self.resolution, self.depth)
+        tiles = draw_meter_tiles(self.resolution, self.max_depth)
 
         for tile in tiles:
             label = QLabel(self)
@@ -41,13 +40,14 @@ class Meter(QWidget):
         self._clear_meter()
         self._plot()
 
-    @Slot(int)
-    def update_size(self, height: float) -> None:
-        self.depth = self.resolution * height
-        # self._remove_tiles()
-        # for i in reversed(range(self.layout.count() - 1)):
-        #     self.layout.itemAt(i).widget().deleteLater()
-        self._plot()
+    @Slot(float, float)
+    def update_size(self, new_min: int | float, new_max: int | float) -> None:
+        if self.min_depth == new_min and self.max_depth == new_max:
+            return
+        self.min_depth = new_min
+        self.max_depth = new_max
+        self._clear_meter()
+        self._plot()      
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.layout.count() == 0:

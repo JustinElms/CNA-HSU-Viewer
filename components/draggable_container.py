@@ -6,7 +6,6 @@ from components.data_panel import DataPanel
 
 class DraggableContainer(QWidget):
     widget_dragged = Signal(int, int)
-    resize_container = Signal(int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)

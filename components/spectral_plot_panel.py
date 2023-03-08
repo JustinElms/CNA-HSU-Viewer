@@ -6,6 +6,12 @@ from PySide6.QtCore import Slot
 
 from components.data_panel import DataPanel
 
+"""
+TODO
+-resize plot instead of replotting it?
+-add offset at top of panel
+"""
+
 
 class SpectralPlotPanel(DataPanel):
     def __init__(self, parent=None, resolution: int = 0, **kwargs) -> None:
@@ -42,9 +48,9 @@ class SpectralPlotPanel(DataPanel):
         )
 
         if data[0, 0] >= 9999:
-            data[:,0] = np.arange(0, data.shape[0], 1)
-            data[:,1] = np.arange(1, data.shape[0]+1, 1)
-            
+            data[:, 0] = np.arange(0, data.shape[0], 1)
+            data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
+
         self.meter = (data[:, 0] + data[:, 1]) / 2
         self.meter_start = data[0, 0]
         self.meter_end = data[-1, 1]
@@ -102,10 +108,17 @@ class SpectralPlotPanel(DataPanel):
         plot.yaxis.set_major_formatter(NullFormatter())
         plotCanvas.draw()
 
-        self.layout.addWidget(plotCanvas)
+        self.insert_plot(plotCanvas)
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.resolution = resolution
         self.layout.itemAt(0).widget().deleteLater()
         self._plot_spectral_data()
+
+    def insert_plot(self, plot: FigureCanvasQTAgg) -> None:
+        if self.layout.count() == 0:
+            self.layout.addWidget(plot)
+            self.layout.addStretch()
+        else:
+            self.layout.insertWidget(self.layout.count() - 1, plot)

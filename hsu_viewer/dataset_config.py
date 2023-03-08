@@ -30,6 +30,8 @@ SKIP_COLUMNS = [
     "row_number",
     "meter_from",
     "meter_to",
+    "meter_start",
+    "meter_end",
     "position_raw",
     "None",
 ]
@@ -177,8 +179,6 @@ class DatasetConfig:
             if col in list(self._index_columns.keys())
         }
 
-        csv_data_dict = {**csv_data_dict, **indexers}
-
         meter_from_cols = (
             indexers["meter_from"]
             if isinstance(indexers["meter_from"], list)
@@ -190,6 +190,28 @@ class DatasetConfig:
             if isinstance(indexers["meter_to"], list)
             else [indexers["meter_to"]]
         )
+
+        meter_data = np.genfromtxt(
+            csv_path,
+            delimiter=",",
+            dtype="float",
+            comments=None,
+            skip_header=5,
+            usecols=[*meter_from_cols, *meter_to_cols],
+        )
+        if meter_data.min() < 9999:
+            meter_start = meter_data.min()
+            meter_end = meter_data.max()
+        else:
+            meter_start = 0
+            meter_end = meter_data.shape[0]
+
+        csv_data_dict = {
+            **csv_data_dict,
+            **indexers,
+            "meter_start": meter_start,
+            "meter_end": meter_end,
+        }
 
         for idx, col in enumerate(columns):
             if (

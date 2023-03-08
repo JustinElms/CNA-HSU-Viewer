@@ -1,9 +1,9 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QSizePolicy,
     QScrollArea,
 )
 
@@ -34,6 +34,7 @@ METER_RES_LEVELS = {
 
 class Dashboard(QScrollArea):
     zoom_changed = Signal(int)
+    meter_changed = Signal(float, float)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -67,26 +68,23 @@ class Dashboard(QScrollArea):
         data_content_layout = QHBoxLayout(data_content)
         data_content_layout.setSpacing(0)
         data_content_layout.setContentsMargins(0, 0, 0, 0)
-        data_content.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        )
 
         self.data_container = DraggableContainer(data_content)
-        self.data_container.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        )
 
         self.header_container.widget_dragged.connect(
             self.data_container.insert_dragged_widget
         )
 
         resolution = METER_RES_LEVELS[self.zoom_level]
-        depth = resolution * self.data_container.height()
+        depth = resolution * self.height() - 60
 
-        self.meter = Meter(data_content, resolution, depth)
+        self.meter_min = 0
+        self.meter_max = (self.height() - 60) / resolution
+
+        self.meter = Meter(data_content, resolution, self.meter_min, self.meter_max)
         self.meter.setFixedWidth(60)
         self.zoom_changed.connect(self.meter.zoom_changed)
-        self.data_container.resize_container.connect(self.meter.update_size)
+        self.meter_changed.connect(self.meter.update_size)
 
         data_content_layout.addWidget(self.meter)
         data_content_layout.addWidget(self.data_container)
@@ -105,6 +103,12 @@ class Dashboard(QScrollArea):
         self.setStyleSheet("background-color: rgb(0,0,0)")
 
     def add_data_panel(self, kwargs: dict) -> None:
+
+        meter_end = kwargs.get("meter_end")
+        if meter_end > self.meter_max:
+            self.meter_max = meter_end
+        self.meter_changed.emit(self.meter_min, self.meter_max)
+
 
         match kwargs.get("datatype"):
             case "Spectral Images":
@@ -142,3 +146,9 @@ class Dashboard(QScrollArea):
         if self.zoom_level > 0:
             self.zoom_level -= 1
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        resolution = METER_RES_LEVELS[self.zoom_level]
+        depth = (self.height() - 60) / resolution
+        self.meter_max = depth
+        self.meter_changed.emit(self.meter_min, self.meter_max)
