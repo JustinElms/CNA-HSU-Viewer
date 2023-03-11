@@ -13,8 +13,7 @@ def draw_meter_tiles(resolution: int, depth: int) -> list:
     tile_height = 500  # height of tile in pixels
 
     # determine number of pixmaps needed for meterPos
-    px_height = np.ceil(resolution * depth)
-
+    px_height = resolution * depth
     n_tiles = int(np.ceil(px_height / tile_height))
     stub_height = None  # length of last tile if shorter than others
     if px_height % tile_height != 0:

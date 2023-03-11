@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QWidget,
@@ -76,12 +76,13 @@ class Dashboard(QScrollArea):
         )
 
         resolution = METER_RES_LEVELS[self.zoom_level]
-        depth = resolution * self.height() - 60
 
         self.meter_min = 0
-        self.meter_max = (self.height() - 60) / resolution
+        self.meter_max = 0
 
-        self.meter = Meter(data_content, resolution, self.meter_min, self.meter_max)
+        self.meter = Meter(
+            data_content, resolution, self.meter_min, self.meter_max
+        )
         self.meter.setFixedWidth(60)
         self.zoom_changed.connect(self.meter.zoom_changed)
         self.meter_changed.connect(self.meter.update_size)
@@ -94,6 +95,9 @@ class Dashboard(QScrollArea):
         data_content_scroll.setWidgetResizable(True)
         data_content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         data_content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
+        self.viewport = data_content_scroll.viewport()
+        # self.viewport.resizeEvent.connect(self.test())
 
         layout.addWidget(header_content)
         layout.addWidget(data_content_scroll)
@@ -108,7 +112,6 @@ class Dashboard(QScrollArea):
         if meter_end > self.meter_max:
             self.meter_max = meter_end
         self.meter_changed.emit(self.meter_min, self.meter_max)
-
 
         match kwargs.get("datatype"):
             case "Spectral Images":
@@ -148,7 +151,13 @@ class Dashboard(QScrollArea):
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        print(self.viewport.height())
         resolution = METER_RES_LEVELS[self.zoom_level]
-        depth = (self.height() - 60) / resolution
-        self.meter_max = depth
-        self.meter_changed.emit(self.meter_min, self.meter_max)
+        meter_height = self.viewport.height()
+        if meter_height == 0:
+            depth = self.height() - 60
+        depth = round((meter_height) / (resolution * 10)) * 10
+        # print(depth)
+        if depth > self.meter_max:
+            self.meter_max = depth
+            self.meter_changed.emit(self.meter_min, self.meter_max)

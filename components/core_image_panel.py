@@ -23,12 +23,13 @@ class CoreImagePanel(DataPanel):
         self.width = 0
         self.image_resolution = resolution
 
-        image_frame = QWidget(self)
-        self.image_frame_layout = QVBoxLayout(image_frame)
+        self.image_frame = QWidget(self)
+        self.image_frame_layout = QVBoxLayout(self.image_frame)
         # tooltip displays min name when hovering mouse over widget
-        image_frame.setToolTip(f"{self.dataset} {self.dataname}")
+        self.image_frame.setToolTip(f"{self.dataset} {self.dataname}")
 
-        self.layout.addWidget(image_frame)
+        self.layout.addWidget(self.image_frame)
+        self.layout.addStretch()
 
         self._load_core_images()
 
@@ -52,19 +53,20 @@ class CoreImagePanel(DataPanel):
 
         for index, path in enumerate(image_paths):
             pixmap = QPixmap(path)
-            meter_depth = self.meter[index][1] - self.meter[index][0]
-            pixel_depth = round(meter_depth * self.resolution)
-            pixmap = pixmap.scaledToHeight(pixel_depth)
             if pixmap.width() > self.width:
-                self.width = pixmap.width()
+                new_width = pixmap.width()
             image = QLabel()
             image.setScaledContents(True)
             image.setPixmap(pixmap)
             self.insert_tile(image)
-            # self.image_frame_layout.addWidget(image, index, 1)
 
         self.image_frame_layout.setSpacing(0)
         self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
+
+        frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
+        frame_width = new_width*(index+1)/frame_height
+        self.image_frame.setFixedSize(frame_width, frame_height)
+        self.width = new_width
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.image_frame_layout.count() == 0:
@@ -77,22 +79,9 @@ class CoreImagePanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        zoom_ratio = resolution/self.resolution
+        new_height = np.floor(self.image_frame.height() * zoom_ratio)
+        new_width = np.floor(self.image_frame.width() * zoom_ratio)
+        self.image_frame.setFixedSize(new_width, new_height)
+        self.width = new_width
         self.resolution = resolution
-        if (
-            resolution / self.image_resolution < 3
-            and resolution / self.image_resolution > 1 / 3
-        ):
-            for i in reversed(range(self.image_frame_layout.count() - 1)):
-                meter_depth = self.meter[i][1] - self.meter[i][0]
-                pixel_depth = round(meter_depth * self.resolution)
-                widget = self.image_frame_layout.itemAt(i).widget()
-                pixmap = widget.pixmap()
-                widget.setPixmap(pixmap.scaledToHeight(pixel_depth))
-        else:
-            self.image_resolution = self.resolution
-            for i in reversed(range(self.image_frame_layout.count() - 1)):
-                try:
-                    self.image_frame_layout.itemAt(i).widget().deleteLater()
-                except AttributeError:
-                    continue
-            self._load_core_images()
