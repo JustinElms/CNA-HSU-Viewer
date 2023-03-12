@@ -22,6 +22,7 @@ class CoreImagePanel(DataPanel):
 
         self.width = 0
         self.image_resolution = resolution
+        self.depth = kwargs.get("meter_end")
 
         self.image_frame = QWidget(self)
         self.image_frame_layout = QVBoxLayout(self.image_frame)

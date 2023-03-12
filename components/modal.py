@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -8,6 +9,8 @@ from PySide6.QtWidgets import (
 
 
 class Modal(QWidget):
+    modal_closed = Signal()
+
     def __init__(self, parent: QWidget = None, text: str = None) -> None:
         super().__init__(parent=parent)
 
@@ -52,3 +55,4 @@ class Modal(QWidget):
         self.background.deleteLater()
         self.content.deleteLater()
         self.deleteLater()
+        self.modal_closed.emit()

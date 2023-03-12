@@ -1,4 +1,5 @@
-from PySide6.QtCore import Qt, Signal
+import numpy as np
+from PySide6.QtCore import Qt, Signal, QEvent
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QWidget,
@@ -34,7 +35,7 @@ METER_RES_LEVELS = {
 
 class Dashboard(QScrollArea):
     zoom_changed = Signal(int)
-    meter_changed = Signal(float, float)
+    meter_changed = Signal(float, int)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -77,11 +78,11 @@ class Dashboard(QScrollArea):
 
         resolution = METER_RES_LEVELS[self.zoom_level]
 
-        self.meter_min = 0
         self.meter_max = 0
+        self.meter_height = 669
 
         self.meter = Meter(
-            data_content, resolution, self.meter_min, self.meter_max
+            data_content, resolution, self.meter_height, self.meter_max
         )
         self.meter.setFixedWidth(60)
         self.zoom_changed.connect(self.meter.zoom_changed)
@@ -97,7 +98,6 @@ class Dashboard(QScrollArea):
         data_content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         self.viewport = data_content_scroll.viewport()
-        # self.viewport.resizeEvent.connect(self.test())
 
         layout.addWidget(header_content)
         layout.addWidget(data_content_scroll)
@@ -107,11 +107,11 @@ class Dashboard(QScrollArea):
         self.setStyleSheet("background-color: rgb(0,0,0)")
 
     def add_data_panel(self, kwargs: dict) -> None:
-
         meter_end = kwargs.get("meter_end")
         if meter_end > self.meter_max:
             self.meter_max = meter_end
-        self.meter_changed.emit(self.meter_min, self.meter_max)
+        meter_height = self.viewport.height()
+        self.meter_changed.emit(self.meter_max, meter_height)
 
         match kwargs.get("datatype"):
             case "Spectral Images":
@@ -140,24 +140,31 @@ class Dashboard(QScrollArea):
         self.header_container.insert_panel(header)
         self.data_container.insert_panel(panel)
 
-    def zoom_in(self):
+    def zoom_in(self) -> None:
         if self.zoom_level < 9:
             self.zoom_level += 1
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
-    def zoom_out(self):
+    def zoom_out(self) -> None:
         if self.zoom_level > 0:
             self.zoom_level -= 1
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        print(self.viewport.height())
-        resolution = METER_RES_LEVELS[self.zoom_level]
         meter_height = self.viewport.height()
-        if meter_height == 0:
-            depth = self.height() - 60
-        depth = round((meter_height) / (resolution * 10)) * 10
-        # print(depth)
-        if depth > self.meter_max:
-            self.meter_max = depth
-            self.meter_changed.emit(self.meter_min, self.meter_max)
+        max_depth = self._max_panel_depth()
+        self.meter_changed.emit(max_depth, meter_height)
+        # if meter_height == 0:
+        #     depth = self.height() - 60
+        # depth = round((meter_height) / (resolution * 10)) * 10
+        # if depth > self.meter_max:
+        #     self.meter_max = depth
+        #     self.meter_changed.emit(max_depth, meter_height)
+
+    def _max_panel_depth(self) -> float:
+        depths = []
+        for i in range(self.data_container.layout.count() - 1):
+            depths.append(self.data_container.layout.itemAt(i).widget().depth)
+        if not depths:
+            return 0
+        return np.max(depths)

@@ -20,6 +20,7 @@ class SpectralPlotPanel(DataPanel):
         self.width = 120
         self.setFixedWidth(120)
         self.image_resolution = resolution
+        self.depth = kwargs.get("meter_end")
 
         self.meta_data = self.config.data(
             self.dataset, self.datatype, self.datasubtype, self.dataname
