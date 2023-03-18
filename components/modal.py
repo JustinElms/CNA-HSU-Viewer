@@ -1,7 +1,16 @@
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class Modal(QWidget):
+    modal_closed = Signal()
+
     def __init__(self, parent: QWidget = None, text: str = None) -> None:
         super().__init__(parent=parent)
 
@@ -11,11 +20,10 @@ class Modal(QWidget):
 
         self.content = QWidget(self.background)
         self.content.setStyleSheet("background-color: rgb(10,15,20)")
-        self.content.setMaximumWidth(parent.width() * 0.7)
-        self.content.setMaximumHeight(parent.width() * 0.7)
+        self.content.setMaximumWidth(parent.width() - 100)
+        self.content.setMaximumHeight(parent.height() - 100)
 
         button_bar = QWidget(self.content)
-        button_bar.setMinimumWidth(self.content.width())
         button_bar.setMaximumHeight(40)
         button_bar.setStyleSheet("background-Color: rgb(51,51,51)")
 
@@ -47,3 +55,4 @@ class Modal(QWidget):
         self.background.deleteLater()
         self.content.deleteLater()
         self.deleteLater()
+        self.modal_closed.emit()

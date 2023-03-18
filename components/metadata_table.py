@@ -8,10 +8,14 @@ class MetadataTable(QTableWidget):
         self.setColumnCount(2)
 
         self.horizontalHeader().setStretchLastSection(True)
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents
+        )
         self.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.horizontalHeader().hide()
-        self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents
+        )
         self.verticalHeader().hide()
 
     def add_items(self, items: dict) -> None:

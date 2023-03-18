@@ -2,10 +2,9 @@ import os
 from pathlib import Path
 
 import matplotlib
-import numpy as np
-from PySide6.QtGui import QIcon, QScreen
+from PySide6.QtGui import QIcon, QScreen, QResizeEvent
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QApplication
-from PySide6. QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Signal
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
@@ -17,14 +16,12 @@ except ImportError:
     pass
 
 from components.dashboard import Dashboard
+
 # from components.data_widget import DataWidget
 from components.dataset_selector import DatasetSelector
 from components.drawer import Drawer
-from components.overlay_view import *
-from plotters.drawing import *
-from static.resources import *
 
-matplotlib.use("tkagg")
+matplotlib.use("QtAgg")
 
 HSU_STYLES = """
     QWidget{
@@ -61,26 +58,13 @@ HSU_STYLES = """
     }
 """
 
-DEFAULT_COLORS = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
-]
-
 
 class HSUViewer(QMainWindow):
     """
     mainWindow is the main class of the application.
-    main window consists of an options drawer, down-hole meter, and data area (dashboard)
-    two overlays are used to display data headers and a depth marker on top of the data
-    area
+    main window consists of an options drawer, down-hole meter, and data area
+    (dashboard) two overlays are used to display data headers and a depth
+    marker on top of the data area.
     """
 
     # Signal for when a minerals color is changed
@@ -91,13 +75,14 @@ class HSUViewer(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         """
-        initializes widget sylesheets, image sizes, and lists of minerals and images.
-        calls self.initUI() to create widgets
+        initializes widget sylesheets, image sizes, and lists of minerals and
+        images. Calls self.initUI() to create widgets
         """
 
         self.setStyleSheet(HSU_STYLES)
 
-        self.rootDir = os.getcwd()  # save the apps root directory for future reference
+        # save the apps root directory for future reference
+        self.rootDir = os.getcwd()
         screenGeometry = QScreen.availableGeometry(
             QApplication.primaryScreen()
         )  # gets screen resolution
@@ -108,14 +93,7 @@ class HSUViewer(QMainWindow):
         self.dataWidgetWidth = (
             []
         )  # initialize variable, gets corrected when data is loaded
-        self.imDict = []
 
-        # intialize lists for data, mineral names, and images
-        self.minMeter = []
-
-        # default colors for minerals in plots and overlay
-        self.defaultColors = DEFAULT_COLORS
-        self.plotColors = self.defaultColors.copy()
         self.setWindowIcon(QIcon(":/Icon.ico"))
 
         # set minimum size of app
@@ -123,6 +101,9 @@ class HSUViewer(QMainWindow):
 
         # initialize app widgets
         self.initUI()
+
+        # track which overlays/modals are open
+        self.dataset_selector_open = False
 
         # display app
         self.show()
@@ -143,23 +124,36 @@ class HSUViewer(QMainWindow):
         mainLayout.setContentsMargins(0, 0, 0, 0)
 
         drawer = Drawer(self.main)
+
         self.dashboard = Dashboard(self.main)
+        drawer.zoom_in_button.clicked.connect(lambda: self.dashboard.zoom_in())
+        drawer.zoom_out_button.clicked.connect(
+            lambda: self.dashboard.zoom_out()
+        )
 
         drawer.add_dataset_button.clicked.connect(self._open_dataset_selector)
 
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        if self.dataset_selector_open:
+            self.dataset_selector.resize(self.width(), self.height())
 
     def _open_dataset_selector(self) -> None:
 
-        data_selector = DatasetSelector(
+        self.dataset_selector_open = True
+
+        self.dataset_selector = DatasetSelector(
             self, config_path=Path.cwd().joinpath("hsu_datasets.cfg")
         )
-        data_selector.data_selected.connect(self._add_data)
-        data_selector.show()
+        self.dataset_selector.data_selected.connect(self._add_data)
+        self.dataset_selector.modal_closed.connect(self._close_dataset_selector)
+        self.dataset_selector.show()
 
-    def _add_data(self, dataset, datatype, subtype, data) -> None:
-        self.dashboard.data_container.add_data_panel(
-            dataset, datatype, subtype, data
-        )
+    def _close_dataset_selector(self) -> None:
+        self.dataset_selector = None
+        self.dataset_selector_open = False
+
+    def _add_data(self, kwargs) -> None:
+        self.dashboard.add_data_panel(kwargs)
