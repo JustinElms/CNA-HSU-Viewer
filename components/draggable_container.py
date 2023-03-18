@@ -1,3 +1,4 @@
+import numpy as np
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, Signal, Slot
 
@@ -53,3 +54,11 @@ class DraggableContainer(QWidget):
     def insert_dragged_widget(self, start_index, end_index):
         widget = self.layout.itemAt(start_index).widget()
         self.layout.insertWidget(end_index, widget)
+
+    def max_panel_depth(self) -> int:
+        depths = []
+        for i in range(self.layout.count() - 1):
+            depths.append(self.layout.itemAt(i).widget().depth)
+        if not depths:
+            return 0
+        return np.max(depths)

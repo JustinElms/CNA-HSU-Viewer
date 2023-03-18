@@ -1,5 +1,4 @@
-import numpy as np
-from PySide6.QtCore import Qt, Signal, QEvent
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QWidget,
@@ -77,12 +76,10 @@ class Dashboard(QScrollArea):
         )
 
         resolution = METER_RES_LEVELS[self.zoom_level]
-
-        self.meter_max = 0
         self.meter_height = 669
 
         self.meter = Meter(
-            data_content, resolution, self.meter_height, self.meter_max
+            data_content, resolution, self.meter_height, 0
         )
         self.meter.setFixedWidth(60)
         self.zoom_changed.connect(self.meter.zoom_changed)
@@ -108,10 +105,9 @@ class Dashboard(QScrollArea):
 
     def add_data_panel(self, kwargs: dict) -> None:
         meter_end = kwargs.get("meter_end")
-        if meter_end > self.meter_max:
-            self.meter_max = meter_end
-        meter_height = self.viewport.height()
-        self.meter_changed.emit(self.meter_max, meter_height)
+        if meter_end > self.data_container.max_panel_depth():
+            meter_height = self.viewport.height()
+            self.meter_changed.emit(meter_end, meter_height)
 
         match kwargs.get("datatype"):
             case "Spectral Images":
@@ -152,19 +148,5 @@ class Dashboard(QScrollArea):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         meter_height = self.viewport.height()
-        max_depth = self._max_panel_depth()
+        max_depth = self.data_container.max_panel_depth()
         self.meter_changed.emit(max_depth, meter_height)
-        # if meter_height == 0:
-        #     depth = self.height() - 60
-        # depth = round((meter_height) / (resolution * 10)) * 10
-        # if depth > self.meter_max:
-        #     self.meter_max = depth
-        #     self.meter_changed.emit(max_depth, meter_height)
-
-    def _max_panel_depth(self) -> float:
-        depths = []
-        for i in range(self.data_container.layout.count() - 1):
-            depths.append(self.data_container.layout.itemAt(i).widget().depth)
-        if not depths:
-            return 0
-        return np.max(depths)

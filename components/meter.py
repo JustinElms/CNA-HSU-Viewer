@@ -24,8 +24,9 @@ class Meter(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
-        if self.height > 0 or self.depth > 0:
-            self._plot()
+        # if self.height > 0 or self.depth > 0:
+        #     # self._clear_meter()
+        #     self._plot()
 
     def _plot(self) -> None:
         self._clear_meter()
@@ -40,6 +41,7 @@ class Meter(QWidget):
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.resolution = resolution
+        # self._clear_meter()
         self._plot()
 
     @Slot(float, float)
@@ -48,6 +50,7 @@ class Meter(QWidget):
             return
         self.height = new_height
         self.depth = new_max
+        # self._clear_meter()
         self._plot()
 
     def insert_tile(self, tile: QLabel) -> None:
@@ -58,9 +61,9 @@ class Meter(QWidget):
             self.layout.insertWidget(self.layout.count() - 1, tile)
 
     def _clear_meter(self):
-        print("clearing meter")
         for i in reversed(range(self.layout.count() - 1)):
-            self.layout.itemAt(i).widget().deleteLater()
+            tile = self.layout.itemAt(i).widget()
+            tile.deleteLater()
 
     def _draw_meter_tiles(self) -> list:
         """
@@ -73,7 +76,7 @@ class Meter(QWidget):
 
         if self.height > total_height:
             total_height = self.height
-        
+
         total_height = np.floor(total_height / 25) * 25
         max_tick = total_height / self.resolution - 1
 
