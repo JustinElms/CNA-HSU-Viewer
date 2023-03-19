@@ -24,23 +24,20 @@ class Meter(QWidget):
         self.layout.addStretch()
         self.setLayout(self.layout)
 
-        if self.height > 0 or self.depth > 0:
-            self._plot()
-
-    def _plot(self) -> None:
+    def add_meter_tiles(self) -> None:
         self._clear_meter()
 
-        tiles = self._draw_meter_tiles()
+        tile_pixmaps = self._draw_meter_pixmaps()
 
-        for tile in tiles:
-            label = QLabel(self)
-            label.setPixmap(tile)
-            self.insert_tile(label)
+        for pixmap in tile_pixmaps:
+            tile = QLabel(self)
+            tile.setPixmap(pixmap)
+            self.insert_tile(tile)
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.resolution = resolution
-        self._plot()
+        self.add_meter_tiles()
 
     @Slot(float, float)
     def update_size(self, new_max: int | float, new_height: int) -> None:
@@ -48,7 +45,7 @@ class Meter(QWidget):
             return
         self.height = new_height
         self.depth = new_max
-        self._plot()
+        self.add_meter_tiles()
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.layout.count() == 0:
@@ -59,15 +56,10 @@ class Meter(QWidget):
 
     def _clear_meter(self):
         for i in reversed(range(self.layout.count() - 1)):
-            tile = self.layout.itemAt(i).widget()
-            tile.deleteLater()
+            self.layout.itemAt(i).widget().setVisible(False)
+            self.layout.itemAt(i).widget().deleteLater()
 
-    def _draw_meter_tiles(self) -> list:
-        """
-        draws pixmaps for down-hole meter. Maximum pixmap size is 32767 px so
-        multiple pixmaps may be needed depending on depth of drill hole and
-        image sizes.
-        """
+    def _draw_meter_pixmaps(self) -> list:
         tile_height = 500  # height of tile in pixels
         total_height = self.depth * self.resolution
 
@@ -87,7 +79,7 @@ class Meter(QWidget):
         tick_pos = [int(value * self.resolution) for value in tick_values]
         ticks = dict(zip(tick_pos, tick_values))
 
-        tiles = []
+        pixmaps = []
         for n in range(n_tiles):
             if stub_height and n == n_tiles - 1:
                 pm_height = stub_height
@@ -115,6 +107,6 @@ class Meter(QWidget):
                     QPoint(2, tick_pos + 17), "{:.1f}".format(tick[1]) + " m"
                 )
 
-            tiles.append(pixmap)
+            pixmaps.append(pixmap)
 
-        return tiles
+        return pixmaps

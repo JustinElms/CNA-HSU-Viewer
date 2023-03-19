@@ -51,9 +51,11 @@ class CoreImagePanel(DataPanel):
 
         image_dir = Path(data.get("path"))
         image_paths = os_sorted(image_dir.glob("*.png"))
+        total_image_height = 0
 
-        for index, path in enumerate(image_paths):
+        for path in image_paths:
             pixmap = QPixmap(path)
+            total_image_height = total_image_height + pixmap.height()
             if pixmap.width() > self.width:
                 new_width = pixmap.width()
             image = QLabel()
@@ -65,7 +67,7 @@ class CoreImagePanel(DataPanel):
         self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
 
         frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
-        frame_width = new_width*(index+1)/frame_height
+        frame_width = new_width*frame_height/total_image_height
         self.image_frame.setFixedSize(frame_width, frame_height)
         self.width = new_width
 

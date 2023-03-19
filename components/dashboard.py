@@ -46,9 +46,7 @@ class Dashboard(QScrollArea):
         header_content = QWidget()
         header_content.setFixedHeight(60)
 
-        header_spacer = QWidget()
-        header_spacer.setFixedWidth(60)
-        self.header_container = DraggableContainer(self)
+        self.header_container = DraggableContainer(self, header=True)
 
         header_scroll = QScrollArea(self)
         header_scroll.setWidget(self.header_container)
@@ -60,7 +58,6 @@ class Dashboard(QScrollArea):
         header_content_layout = QHBoxLayout(header_content)
         header_content_layout.setSpacing(0)
         header_content_layout.setContentsMargins(0, 0, 0, 0)
-        header_content_layout.addWidget(header_spacer)
         header_content_layout.addWidget(header_scroll)
 
         # create area to display data
@@ -76,11 +73,9 @@ class Dashboard(QScrollArea):
         )
 
         resolution = METER_RES_LEVELS[self.zoom_level]
-        self.meter_height = 669
+        self.meter_height = 0
 
-        self.meter = Meter(
-            data_content, resolution, self.meter_height, 0
-        )
+        self.meter = Meter(data_content, resolution, self.meter_height, 0)
         self.meter.setFixedWidth(60)
         self.zoom_changed.connect(self.meter.zoom_changed)
         self.meter_changed.connect(self.meter.update_size)
@@ -93,6 +88,10 @@ class Dashboard(QScrollArea):
         data_content_scroll.setWidgetResizable(True)
         data_content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         data_content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
+        data_content_scroll.horizontalScrollBar().valueChanged.connect(
+            header_scroll.horizontalScrollBar().setValue
+        )
 
         self.viewport = data_content_scroll.viewport()
 
@@ -147,6 +146,8 @@ class Dashboard(QScrollArea):
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        meter_height = self.viewport.height()
+        self.meter_height = self.viewport.height()
+        if self.meter_height < 669:
+            self.meter_height = 669
         max_depth = self.data_container.max_panel_depth()
-        self.meter_changed.emit(max_depth, meter_height)
+        self.meter_changed.emit(max_depth, self.meter_height)
