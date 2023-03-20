@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 from components.filter_list import FilterList
 from components.modal import Modal
 from components.metadata_table import MetadataTable
+from data.dataset import Dataset
 from hsu_viewer.hsu_config import HSUConfig
 
 
@@ -33,7 +34,8 @@ class DatasetSelector(Modal):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.dataset_config = HSUConfig(config_path)
+        self.hsu_config = HSUConfig(config_path)
+        self.dataset = None
 
         self.selected_dataset = None
         self.selected_datatype = None
@@ -83,7 +85,7 @@ class DatasetSelector(Modal):
             self, self._dataname_changed, multi_select=True
         )
 
-        self.dataset_list.set_items(self.dataset_config.datasets())
+        self.dataset_list.set_items(self.hsu_config.datasets())
 
         self.dataset_list.select(0)
         self.datatypes_list.select([0, 0])
@@ -105,9 +107,11 @@ class DatasetSelector(Modal):
         self.content.setMaximumHeight(height - 100)
 
     def _dataset_changed(self, selected: str) -> None:
-        self.selected_dataset = selected
+        # self.selected_dataset = selected
+        path = self.hsu_config.dataset_path(selected)
+        self.dataset = Dataset(path)
         self.dataset_label.setText(self.selected_dataset)
-        datatypes = self.dataset_config.data_types(selected)
+        datatypes = self.dataset.data_types()
         self.datatypes_list.clear_list()
         self.datatypes_list.set_items(datatypes)
         self.datatypes_list.select([0, 0])
@@ -117,9 +121,7 @@ class DatasetSelector(Modal):
         self.selected_subtype = selected
         self.selected_data = None
         self._set_options_label()
-        data = self.dataset_config.data_options(
-            self.selected_dataset, group, selected
-        )
+        data = self.dataset.data_options(group, selected)
         self.data_list.clear_list()
         self.data_list.set_items(data)
         self.data_list.select(0)
@@ -133,9 +135,9 @@ class DatasetSelector(Modal):
         dataset_path = QFileDialog.getExistingDirectory(
             self, "Select Main Directory"
         )
-        self.dataset_config.add_dataset(dataset_path)
+        self.hsu_config.add_dataset(dataset_path)
         self.dataset_list.clear_list()
-        self.dataset_list.set_items(self.dataset_config.datasets())
+        self.dataset_list.set_items(self.hsu_config.datasets())
 
     def _set_options_label(self) -> None:
         self.options_label.setText(
@@ -151,7 +153,7 @@ class DatasetSelector(Modal):
             and self.selected_subtype
             and self.selected_dataname
         ):
-            meta_data = self.dataset_config.data(
+            meta_data = self.dataset.data(
                 self.selected_dataset,
                 self.selected_datatype,
                 self.selected_subtype,
@@ -164,7 +166,7 @@ class DatasetSelector(Modal):
         super()._close()
 
     def _add_data(self) -> None:
-        meta_data = self.dataset_config.dataset(self.selected_dataset)
+        meta_data = self.dataset.config
         args = {
             "dataset": self.selected_dataset,
             "datatype": self.selected_datatype,
