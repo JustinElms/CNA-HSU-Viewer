@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from hsu_viewer.dataset_config import DatasetConfig
+from hsu_viewer.hsu_config import HSUConfig
 
 
 class DataPanel(QWidget):

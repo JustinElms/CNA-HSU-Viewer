@@ -20,6 +20,14 @@ DATA_COLUMNS = [
     "position_",
 ]
 
+INDEX_COLUMNS = {
+    "filename": str,
+    "box_number": int,
+    "row_number": int,
+    "meter_from": float,
+    "meter_to": float,
+}
+
 SKIP_COLUMNS = [
     "filename",
     "path",
@@ -37,36 +45,29 @@ SKIP_COLUMNS = [
 ]
 
 
-class DatasetConfig:
+class HSUConfig:
     def __init__(self, config_path: Path | str = None) -> None:
 
         config_path = (
             config_path if isinstance(config_path, Path) else Path(config_path)
         )
-        self._config_path: Path = config_path
-        self._config: dict = self.__get_dataset_config()
-        self._index_columns = {
-            "filename": str,
-            "box_number": int,
-            "row_number": int,
-            "meter_from": float,
-            "meter_to": float,
-        }
+        self.hsu_config_path: Path = config_path
+        self.hsu_config: dict = self.__get_hsu_config()
 
-    def __get_dataset_config(self) -> dict:
+
+    def __get_hsu_config(self) -> dict:
         cwd = Path(__file__).parent
 
         try:
-            with open(cwd.joinpath(self._config_path), "r") as f:
+            with open(cwd.joinpath(self.hsu_config_path), "r") as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
 
     def add_dataset(self, dataset_path: str) -> None:
-
-        dataset = {}
         dataset_path = Path(dataset_path)
         dataset_name = dataset_path.name
+        config_path = dataset_path.joinpath(f"{dataset_name}.cfg")
 
         spec_images = self.__get_spec_image_data(dataset_path.joinpath("Core"))
         core_images = self.__get_core_image_data(
@@ -77,37 +78,35 @@ class DatasetConfig:
         if len(csv_files) > 0:
             csv_data = self.__parse_csv_data(csv_files[0])
 
-        dataset[dataset_name] = {
+        with open(config_path, "w") as f:
+            json.dump({
             "path": dataset_path.as_posix(),
             "csv_path": csv_files[0].as_posix(),
             "Spectral Images": spec_images,
             "Corebox Images": core_images,
             **csv_data,
-        }
+        }, f)
+            
+        self.hsu_config[dataset_name] = {"path": config_path.as_posix()}
 
-        if self._config:
-            self._config.update(dataset)
-        else:
-            self._config = dataset
-
-        with open(self._config_path, "w") as f:
-            json.dump(self._config, f)
+        with open(self.hsu_config_path, "w") as f:
+            json.dump(self.hsu_config, f)
 
     def dataset(self, dataset: str) -> dict:
-        return self._config[dataset]
+        return self.hsu_config[dataset]
 
     def datasets(self) -> list:
-        if self._config:
-            return list(self._config.keys())
+        if self.hsu_config:
+            return list(self.hsu_config.keys())
         else:
             return []
 
     def data_types(self, dataset: str | None = None) -> dict:
         if dataset:
-            data_types = list(self._config[dataset].keys())
+            data_types = list(self.config[dataset].keys())
             data_types = [dt for dt in data_types if dt not in SKIP_COLUMNS]
             return {
-                dt: list(self._config[dataset][dt].keys()) for dt in data_types
+                dt: list(self.config[dataset][dt].keys()) for dt in data_types
             }
         else:
             return {}
@@ -119,7 +118,7 @@ class DatasetConfig:
         datatype: str | None = None,
     ) -> list:
         if dataset and product_group and datatype:
-            options = list(self._config[dataset][product_group][datatype])
+            options = list(self.config[dataset][product_group][datatype])
         return options
 
     def data(
@@ -129,7 +128,7 @@ class DatasetConfig:
         datatype: str | None = None,
         selection: str | None = None,
     ):
-        return self._config[dataset][product_group][datatype][selection]
+        return self.config[dataset][product_group][datatype][selection]
 
     def __get_spec_image_data(self, dataset_path: Path) -> list:
 
@@ -176,7 +175,7 @@ class DatasetConfig:
         indexers = {
             col: idx
             for idx, col in enumerate(columns)
-            if col in list(self._index_columns.keys())
+            if col in list(INDEX_COLUMNS.keys())
         }
 
         meter_from_cols = (
@@ -251,9 +250,9 @@ class DatasetConfig:
 
     def meter(self, dataset: str):
 
-        meter_from = self._config[dataset]["meter_from"]
-        meter_to = self._config[dataset]["meter_to"]
-        csv_path = self._config[dataset]["csv_path"]
+        meter_from = self.config[dataset]["meter_from"]
+        meter_to = self.config[dataset]["meter_to"]
+        csv_path = self.config[dataset]["csv_path"]
 
         meter_data = np.genfromtxt(
             csv_path,
@@ -267,10 +266,10 @@ class DatasetConfig:
         return meter_data
 
     def get_row_meter(self, dataset: str):
-        meter_from_col = self._config[dataset].get("meter_from")
-        meter_to_col = self._config[dataset].get("meter_to")
+        meter_from_col = self.config[dataset].get("meter_from")
+        meter_to_col = self.config[dataset].get("meter_to")
 
-        csv_path = self._config[dataset]["csv_path"]
+        csv_path = self.config[dataset]["csv_path"]
 
         meter_data = np.genfromtxt(
             csv_path,
@@ -286,11 +285,11 @@ class DatasetConfig:
     def get_box_meter(self, dataset: str):
         meter_data = []
 
-        box_numbers_col = self._config[dataset].get("box_number")
-        meter_from_col = self._config[dataset].get("meter_from")
-        meter_to_col = self._config[dataset].get("meter_to")
+        box_numbers_col = self.config[dataset].get("box_number")
+        meter_from_col = self.config[dataset].get("meter_from")
+        meter_to_col = self.config[dataset].get("meter_to")
 
-        csv_path = self._config[dataset]["csv_path"]
+        csv_path = self.config[dataset]["csv_path"]
 
         [box_numbers, meter_from, meter_to] = np.genfromtxt(
             csv_path,

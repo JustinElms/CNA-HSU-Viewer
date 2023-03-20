@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QDrag, QPixmap
 
-from hsu_viewer.dataset_config import DatasetConfig
+from hsu_viewer.hsu_config import HSUConfig
 
 
 class DataHeader(QWidget):

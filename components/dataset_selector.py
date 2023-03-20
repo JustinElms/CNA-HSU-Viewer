@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 from components.filter_list import FilterList
 from components.modal import Modal
 from components.metadata_table import MetadataTable
-from hsu_viewer.dataset_config import DatasetConfig
+from hsu_viewer.hsu_config import HSUConfig
 
 
 class DatasetSelector(Modal):
@@ -33,7 +33,7 @@ class DatasetSelector(Modal):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.dataset_config = DatasetConfig(config_path)
+        self.dataset_config = HSUConfig(config_path)
 
         self.selected_dataset = None
         self.selected_datatype = None
