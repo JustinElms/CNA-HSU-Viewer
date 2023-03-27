@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -5,6 +7,7 @@ from matplotlib.ticker import NullFormatter
 from PySide6.QtCore import Slot
 
 from components.data_panel import DataPanel
+from data.dataset import Dataset
 
 """
 TODO
@@ -14,26 +17,30 @@ TODO
 
 
 class SpectralPlotPanel(DataPanel):
-    def __init__(self, parent=None, resolution: int = 0, **kwargs) -> None:
-        super().__init__(parent=parent, resolution=resolution, **kwargs)
+    def __init__(
+        self,
+        parent=None,
+        resolution: int = 0,
+        dataset: Dataset = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+        )
 
         self.width = 120
         self.setFixedWidth(120)
         self.image_resolution = resolution
-        self.depth = kwargs.get("meter_end")
+        self.depth = dataset.meter_end()
 
-        self.meta_data = self.config.data(
-            self.dataset, self.datatype, self.datasubtype, self.dataname
-        )
-
-        self.setToolTip(f"{self.dataset} {self.dataname}")
+        self.setToolTip(f"{self.dataset_name} {self.data_name}")
 
         self._load_spectral_data()
         self._plot_spectral_data()
 
     def _load_spectral_data(self) -> None:
 
-        csv_path = self.config.dataset(self.dataset).get("csv_path")
+        csv_path = Path(self.csv_data.get("path"))
 
         data = np.genfromtxt(
             csv_path,
@@ -42,9 +49,9 @@ class SpectralPlotPanel(DataPanel):
             comments=None,
             skip_header=5,
             usecols=[
-                self.meta_data.get("meter_from"),
-                self.meta_data.get("meter_to"),
-                self.meta_data.get("column"),
+                self.dataset_info.get("meter_from"),
+                self.dataset_info.get("meter_to"),
+                self.dataset_info.get("column"),
             ],
         )
 
@@ -83,8 +90,8 @@ class SpectralPlotPanel(DataPanel):
         # )
 
         try:
-            axis_min = float(self.meta_data.get("min_value"))
-            axis_max = float(self.meta_data.get("max_value"))
+            axis_min = float(self.dataset_info.get("min_value"))
+            axis_max = float(self.dataset_info.get("max_value"))
         except ValueError:
             if self.datasubtype == "Position":
                 [min, max] = self.dataname.split(" ")

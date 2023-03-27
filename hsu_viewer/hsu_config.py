@@ -69,22 +69,20 @@ class HSUConfig:
         dataset_config_path = dataset_path.joinpath(f"{dataset_name}.cfg")
 
         spec_images = self._get_spec_image_data(dataset_path.joinpath("Core"))
-        core_images = self._get_core_image_data(
-            dataset_path.joinpath("Photo")
-        )
+        core_images = self._get_core_image_data(dataset_path.joinpath("Photo"))
 
         csv_files = list(dataset_path.glob("*_DATA.csv"))
         if len(csv_files) > 0:
-            csv_data = self._parse_csv_data(csv_files[0])
+            spec_data, csv_data = self._parse_csv_data(csv_files[0])
 
         with open(dataset_config_path, "w") as f:
             json.dump(
                 {
                     "path": dataset_path.as_posix(),
-                    "csv_path": csv_files[0].as_posix(),
+                    "csv_data": {"path": csv_files[0].as_posix(), **csv_data},
                     "Spectral Images": spec_images,
+                    "Spectral Data": spec_data,
                     "Corebox Images": core_images,
-                    **csv_data,
                 },
                 f,
             )
@@ -142,7 +140,7 @@ class HSUConfig:
     def _parse_csv_data(self, csv_path: Path) -> list:
 
         csv_data_dict = {}
-        csv_data_dict["Spectral Data"] = {}
+        spectral_data = {}
         csv_data = np.genfromtxt(
             csv_path, delimiter=",", max_rows=5, dtype="str", comments=None
         )
@@ -214,11 +212,11 @@ class HSUConfig:
                 elif data_type == "position_":
                     data_type = "Position"
 
-                if csv_data_dict["Spectral Data"].get(data_type):
-                    csv_data_dict["Spectral Data"][data_type][name] = meta_data
+                if spectral_data.get(data_type):
+                    spectral_data[data_type][name] = meta_data
                 else:
-                    csv_data_dict["Spectral Data"][data_type] = {
+                    spectral_data[data_type] = {
                         name: meta_data
                     }
 
-        return csv_data_dict
+        return spectral_data, csv_data_dict

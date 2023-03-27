@@ -14,14 +14,9 @@ SKIP_COLUMNS = [
     "filename",
     "path",
     "csv_path",
+    "csv_data",
     "info_line_number",
     "Hole_ID",
-    "box_number",
-    "row_number",
-    "meter_from",
-    "meter_to",
-    "meter_start",
-    "meter_end",
     "position_raw",
     "None",
 ]
@@ -64,14 +59,30 @@ class Dataset:
         product_group: str | None = None,
         datatype: str | None = None,
         selection: str | None = None,
-    ):
+    ) -> dict:
         return self.config[product_group][datatype][selection]
+    
+    def path(
+        self,
+        product_group: str | None = None,
+        datatype: str | None = None,
+        selection: str | None = None,
+    ) -> dict:
+        if (product_group == "Spectral Data"):
+            return Path(self.config["csv_data"]["path"])
+        else:
+            return Path(self.config[product_group][datatype][selection]["path"])
 
-    def meter(self):
-
+    def meter_start(self) -> float:
+        return self.config["csv_data"]["meter_start"]
+    
+    def meter_end(self) -> float:
+        return self.config["csv_data"]["meter_end"]
+    
+    def meter(self) -> np.array:
         meter_from = self.config["meter_from"]
         meter_to = self.config["meter_to"]
-        csv_path = self.config["csv_path"]
+        csv_path = self.config["csv_data"]["path"]
 
         meter_data = np.genfromtxt(
             csv_path,
@@ -84,11 +95,11 @@ class Dataset:
 
         return meter_data
 
-    def get_row_meter(self):
-        meter_from_col = self.config.get("meter_from")
-        meter_to_col = self.config.get("meter_to")
+    def get_row_meter(self) -> np.array:
+        meter_from_col = self.config["csv_data"].get("meter_from")
+        meter_to_col = self.config["csv_data"].get("meter_to")
 
-        csv_path = self.config["csv_path"]
+        csv_path = self.config["csv_data"]["path"]
 
         meter_data = np.genfromtxt(
             csv_path,
@@ -101,14 +112,14 @@ class Dataset:
 
         return meter_data
 
-    def get_box_meter(self):
+    def get_box_meter(self) -> list:
         meter_data = []
 
-        box_numbers_col = self.config.get("box_number")
-        meter_from_col = self.config.get("meter_from")
-        meter_to_col = self.config.get("meter_to")
+        box_numbers_col = self.config["csv_data"].get("box_number")
+        meter_from_col = self.config["csv_data"].get("meter_from")
+        meter_to_col = self.config["csv_data"].get("meter_to")
 
-        csv_path = self.config["csv_path"]
+        csv_path = self.config["csv_data"]["path"]
 
         [box_numbers, meter_from, meter_to] = np.genfromtxt(
             csv_path,

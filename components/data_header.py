@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QLabel,
@@ -11,25 +9,23 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QDrag, QPixmap
 
-from hsu_viewer.hsu_config import HSUConfig
+from data.dataset import Dataset
 
 
 class DataHeader(QWidget):
     close_panel = Signal()
 
-    def __init__(self, parent=None, width: int = None, **kwargs) -> None:
+    def __init__(
+        self, parent=None, width: int = None, dataset: Dataset = None, **kwargs
+    ) -> None:
         super().__init__(parent=parent)
 
-        self.config = DatasetConfig(Path.cwd().joinpath("hsu_datasets.cfg"))
+        dataset_name = kwargs.get("dataset_name")
+        data_type = kwargs.get("data_type")
+        data_subtype = kwargs.get("data_subtype")
+        data_name = kwargs.get("data_name")
 
-        dataset = kwargs.get("dataset")
-        datatype = kwargs.get("datatype")
-        datasubtype = kwargs.get("datasubtype")
-        dataname = kwargs.get("dataname")
-
-        self.meta_data = self.config.data(
-            dataset, datatype, datasubtype, dataname
-        )
+        self.csv_data = dataset.config.get("csv_data")
 
         title_container = QWidget(self)
         title_container.setFixedHeight(20)
@@ -42,7 +38,7 @@ class DataHeader(QWidget):
 
         dataset_label = QLabel(title_container)
         dataset_label.setFixedHeight(20)
-        dataset_label.setText(dataset)
+        dataset_label.setText(dataset_name)
         dataset_label.setStyleSheet(
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
@@ -64,7 +60,7 @@ class DataHeader(QWidget):
 
         dataname_label = QLabel(self)
         dataname_label.setFixedHeight(20)
-        dataname_label.setText(dataname)
+        dataname_label.setText(data_name)
         dataname_label.setStyleSheet(
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
@@ -128,15 +124,15 @@ class DataHeader(QWidget):
     def resize_header(self, width: int) -> None:
         self.setFixedWidth(width)
 
-    def panel_closed(self):
+    def panel_closed(self) -> None:
         self.close_panel.emit()
         self.deleteLater()
 
     def axis_limits(self) -> list:
 
         try:
-            axis_min = self.meta_data.get("min_value")
-            axis_max = self.meta_data.get("max_value")
+            axis_min = self.csv_data.get("min_value")
+            axis_max = self.csv_data.get("max_value")
         except ValueError:
             if self.datasubtype == "Position":
                 [min, max] = self.dataname.split(" ")
