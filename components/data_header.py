@@ -58,6 +58,15 @@ class DataHeader(QWidget):
         title_container_layout.addStretch()
         title_container_layout.addWidget(self.close_button)
 
+        datatype_label = QLabel(title_container)
+        datatype_label.setFixedHeight(20)
+        datatype_label.setText(f"{data_type}: {data_subtype}")
+        datatype_label.setToolTip(f"{data_type}: {data_subtype}")
+        datatype_label.setStyleSheet(
+            "background-color: transparent; \
+                font: bold 10pt; border: transparent"
+        )
+
         dataname_label = QLabel(self)
         dataname_label.setFixedHeight(20)
         dataname_label.setText(data_name)
@@ -65,6 +74,7 @@ class DataHeader(QWidget):
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
+
 
         axis_limits = self.axis_limits()
         # area for axis limits
@@ -102,6 +112,7 @@ class DataHeader(QWidget):
         self.setLayout(self.layout)
 
         self.layout.addWidget(title_container)
+        self.layout.addWidget(datatype_label)
         self.layout.addWidget(dataname_label)
         self.layout.addWidget(axis_limits_container)
 

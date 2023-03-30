@@ -59,7 +59,8 @@ class SpectralPlotPanel(DataPanel):
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
-        self.meter = (data[:, 0] + data[:, 1]) / 2
+        self.bar_widths = data[:, 1] - data[:, 0]
+        self.bar_centers = (data[:, 0] + data[:, 1]) / 2
         self.meter_start = data[0, 0]
         self.meter_end = data[-1, 1]
         self.spectral_data = data[:, 2]
@@ -103,10 +104,7 @@ class SpectralPlotPanel(DataPanel):
 
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
-        plot.fill_betweenx(
-            self.meter, axis_min, self.spectral_data, facecolor="#ffffff"
-        )
-        # plot.set_yticks(meterVals)
+        plot.barh(self.bar_centers, self.spectral_data, self.bar_widths)
         plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
         plot.set_ylim(self.meter_end, self.meter_start)
         plot.set_xlim(axis_min, axis_max)
