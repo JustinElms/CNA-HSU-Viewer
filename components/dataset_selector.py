@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
 from components.filter_list import FilterList
 from components.modal import Modal
 from components.metadata_table import MetadataTable
-from hsu_viewer.dataset_config import DatasetConfig
+from data.dataset import Dataset
+from hsu_viewer.hsu_config import HSUConfig
 
 
 class DatasetSelector(Modal):
@@ -33,8 +34,9 @@ class DatasetSelector(Modal):
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.dataset_config = DatasetConfig(config_path)
+        self.hsu_config = HSUConfig(config_path)
 
+        self.dataset = None
         self.selected_dataset = None
         self.selected_datatype = None
         self.selected_subtype = None
@@ -61,18 +63,9 @@ class DatasetSelector(Modal):
         button_panel_layout.addWidget(close_button)
         button_panel_layout.addWidget(add_button)
 
-        self.dataset_label = QLabel(info_panel)
-        self.dataset_label.setFont(QFont("Arial", 18))
-        self.dataset_label.setWordWrap(True)
-        self.options_label = QLabel(info_panel)
-        self.options_label.setFont(QFont("Arial", 12))
-        self.options_label.setWordWrap(True)
-
         info_panel_layout = QVBoxLayout(info_panel)
         info_panel_layout.addWidget(add_dataset_button)
         info_panel_layout.addStretch()
-        info_panel_layout.addWidget(self.dataset_label)
-        info_panel_layout.addWidget(self.options_label)
         info_panel_layout.addWidget(self.meta_table)
         info_panel_layout.addStretch()
         info_panel_layout.addWidget(button_panel)
@@ -83,7 +76,7 @@ class DatasetSelector(Modal):
             self, self._dataname_changed, multi_select=True
         )
 
-        self.dataset_list.set_items(self.dataset_config.datasets())
+        self.dataset_list.set_items(self.hsu_config.datasets())
 
         self.dataset_list.select(0)
         self.datatypes_list.select([0, 0])
@@ -105,9 +98,10 @@ class DatasetSelector(Modal):
         self.content.setMaximumHeight(height - 100)
 
     def _dataset_changed(self, selected: str) -> None:
+        path = self.hsu_config.dataset_path(selected)
+        self.dataset = Dataset(path)
         self.selected_dataset = selected
-        self.dataset_label.setText(self.selected_dataset)
-        datatypes = self.dataset_config.data_types(selected)
+        datatypes = self.dataset.data_types()
         self.datatypes_list.clear_list()
         self.datatypes_list.set_items(datatypes)
         self.datatypes_list.select([0, 0])
@@ -116,62 +110,42 @@ class DatasetSelector(Modal):
         self.selected_datatype = group
         self.selected_subtype = selected
         self.selected_data = None
-        self._set_options_label()
-        data = self.dataset_config.data_options(
-            self.selected_dataset, group, selected
-        )
+        data = self.dataset.data_options(group, selected)
         self.data_list.clear_list()
         self.data_list.set_items(data)
         self.data_list.select(0)
 
     def _dataname_changed(self, selected: QListWidgetItem) -> None:
         self.selected_dataname = selected
-        self._set_options_label()
         self._update_table()
 
     def _add_dataset(self) -> None:
         dataset_path = QFileDialog.getExistingDirectory(
             self, "Select Main Directory"
         )
-        self.dataset_config.add_dataset(dataset_path)
+        self.hsu_config.add_dataset(dataset_path)
         self.dataset_list.clear_list()
-        self.dataset_list.set_items(self.dataset_config.datasets())
-
-    def _set_options_label(self) -> None:
-        self.options_label.setText(
-            f"{self.selected_datatype}/\
-                {self.selected_subtype}/\
-                    {self.selected_dataname}"
-        )
+        self.dataset_list.set_items(self.hsu_config.datasets())
 
     def _update_table(self) -> None:
-        if (
-            self.selected_dataset
-            and self.selected_datatype
-            and self.selected_subtype
-            and self.selected_dataname
-        ):
-            meta_data = self.dataset_config.data(
-                self.selected_dataset,
-                self.selected_datatype,
-                self.selected_subtype,
-                self.selected_dataname,
-            )
-
-            self.meta_table.add_items(meta_data)
+        self.meta_table.set_label(
+            self.selected_dataset,
+            self.selected_datatype,
+            self.selected_subtype,
+            self.selected_dataname,
+        )
+        self.meta_table.add_items(self.dataset.config)
 
     def _close(self) -> None:
         super()._close()
 
     def _add_data(self) -> None:
-        meta_data = self.dataset_config.dataset(self.selected_dataset)
         args = {
-            "dataset": self.selected_dataset,
-            "datatype": self.selected_datatype,
-            "datasubtype": self.selected_subtype,
-            "dataname": self.selected_dataname,
-            "meter_start": meta_data.get("meter_start"),
-            "meter_end": meta_data.get("meter_end"),
+            "config": self.dataset,
+            "dataset_name": self.selected_dataset,
+            "data_type": self.selected_datatype,
+            "data_subtype": self.selected_subtype,
+            "data_name": self.selected_dataname,
         }
         self.data_selected.emit(args)
         super()._close()

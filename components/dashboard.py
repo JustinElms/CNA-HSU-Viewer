@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
     QWidget,
@@ -102,32 +102,40 @@ class Dashboard(QScrollArea):
 
         self.setStyleSheet("background-color: rgb(0,0,0)")
 
-    def add_data_panel(self, kwargs: dict) -> None:
-        meter_end = kwargs.get("meter_end")
+    @Slot(dict)
+    def add_data_panel(self, dataset_args: dict) -> None:
+        dataset_config = dataset_args.get("config")
+        dataset_args.pop("config")
+        meter_end = dataset_config.meter_end()
         if meter_end > self.data_container.max_panel_depth():
             meter_height = self.viewport.height()
             self.meter_changed.emit(meter_end, meter_height)
 
-        match kwargs.get("datatype"):
+        match dataset_args.get("data_type"):
             case "Spectral Images":
                 panel = CoreImagePanel(
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
-                    **kwargs
+                    dataset_config,
+                    **dataset_args
                 )
             case "Corebox Images":
                 panel = CoreImagePanel(
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
-                    **kwargs
+                    dataset_config,
+                    **dataset_args
                 )
             case "Spectral Data":
                 panel = SpectralPlotPanel(
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
-                    **kwargs
+                    dataset_config,
+                    **dataset_args
                 )
-        header = DataHeader(self.header_container, panel.width, **kwargs)
+        header = DataHeader(
+            self.header_container, panel.width, dataset_config, **dataset_args
+        )
         self.zoom_changed.connect(panel.zoom_changed)
         panel.resize_panel.connect(header.resize_header)
         header.close_panel.connect(panel.close_panel)
