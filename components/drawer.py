@@ -18,9 +18,12 @@ class Drawer(QWidget):
         self.add_dataset_button = QPushButton("Add Data")
         self.add_dataset_button.setStyleSheet("background-color: green;")
 
+        self.composite_image_button = QPushButton("New Composite Image")
+
         content_panel_layout = QVBoxLayout(self.content_panel)
         content_panel_layout.setContentsMargins(5, 20, 5, 20)
         content_panel_layout.addWidget(self.add_dataset_button)
+        content_panel_layout.addWidget(self.composite_image_button)
         content_panel_layout.addStretch()
 
         self.button_panel = QWidget(self)

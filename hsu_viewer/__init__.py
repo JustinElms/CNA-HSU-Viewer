@@ -15,11 +15,11 @@ try:
 except ImportError:
     pass
 
+from components.composite_image_window import CompositeImageWindow
 from components.dashboard import Dashboard
-
-# from components.data_widget import DataWidget
 from components.dataset_selector import DatasetSelector
 from components.drawer import Drawer
+
 
 matplotlib.use("QtAgg")
 
@@ -104,6 +104,7 @@ class HSUViewer(QMainWindow):
 
         # track which overlays/modals are open
         self.dataset_selector_open = False
+        self.composite_image_open = False
 
         # display app
         self.show()
@@ -132,6 +133,7 @@ class HSUViewer(QMainWindow):
         )
 
         drawer.add_dataset_button.clicked.connect(self._open_dataset_selector)
+        drawer.composite_image_button.clicked.connect(self._new_comp_image)
 
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
@@ -151,9 +153,18 @@ class HSUViewer(QMainWindow):
         self.dataset_selector.modal_closed.connect(self._close_dataset_selector)
         self.dataset_selector.show()
 
+    def _new_comp_image(self) -> None:
+
+        self.composite_image_open = True
+
+        self.composite_image_window = CompositeImageWindow(self, config_path=Path.cwd().joinpath("hsu_datasets.cfg"))
+
+
     def _close_dataset_selector(self) -> None:
         self.dataset_selector = None
         self.dataset_selector_open = False
+        self.composite_image_open = False
+
 
     def _add_data(self, kwargs) -> None:
         self.dashboard.add_data_panel(kwargs)
