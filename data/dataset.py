@@ -24,7 +24,6 @@ SKIP_COLUMNS = [
 
 class Dataset:
     def __init__(self, config_path: Path | str = None) -> None:
-
         config_path = (
             config_path if isinstance(config_path, Path) else Path(config_path)
         )
@@ -61,24 +60,26 @@ class Dataset:
         selection: str | None = None,
     ) -> dict:
         return self.config[product_group][datatype][selection]
-    
+
     def path(
         self,
         product_group: str | None = None,
         datatype: str | None = None,
         selection: str | None = None,
     ) -> dict:
-        if (product_group == "Spectral Data"):
+        if product_group == "Spectral Data":
             return Path(self.config["csv_data"]["path"])
         else:
-            return Path(self.config[product_group][datatype][selection]["path"])
+            return Path(
+                self.config[product_group][datatype][selection]["path"]
+            )
 
     def meter_start(self) -> float:
         return self.config["csv_data"]["meter_start"]
-    
+
     def meter_end(self) -> float:
         return self.config["csv_data"]["meter_end"]
-    
+
     def meter(self) -> np.array:
         meter_from = self.config["meter_from"]
         meter_to = self.config["meter_to"]

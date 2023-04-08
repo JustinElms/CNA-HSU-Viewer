@@ -1,11 +1,9 @@
 from pathlib import Path
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
-    QLabel,
     QListWidgetItem,
     QPushButton,
     QVBoxLayout,

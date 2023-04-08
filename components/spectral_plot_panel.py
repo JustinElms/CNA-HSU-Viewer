@@ -28,8 +28,8 @@ class SpectralPlotPanel(DataPanel):
             parent=parent, resolution=resolution, dataset=dataset, **kwargs
         )
 
-        self.width = 120
-        self.setFixedWidth(120)
+        self.width = 180
+        self.setFixedWidth(self.width)
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
 
