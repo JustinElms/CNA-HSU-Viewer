@@ -147,8 +147,12 @@ class HSUViewer(QMainWindow):
         self.dataset_selector = DatasetSelector(
             self, config_path=Path.cwd().joinpath("hsu_datasets.cfg")
         )
-        self.dataset_selector.data_selected.connect(self.dashboard.add_data_panel)
-        self.dataset_selector.modal_closed.connect(self._close_dataset_selector)
+        self.dataset_selector.data_selected.connect(
+            self.dashboard.add_data_panel
+        )
+        self.dataset_selector.modal_closed.connect(
+            self._close_dataset_selector
+        )
         self.dataset_selector.show()
 
     def _close_dataset_selector(self) -> None:

@@ -72,9 +72,9 @@ class CoreImagePanel(DataPanel):
         self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
 
         frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
-        frame_width = new_width * frame_height / total_image_height
+        frame_width = int(new_width * frame_height / total_image_height)
         self.image_frame.setFixedSize(frame_width, frame_height)
-        self.width = new_width
+        self.width = frame_width
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.image_frame_layout.count() == 0:

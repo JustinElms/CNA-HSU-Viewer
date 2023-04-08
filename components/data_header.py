@@ -8,13 +8,14 @@ from PySide6.QtWidgets import (
     QMenu,
 )
 from PySide6.QtCore import Qt, QMimeData, QPoint
-from PySide6.QtGui import QDrag, QPixmap
+from PySide6.QtGui import QAction, QDrag, QPixmap
 
 from data.dataset import Dataset
 
 
 class DataHeader(QWidget):
     close_panel = Signal()
+    save_image = Signal()
 
     def __init__(
         self, parent=None, width: int = None, dataset: Dataset = None, **kwargs
@@ -56,8 +57,14 @@ class DataHeader(QWidget):
 
         self.context_menu = QMenu(self)
         self.context_menu.setFixedWidth(width - 40)
-        self.context_menu.addAction("Save Image")
-        self.context_menu.setStyleSheet("background-color: red;")
+        self.context_menu.setStyleSheet(
+            "background-color: rgba(100,100,100,150)"
+        )
+
+        save_action = QAction("Save panel to image", self)
+        save_action.triggered.connect(self.save_panel_image)
+
+        self.context_menu.addAction(save_action)
 
         self.close_button = QPushButton(title_container)
         self.close_button.setText("×")
@@ -134,7 +141,6 @@ class DataHeader(QWidget):
         self.setFixedSize(width, 60)
 
     def mouseMoveEvent(self, e) -> None:
-
         if e.buttons() == Qt.LeftButton:
             drag = QDrag(self)
             mime = QMimeData()
@@ -149,14 +155,13 @@ class DataHeader(QWidget):
     @Slot(int)
     def resize_header(self, width: int) -> None:
         self.setFixedWidth(width)
-        self.context_menu.setFixedWidth(width - 40)
+        self.context_menu.setFixedWidth(width)
 
     def panel_closed(self) -> None:
         self.close_panel.emit()
         self.deleteLater()
 
     def axis_limits(self) -> list:
-
         try:
             axis_min = self.csv_data.get("min_value")
             axis_max = self.csv_data.get("max_value")
@@ -173,5 +178,8 @@ class DataHeader(QWidget):
 
     def show_menu(self):
         self.context_menu.popup(
-            self.menu_button.mapToGlobal(QPoint(60 - self.width(), 20))
+            self.menu_button.mapToGlobal(QPoint(40 - self.width(), 20))
         )
+
+    def save_panel_image(self) -> None:
+        self.save_image.emit()

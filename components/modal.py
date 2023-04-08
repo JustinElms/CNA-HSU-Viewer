@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
 class Modal(QWidget):
     modal_closed = Signal()
 
-    def __init__(self, parent: QWidget = None, text: str = None) -> None:
+    def __init__(
+        self, parent: QWidget = None, text: str = None, size: str = "lg"
+    ) -> None:
         super().__init__(parent=parent)
 
         self.background = QWidget(parent)
@@ -20,8 +22,13 @@ class Modal(QWidget):
 
         self.content = QWidget(self.background)
         self.content.setStyleSheet("background-color: rgb(10,15,20)")
-        self.content.setMaximumWidth(parent.width() - 100)
-        self.content.setMaximumHeight(parent.height() - 100)
+
+        if size == "sm":
+            self.content.setMaximumHeight(200)
+            self.content.setMaximumWidth(600)
+        else:
+            self.content.setMaximumWidth(parent.width() - 100)
+            self.content.setMaximumHeight(parent.height() - 100)
 
         button_bar = QWidget(self.content)
         button_bar.setMaximumHeight(40)

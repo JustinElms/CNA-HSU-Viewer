@@ -1,5 +1,5 @@
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QResizeEvent
+from PySide6.QtCore import QPoint, QRect, Qt, Signal, Slot
+from PySide6.QtGui import QResizeEvent, QPixmap
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -11,6 +11,7 @@ from components.data_header import DataHeader
 from components.core_image_panel import CoreImagePanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
+from components.save_panel_window import SavePanelWindow
 from components.spectral_plot_panel import SpectralPlotPanel
 
 """
@@ -117,24 +118,42 @@ class Dashboard(QScrollArea):
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
                     dataset_config,
-                    **dataset_args
+                    **dataset_args,
                 )
             case "Corebox Images":
                 panel = CoreImagePanel(
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
                     dataset_config,
-                    **dataset_args
+                    **dataset_args,
                 )
             case "Spectral Data":
                 panel = SpectralPlotPanel(
                     self.data_container,
                     METER_RES_LEVELS[self.zoom_level],
                     dataset_config,
-                    **dataset_args
+                    **dataset_args,
                 )
+
         header = DataHeader(
             self.header_container, panel.width, dataset_config, **dataset_args
+        )
+
+        image_height = int(
+            (dataset_config.meter_end() - dataset_config.meter_start())
+            * METER_RES_LEVELS[self.zoom_level]
+        )
+        image_name = "_".join(dataset_args.values()) + ".png"
+        panel_image = panel.grab(
+            QRect(QPoint(0, 0), QPoint(panel.width, image_height))
+        )
+        meter_image = self.meter.grab(
+            QRect(QPoint(0, 0), QPoint(60, image_height))
+        )
+        header.save_image.connect(
+            lambda: self.save_panel_image(
+                panel_image, meter_image, image_name
+            )
         )
         self.zoom_changed.connect(panel.zoom_changed)
         panel.resize_panel.connect(header.resize_header)
@@ -159,3 +178,14 @@ class Dashboard(QScrollArea):
             self.meter_height = 669
         max_depth = self.data_container.max_panel_depth()
         self.meter_changed.emit(max_depth, self.meter_height)
+
+    def save_panel_image(
+        self,
+        panel_image: QPixmap,
+        meter_image: QPixmap,
+        image_name: str,
+    ) -> None:
+        save_panel_window = SavePanelWindow(
+            self.parent(), panel_image, meter_image, image_name
+        )
+        save_panel_window.show()
