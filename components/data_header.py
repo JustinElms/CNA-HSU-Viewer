@@ -5,8 +5,9 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QPushButton,
+    QMenu,
 )
-from PySide6.QtCore import Qt, QMimeData
+from PySide6.QtCore import Qt, QMimeData, QPoint
 from PySide6.QtGui import QDrag, QPixmap
 
 from data.dataset import Dataset
@@ -44,6 +45,20 @@ class DataHeader(QWidget):
                 font: bold 10pt; border: transparent"
         )
 
+        self.menu_button = QPushButton(title_container)
+        self.menu_button.setText("▼")
+        self.menu_button.clicked.connect(self.show_menu)
+        self.menu_button.setFixedSize(20, 20)
+        self.menu_button.setStyleSheet(
+            "background-color: transparent; \
+                font: bold 6pt; border: transparent"
+        )
+
+        self.context_menu = QMenu(self)
+        self.context_menu.setFixedWidth(width - 40)
+        self.context_menu.addAction("Save Image")
+        self.context_menu.setStyleSheet("background-color: red;")
+
         self.close_button = QPushButton(title_container)
         self.close_button.setText("×")
         self.close_button.setFixedSize(20, 20)
@@ -56,6 +71,7 @@ class DataHeader(QWidget):
         title_container_layout.addStretch()
         title_container_layout.addWidget(dataset_label)
         title_container_layout.addStretch()
+        title_container_layout.addWidget(self.menu_button)
         title_container_layout.addWidget(self.close_button)
 
         datatype_label = QLabel(title_container)
@@ -74,7 +90,6 @@ class DataHeader(QWidget):
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
-
 
         axis_limits = self.axis_limits()
         # area for axis limits
@@ -134,6 +149,7 @@ class DataHeader(QWidget):
     @Slot(int)
     def resize_header(self, width: int) -> None:
         self.setFixedWidth(width)
+        self.context_menu.setFixedWidth(width - 40)
 
     def panel_closed(self) -> None:
         self.close_panel.emit()
@@ -154,3 +170,8 @@ class DataHeader(QWidget):
                 axis_max = ""
 
         return [axis_min, axis_max]
+
+    def show_menu(self):
+        self.context_menu.popup(
+            self.menu_button.mapToGlobal(QPoint(60 - self.width(), 20))
+        )
