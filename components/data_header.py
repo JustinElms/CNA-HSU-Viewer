@@ -1,4 +1,5 @@
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Qt, QMimeData, QPoint, Signal, Slot
+from PySide6.QtGui import QAction, QDrag, QPixmap
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -7,8 +8,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QMenu,
 )
-from PySide6.QtCore import Qt, QMimeData, QPoint
-from PySide6.QtGui import QAction, QDrag, QPixmap
 
 from data.dataset import Dataset
 
