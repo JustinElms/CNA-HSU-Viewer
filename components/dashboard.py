@@ -147,13 +147,8 @@ class Dashboard(QScrollArea):
         panel_image = panel.grab(
             QRect(QPoint(0, 0), QPoint(panel.width, image_height))
         )
-        meter_image = self.meter.grab(
-            QRect(QPoint(0, 0), QPoint(60, image_height))
-        )
         header.save_image.connect(
-            lambda: self.save_panel_image(
-                panel_image, meter_image, image_name
-            )
+            lambda: self.save_panel_image(panel_image, image_name)
         )
         self.zoom_changed.connect(panel.zoom_changed)
         panel.resize_panel.connect(header.resize_header)
@@ -182,9 +177,13 @@ class Dashboard(QScrollArea):
     def save_panel_image(
         self,
         panel_image: QPixmap,
-        meter_image: QPixmap,
         image_name: str,
     ) -> None:
+        meter_image = self.meter.grab(
+            QRect(
+                QPoint(0, 0), QPoint(self.meter.width(), panel_image.height())
+            )
+        )
         save_panel_window = SavePanelWindow(
             self.parent(), panel_image, meter_image, image_name
         )
