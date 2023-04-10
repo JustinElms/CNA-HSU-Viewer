@@ -47,7 +47,6 @@ SKIP_COLUMNS = [
 
 class HSUConfig:
     def __init__(self, config_path: Path | str = None) -> None:
-
         config_path = (
             config_path if isinstance(config_path, Path) else Path(config_path)
         )
@@ -104,12 +103,10 @@ class HSUConfig:
             return []
 
     def _get_spec_image_data(self, dataset_path: Path) -> list:
-
         spec_im_dict = {}
         if dataset_path.is_dir():
             for path in dataset_path.iterdir():
                 if path.is_dir() and "mask_" not in path.name:
-
                     dir_info = path.name.split("_")
                     image_type = dir_info[0].title()
                     name = " ".join(dir_info[1:]).title()
@@ -128,7 +125,6 @@ class HSUConfig:
         return spec_im_dict
 
     def _get_core_image_data(self, dataset_path: Path) -> list:
-
         core_im_dict = {}
         if dataset_path.is_dir():
             for path in dataset_path.iterdir():
@@ -138,7 +134,6 @@ class HSUConfig:
         return core_im_dict
 
     def _parse_csv_data(self, csv_path: Path) -> list:
-
         csv_data_dict = {}
         spectral_data = {}
         csv_data = np.genfromtxt(
@@ -171,7 +166,7 @@ class HSUConfig:
             skip_header=5,
             usecols=[*meter_from_cols, *meter_to_cols],
         )
-        if meter_data.min() < 9999:
+        if meter_data.max() < 9999:
             meter_start = meter_data.min()
             meter_end = meter_data.max()
         else:
@@ -215,8 +210,6 @@ class HSUConfig:
                 if spectral_data.get(data_type):
                     spectral_data[data_type][name] = meta_data
                 else:
-                    spectral_data[data_type] = {
-                        name: meta_data
-                    }
+                    spectral_data[data_type] = {name: meta_data}
 
         return spectral_data, csv_data_dict

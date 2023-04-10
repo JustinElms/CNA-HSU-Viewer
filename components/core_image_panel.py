@@ -49,7 +49,7 @@ class CoreImagePanel(DataPanel):
             case "Corebox Images":
                 self.meter = self.dataset.get_box_meter()
 
-        if self.meter.min() >= 9999:
+        if self.meter.max() >= 9999:
             self.meter[:, 0] = np.arange(0, self.meter.shape[0], 1)
             self.meter[:, 1] = np.arange(1, self.meter.shape[0] + 1, 1)
 

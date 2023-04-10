@@ -39,7 +39,6 @@ class SpectralPlotPanel(DataPanel):
         self._plot_spectral_data()
 
     def _load_spectral_data(self) -> None:
-
         csv_path = Path(self.csv_data.get("path"))
 
         data = np.genfromtxt(
@@ -55,7 +54,7 @@ class SpectralPlotPanel(DataPanel):
             ],
         )
 
-        if data[0, 0] >= 9999:
+        if data[-1, 1] >= 9999:
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
