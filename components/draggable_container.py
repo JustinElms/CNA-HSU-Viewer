@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QHBoxLayout, QWidget
 from PySide6.QtCore import Qt, Signal, Slot
 
 from components.data_panel import DataPanel
+from components.data_header import DataHeader
 
 
 class DraggableContainer(QWidget):
@@ -21,7 +22,7 @@ class DraggableContainer(QWidget):
         self.end_index = -1
         if header:
             self.start_idx = 1
-            self.end_index  = -2
+            self.end_index = -2
             start_spacer = QWidget()
             start_spacer.setFixedWidth(55)
             end_spacer = QWidget()
@@ -40,12 +41,13 @@ class DraggableContainer(QWidget):
         start_index = None
         end_index = None
 
-        for n in range(self.layout.count() + self.end_index):
+        for n in range(self.layout.count()):
             w = self.layout.itemAt(n).widget()
-            if w == e.source():
-                start_index = n
-            if w.x() < pos.x() and pos.x() < w.x() + w.size().width():
-                end_index = n
+            if isinstance(w, DataHeader):
+                if w == e.source():
+                    start_index = n
+                if w.x() < pos.x() and pos.x() < w.x() + w.size().width():
+                    end_index = n
 
         self.layout.insertWidget(end_index, widget)
         self.widget_dragged.emit(start_index, end_index)
@@ -64,8 +66,8 @@ class DraggableContainer(QWidget):
 
     @Slot(int, int)
     def insert_dragged_widget(self, start_index, end_index):
-        widget = self.layout.itemAt(start_index).widget()
-        self.layout.insertWidget(end_index, widget)
+        widget = self.layout.itemAt(start_index - 1).widget()
+        self.layout.insertWidget(end_index - 1, widget)
 
     def max_panel_depth(self) -> int:
         depths = []
