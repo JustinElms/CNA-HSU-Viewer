@@ -90,6 +90,10 @@ class HSUConfig:
             "path": dataset_config_path.as_posix()
         }
 
+        keys = list(self.hsu_config.keys())
+        keys.sort()
+        self.hsu_config = {key: self.hsu_config[key] for key in keys}
+
         with open(self.hsu_config_path, "w") as f:
             json.dump(self.hsu_config, f)
 
@@ -158,6 +162,7 @@ class HSUConfig:
             else [indexers["meter_to"]]
         )
 
+        meter_warning = None
         meter_data = np.genfromtxt(
             csv_path,
             delimiter=",",
@@ -172,6 +177,7 @@ class HSUConfig:
         else:
             meter_start = 0
             meter_end = meter_data.shape[0]
+            meter_warning = True
 
         csv_data_dict = {
             **csv_data_dict,
@@ -179,6 +185,9 @@ class HSUConfig:
             "meter_start": meter_start,
             "meter_end": meter_end,
         }
+
+        if meter_warning:
+            csv_data_dict["meter_missing"] = True
 
         for idx, col in enumerate(columns):
             if (

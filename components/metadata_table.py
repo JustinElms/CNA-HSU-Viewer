@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
+    QHBoxLayout,
 )
 
 
@@ -48,9 +49,25 @@ class MetadataTable(QWidget):
         )
         self.table.verticalHeader().hide()
 
+        self.warning_container = QWidget(self)
+        self.warning_container.setStyleSheet("border: 1px solid red;")
+        warning_container_layer = QHBoxLayout(self.warning_container)
+        exclamation_label = QLabel("!", self.warning_container)
+        exclamation_label.setFont(QFont("Times", 32))
+        exclamation_label.setStyleSheet("border: none; color: red;")
+        warning_label = QLabel(
+            "This dataset does not contain valid meter data. Assuming depth of 1m per row.",
+            self.warning_container,
+        )
+        warning_label.setWordWrap(True)
+        warning_label.setStyleSheet("border: none; color: red;")
+        warning_container_layer.addWidget(exclamation_label)
+        warning_container_layer.addWidget(warning_label)
+
         layout.addWidget(self.dataset_label)
         layout.addWidget(self.options_label)
         layout.addWidget(self.name_label)
+        layout.addWidget(self.warning_container)
         layout.addWidget(self.table)
 
     def set_label(
@@ -74,7 +91,9 @@ class MetadataTable(QWidget):
         self.table.setItem(0, 1, QTableWidgetItem(items["path"]))
         self.table.setItem(1, 0, QTableWidgetItem("Data Path"))
         if self.selected_datatype == "Spectral Data":
-            self.table.setItem(1, 1, QTableWidgetItem(items["csv_data"]["path"]))
+            self.table.setItem(
+                1, 1, QTableWidgetItem(items["csv_data"]["path"])
+            )
         else:
             self.table.setItem(
                 1,
@@ -95,3 +114,8 @@ class MetadataTable(QWidget):
         )
 
         self.table.resizeRowsToContents()
+
+        if items["csv_data"].get("meter_missing"):
+            self.warning_container.show()
+        else:
+            self.warning_container.hide()
