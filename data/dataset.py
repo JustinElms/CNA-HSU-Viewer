@@ -50,7 +50,11 @@ class Dataset:
         datatype: str | None = None,
     ) -> list:
         if product_group and datatype:
-            options = list(self.config[product_group][datatype])
+            options = None
+            try:
+                options = list(self.config[product_group][datatype])
+            except KeyError:
+                pass
             return options
 
     def data(
