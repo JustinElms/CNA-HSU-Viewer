@@ -1,4 +1,5 @@
 from PySide6.QtCore import Signal
+from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -36,7 +37,8 @@ class Modal(QWidget):
 
         text_box = QLabel(text)
         text_box.setFont("24px")
-        close_button = QPushButton("×")
+        close_button = QPushButton()
+        close_button.setIcon(QIcon(QPixmap(":/close.svg")))
         close_button.clicked.connect(self._close)
         close_button.setFlat(True)
         close_button.setMaximumWidth(20)

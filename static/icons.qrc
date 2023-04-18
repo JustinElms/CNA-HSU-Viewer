@@ -1,0 +1,10 @@
+<RCC>
+  <qresource prefix="/" >
+    <file>Icon.ico</file>
+    <file>caret_up.svg</file>
+    <file>caret_down.svg</file>
+    <file>caret_left.svg</file>
+    <file>caret_right.svg</file>
+    <file>close.svg</file>
+  </qresource>
+</RCC>
