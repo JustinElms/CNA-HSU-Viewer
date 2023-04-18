@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QMimeData, QPoint, Signal, Slot
-from PySide6.QtGui import QAction, QDrag, QPixmap
+from PySide6.QtGui import QAction, QDrag, QPixmap, QIcon
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -46,7 +46,7 @@ class DataHeader(QWidget):
         )
 
         self.menu_button = QPushButton(title_container)
-        self.menu_button.setText("▼")
+        self.menu_button.setIcon(QIcon(QPixmap(":/caret_down.svg").scaledToWidth(10)))
         self.menu_button.clicked.connect(self.show_menu)
         self.menu_button.setFixedSize(20, 20)
         self.menu_button.setStyleSheet(
@@ -66,7 +66,7 @@ class DataHeader(QWidget):
         self.context_menu.addAction(save_action)
 
         self.close_button = QPushButton(title_container)
-        self.close_button.setText("×")
+        self.close_button.setIcon(QIcon(QPixmap(":/close.svg")))
         self.close_button.setFixedSize(20, 20)
         self.close_button.clicked.connect(self.panel_closed)
         self.close_button.setStyleSheet(

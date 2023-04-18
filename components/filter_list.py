@@ -8,6 +8,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QLineEdit,
     QTreeView,
     QVBoxLayout,
@@ -20,13 +21,14 @@ class FilterList(QWidget):
         self,
         parent: QWidget = None,
         set_selected: Callable[[str], None] = None,
-        multi_select: bool = False,
     ) -> None:
         super().__init__(parent=parent)
 
         self.setMinimumWidth(100)
 
         self.options = None
+        self.multi_level = False
+        self.multi_select = False
 
         self.filter_field = QLineEdit(self)
         self.filter_field.setPlaceholderText("Filter items")
@@ -40,15 +42,13 @@ class FilterList(QWidget):
         self.proxy_model.setRecursiveFilteringEnabled(True)
         self.proxy_model.setSourceModel(self.model)
         self.model_view.setModel(self.proxy_model)
-        # if multi_select:
-        #     self.model_view.setSelectionMode(QAbstractItemView.MultiSelection)
         self.model_view.clicked[QModelIndex].connect(
             lambda index: self._on_changed(index)
         )
         self.selection_model = self.model_view.selectionModel()
         self.set_selected = set_selected
 
-        self.selected = None
+        self.selected = []
 
         layout = QVBoxLayout(self)
         layout.setSpacing(0)
@@ -60,15 +60,27 @@ class FilterList(QWidget):
 
     def _on_changed(self, index: QModelIndex) -> None:
         item = self.model.itemFromIndex(self.proxy_model.mapToSource(index))
-        if not item.hasChildren():
+        if not self.multi_select:
+            for selected in self.selected:
+                selected.setBackground(Qt.NoBrush)
+        if self.multi_level and item.parent():
             item.setBackground(Qt.blue)
-            if item.parent():
-                self.set_selected(item.parent().text(), item.text())
+            self.set_selected(item.parent().text(), item.text())
+            self.selected = [item]
+        elif not self.multi_level:
+            item.setBackground(Qt.blue)
+            if self.multi_select:
+                if item in self.selected:
+                    item.setBackground(Qt.NoBrush)
+                    self.selected.remove(item)
+                else:
+                    self.selected.append(item)
+                self.set_selected(
+                    [selected.text() for selected in self.selected]
+                )
             else:
                 self.set_selected(item.text())
-            if self.selected:
-                self.selected.setBackground(Qt.NoBrush)
-            self.selected = item
+                self.selected = [item]
 
     def set_items(self, items: list | dict, filter_text: str = None) -> None:
         self.model_root = self.model.invisibleRootItem()
@@ -77,12 +89,16 @@ class FilterList(QWidget):
             if isinstance(items, list):
                 for item in items:
                     if not filter_text or filter_text in item.lower():
-                        self.model.appendRow(QStandardItem(item))
+                        newItem = QStandardItem(item)
+                        newItem.setEditable(False)
+                        self.model.appendRow(newItem)
 
             elif isinstance(items, dict):
+                self.multi_level = True
                 for key in items.keys():
                     item = QStandardItem(key)
                     item.setSelectable(False)
+                    item.setEditable(False)
                     for value in items[key]:
                         sub_item = QStandardItem(value)
                         if not filter_text or filter_text in value.lower():
@@ -99,9 +115,9 @@ class FilterList(QWidget):
                 self.model.indexFromItem(item),
                 QItemSelectionModel.Select,
             )
-            self.selected = item
+            self.selected.append(item)
             self.set_selected(item.text())
-            
+
         elif isinstance(self.options, dict) and isinstance(index, list):
             idx = index[0]
             while not self.model.item(idx).hasChildren():
@@ -114,9 +130,23 @@ class FilterList(QWidget):
                 self.model.indexFromItem(child_item),
                 QItemSelectionModel.Select,
             )
-            self.selected = child_item
+            self.selected.append(child_item)
             self.set_selected(parent_item.text(), child_item.text())
 
     def clear_list(self) -> None:
         if self.model.item(0):
             self.model.clear()
+
+    def enable_multi(self) -> None:
+        for selected in self.selected:
+            selected.setBackground(Qt.NoBrush)
+        self.selected = []
+        self.model_view.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.multi_select = True
+
+    def disable_multi(self) -> None:
+        for selected in self.selected:
+            selected.setBackground(Qt.NoBrush)
+        self.selected = []
+        self.model_view.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.multi_select = False
