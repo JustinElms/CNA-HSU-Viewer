@@ -46,7 +46,7 @@ class DatasetSelector(Modal):
         import_dataset_button.setStyleSheet(
             "border: 1px solid rgb(222, 222, 222);"
         )
-        import_dataset_button.clicked.connect(self._add_dataset)
+        import_dataset_button.clicked.connect(self._import_dataset)
         self.meta_table = MetadataTable(info_panel)
 
         button_panel = QWidget(info_panel)
@@ -128,7 +128,7 @@ class DatasetSelector(Modal):
         self.selected_dataname = selected
         self._update_table()
 
-    def _add_dataset(self) -> None:
+    def _import_dataset(self) -> None:
         dataset_path = QFileDialog.getExistingDirectory(
             self, "Select Main Directory"
         )
@@ -165,8 +165,10 @@ class DatasetSelector(Modal):
 
         if self.comp_plot_button.isChecked():
             args["comp"] = "composite_plot"
+            args["data_subtype"] = "Composite Plot"
         elif self.comp_image_button.isChecked():
             args["comp"] = "composite_image"
+            args["data_subtype"] = "Composite Images"
 
         self.data_selected.emit(args)
         super()._close()
