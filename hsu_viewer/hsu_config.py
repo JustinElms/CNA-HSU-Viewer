@@ -184,6 +184,7 @@ class HSUConfig:
             **indexers,
             "meter_start": meter_start,
             "meter_end": meter_end,
+            "n_rows": meter_data.shape[0],
         }
 
         if meter_warning:

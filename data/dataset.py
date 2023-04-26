@@ -50,7 +50,11 @@ class Dataset:
         datatype: str | None = None,
     ) -> list:
         if product_group and datatype:
-            options = list(self.config[product_group][datatype])
+            options = None
+            try:
+                options = list(self.config[product_group][datatype])
+            except KeyError:
+                pass
             return options
 
     def data(
@@ -59,6 +63,16 @@ class Dataset:
         datatype: str | None = None,
         selection: str | None = None,
     ) -> dict:
+        if isinstance(selection, list):
+            if datatype == "Composite Images":
+                datatype = "Mineral"
+            data_dict = {}
+            for value in selection:
+                data_dict[value] = self.config[product_group][datatype][value][
+                    "path"
+                ]
+            return data_dict
+
         return self.config[product_group][datatype][selection]
 
     def path(
@@ -73,6 +87,9 @@ class Dataset:
             return Path(
                 self.config[product_group][datatype][selection]["path"]
             )
+
+    def n_rows(self) -> int:
+        return self.config["csv_data"]["n_rows"]
 
     def meter_start(self) -> float:
         return self.config["csv_data"]["meter_start"]

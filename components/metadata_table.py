@@ -1,4 +1,4 @@
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QColor
 from PySide6.QtWidgets import (
     QWidget,
     QLabel,
@@ -20,6 +20,7 @@ class MetadataTable(QWidget):
         self.selected_datatype = None
         self.selected_subtype = None
         self.selected_dataname = None
+        self.multi_data = False
 
         self.dataset_label = QLabel(self)
         self.dataset_label.setFont(QFont("Arial", 18))
@@ -62,7 +63,9 @@ class MetadataTable(QWidget):
         warning_label.setWordWrap(True)
         warning_label.setStyleSheet("border: none; color: red;")
         warning_container_layer.addWidget(exclamation_label)
+        warning_container_layer.addStretch()
         warning_container_layer.addWidget(warning_label)
+        warning_container_layer.addStretch()
 
         layout.addWidget(self.dataset_label)
         layout.addWidget(self.options_label)
@@ -73,7 +76,6 @@ class MetadataTable(QWidget):
     def set_label(
         self, dataset: str, data_type: str, data_subtype: str, data_name: str
     ) -> None:
-
         self.selected_dataset = dataset
         self.selected_datatype = data_type
         self.selected_subtype = data_subtype
@@ -81,41 +83,91 @@ class MetadataTable(QWidget):
 
         self.dataset_label.setText(dataset)
         self.options_label.setText(
-            f"{data_type}-\
+            f"{data_type}:\
                 {data_subtype}"
         )
-        self.name_label.setText(data_name)
+        if not self.multi_data:
+            self.name_label.setText(data_name)
 
-    def add_items(self, items: dict) -> None:
+    def add_items(self, config: dict, items: list = None) -> None:
+        if self.multi_data:
+            self.add_multi_data(config, items)
+        else:
+            self.add_single_data(config)
+
+    def add_single_data(self, config: dict) -> None:
+        self.table.setRowCount(5)
         self.table.setItem(0, 0, QTableWidgetItem("Dataset Path"))
-        self.table.setItem(0, 1, QTableWidgetItem(items["path"]))
+        self.table.setItem(0, 1, QTableWidgetItem(config["path"]))
         self.table.setItem(1, 0, QTableWidgetItem("Data Path"))
         if self.selected_datatype == "Spectral Data":
             self.table.setItem(
-                1, 1, QTableWidgetItem(items["csv_data"]["path"])
+                1, 1, QTableWidgetItem(config["csv_data"]["path"])
             )
         else:
             self.table.setItem(
                 1,
                 1,
                 QTableWidgetItem(
-                    items[self.selected_datatype][self.selected_subtype][
+                    config[self.selected_datatype][self.selected_subtype][
                         self.selected_dataname
                     ]["path"]
                 ),
             )
         self.table.setItem(2, 0, QTableWidgetItem("Starting Depth"))
         self.table.setItem(
-            2, 1, QTableWidgetItem(str(items["csv_data"]["meter_start"]))
+            2, 1, QTableWidgetItem(str(config["csv_data"]["meter_start"]))
         )
         self.table.setItem(3, 0, QTableWidgetItem("Ending Depth"))
         self.table.setItem(
-            3, 1, QTableWidgetItem(str(items["csv_data"]["meter_end"]))
+            3, 1, QTableWidgetItem(str(config["csv_data"]["meter_end"]))
         )
 
         self.table.resizeRowsToContents()
 
-        if items["csv_data"].get("meter_missing"):
+        if config["csv_data"].get("meter_missing"):
             self.warning_container.show()
         else:
             self.warning_container.hide()
+
+    def add_multi_data(self, config: dict, items: list) -> None:
+        self.table.setRowCount(3)
+        self.table.setItem(0, 0, QTableWidgetItem("Dataset Path"))
+        self.table.setItem(0, 1, QTableWidgetItem(config["path"]))
+        self.table.setItem(1, 0, QTableWidgetItem("Starting Depth"))
+        self.table.setItem(
+            1, 1, QTableWidgetItem(str(config["csv_data"]["meter_start"]))
+        )
+        self.table.setItem(2, 0, QTableWidgetItem("Ending Depth"))
+        self.table.setItem(
+            2, 1, QTableWidgetItem(str(config["csv_data"]["meter_end"]))
+        )
+        if items:
+            items.sort()
+            row_idx = 3
+            for item in items:
+                self.table.setRowCount(self.table.rowCount() + 2)
+                data = config[self.selected_datatype][self.selected_subtype][
+                    item
+                ]
+                mineral_item = QTableWidgetItem(data["name"])
+                mineral_item.setBackground(QColor("blue"))
+                self.table.setItem(row_idx, 0, mineral_item)
+                self.table.setSpan(row_idx, 0, 1, 2)
+                if data.get("path"):
+                    self.table.setItem(
+                        row_idx + 1, 0, QTableWidgetItem("Data Path")
+                    )
+                    self.table.setItem(
+                        row_idx + 1, 1, QTableWidgetItem(data["path"])
+                    )
+                    row_idx = row_idx + 2
+                else:
+                    row_idx = row_idx + 1
+
+    def set_multi_data(self, enabled: bool) -> None:
+        self.multi_data = enabled
+        if enabled:
+            self.name_label.hide()
+        else:
+            self.name_label.show()

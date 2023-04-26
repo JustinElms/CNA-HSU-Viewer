@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 )
 
 from components.data_header import DataHeader
+from components.composite_image_panel import CompositeImagePanel
 from components.core_image_panel import CoreImagePanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
@@ -114,12 +115,20 @@ class Dashboard(QScrollArea):
 
         match dataset_args.get("data_type"):
             case "Spectral Images":
-                panel = CoreImagePanel(
-                    self.data_container,
-                    METER_RES_LEVELS[self.zoom_level],
-                    dataset_config,
-                    **dataset_args,
-                )
+                if dataset_args.get("data_subtype") == "Composite Images":
+                    panel = CompositeImagePanel(
+                        self.data_container,
+                        METER_RES_LEVELS[self.zoom_level],
+                        dataset_config,
+                        **dataset_args,
+                    )
+                else:
+                    panel = CoreImagePanel(
+                        self.data_container,
+                        METER_RES_LEVELS[self.zoom_level],
+                        dataset_config,
+                        **dataset_args,
+                    )
             case "Corebox Images":
                 panel = CoreImagePanel(
                     self.data_container,
@@ -143,7 +152,17 @@ class Dashboard(QScrollArea):
             (dataset_config.meter_end() - dataset_config.meter_start())
             * METER_RES_LEVELS[self.zoom_level]
         )
-        image_name = "_".join(dataset_args.values()) + ".png"
+
+        if dataset_args.get("data_subtype") not in ["Composite Images"]:
+            image_name = (
+                "_".join(dataset_args.values()).replace(" ", "_") + ".png"
+            )
+        else:
+            dataset_args.pop("data_name")
+            dataset_args.pop("comp")
+            image_name = (
+                "_".join(dataset_args.values()).replace(" ", "_") + ".png"
+            )
         panel_image = panel.grab(
             QRect(QPoint(0, 0), QPoint(panel.width, image_height))
         )
