@@ -1,3 +1,4 @@
+from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -26,12 +27,14 @@ class Drawer(QWidget):
         self.button_panel = QWidget(self)
         self.button_panel.setFixedWidth(30)
 
-        self.zoom_in_button = QPushButton("+")
+        self.zoom_in_button = QPushButton(self.button_panel)
+        self.zoom_in_button.setIcon(QIcon(QPixmap(":/plus.svg")))
         self.zoom_in_button.setFixedSize(20, 20)
         self.zoom_in_button.setStyleSheet(
             "background-color: grey; font: bold 12pt"
         )
-        self.zoom_out_button = QPushButton("-")
+        self.zoom_out_button = QPushButton(self.button_panel)
+        self.zoom_out_button.setIcon(QIcon(QPixmap(":/minus.svg")))
         self.zoom_out_button.setStyleSheet(
             "background-color: grey; font: bold 12pt"
         )
@@ -39,7 +42,9 @@ class Drawer(QWidget):
 
         # create button to toggle drawer
         self.drawer_button = QPushButton(self.button_panel)
-        self.drawer_button.setText("⟨")
+        self.drawer_button.setIcon(
+            QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
+        )
         self.drawer_button.setStyleSheet(
             "background-color: grey; font: bold 12pt"
         )
@@ -70,9 +75,13 @@ class Drawer(QWidget):
         """
         if self._expanded:
             self.content_panel.hide()
-            self.drawer_button.setText("⟩")
+            self.drawer_button.setIcon(
+            QIcon(QPixmap(":/caret_right.svg").scaledToWidth(12))
+        )
             self._expanded = False
         else:
             self.content_panel.show()
-            self.drawer_button.setText("⟨")
+            self.drawer_button.setIcon(
+            QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
+        )
             self._expanded = True
