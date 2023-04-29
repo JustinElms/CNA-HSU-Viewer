@@ -91,11 +91,18 @@ class DataHeader(QWidget):
 
         dataname_label = QLabel(self)
         dataname_label.setFixedHeight(20)
-        dataname_label.setText(data_name)
+
         dataname_label.setStyleSheet(
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
+        if isinstance(data_name, str):
+            dataname_label.setText(data_name)
+            dataname_label.setToolTip(data_name)
+        elif isinstance(data_name, list):
+            label_text = " ".join(data_name)
+            dataname_label.setText(label_text)
+            dataname_label.setToolTip(label_text)
 
         axis_limits = self.axis_limits()
         # area for axis limits

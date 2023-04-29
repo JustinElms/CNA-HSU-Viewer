@@ -131,7 +131,6 @@ class MetadataTable(QWidget):
             self.warning_container.hide()
 
     def add_multi_data(self, config: dict, items: list) -> None:
-        items.sort()
         self.table.setRowCount(3)
         self.table.setItem(0, 0, QTableWidgetItem("Dataset Path"))
         self.table.setItem(0, 1, QTableWidgetItem(config["path"]))
@@ -144,6 +143,7 @@ class MetadataTable(QWidget):
             2, 1, QTableWidgetItem(str(config["csv_data"]["meter_end"]))
         )
         if items:
+            items.sort()
             row_idx = 3
             for item in items:
                 self.table.setRowCount(self.table.rowCount() + 2)
@@ -154,13 +154,16 @@ class MetadataTable(QWidget):
                 mineral_item.setBackground(QColor("blue"))
                 self.table.setItem(row_idx, 0, mineral_item)
                 self.table.setSpan(row_idx, 0, 1, 2)
-                self.table.setItem(
-                    row_idx + 1, 0, QTableWidgetItem("Data Path")
-                )
-                self.table.setItem(
-                    row_idx + 1, 1, QTableWidgetItem(data["path"])
-                )
-                row_idx = row_idx + 2
+                if data.get("path"):
+                    self.table.setItem(
+                        row_idx + 1, 0, QTableWidgetItem("Data Path")
+                    )
+                    self.table.setItem(
+                        row_idx + 1, 1, QTableWidgetItem(data["path"])
+                    )
+                    row_idx = row_idx + 2
+                else:
+                    row_idx = row_idx + 1
 
     def set_multi_data(self, enabled: bool) -> None:
         self.multi_data = enabled
