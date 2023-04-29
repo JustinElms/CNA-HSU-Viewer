@@ -5,6 +5,7 @@ import matplotlib
 from PySide6.QtGui import QIcon, QScreen, QResizeEvent
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QApplication
 from PySide6.QtCore import Signal
+from static import icons
 
 try:
     # Include in try/except block if you're also targeting Mac/Linux
