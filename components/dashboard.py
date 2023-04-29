@@ -2,8 +2,8 @@ from PySide6.QtCore import QPoint, QRect, Qt, Signal, Slot
 from PySide6.QtGui import QResizeEvent, QPixmap
 from PySide6.QtWidgets import (
     QWidget,
-    QVBoxLayout,
     QHBoxLayout,
+    QGridLayout,
     QScrollArea,
 )
 
@@ -43,7 +43,22 @@ class Dashboard(QScrollArea):
 
         self.zoom_level = 0
 
-        layout = QVBoxLayout(self)
+        layout = QGridLayout(self)
+
+        resolution = METER_RES_LEVELS[self.zoom_level]
+        self.meter_height = 0
+
+        self.meter = Meter(self, resolution, self.meter_height, 0)
+        self.meter.setFixedWidth(60)
+        self.zoom_changed.connect(self.meter.zoom_changed)
+        self.meter_changed.connect(self.meter.update_size)
+
+        meter_scroll = QScrollArea(self)
+        meter_scroll.setWidget(self.meter)
+        meter_scroll.setWidgetResizable(True)
+        meter_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        meter_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        meter_scroll.setFixedWidth(60)
 
         header_content = QWidget()
         header_content.setFixedHeight(60)
@@ -74,15 +89,6 @@ class Dashboard(QScrollArea):
             self.data_container.insert_dragged_widget
         )
 
-        resolution = METER_RES_LEVELS[self.zoom_level]
-        self.meter_height = 0
-
-        self.meter = Meter(data_content, resolution, self.meter_height, 0)
-        self.meter.setFixedWidth(60)
-        self.zoom_changed.connect(self.meter.zoom_changed)
-        self.meter_changed.connect(self.meter.update_size)
-
-        data_content_layout.addWidget(self.meter)
         data_content_layout.addWidget(self.data_container)
 
         data_content_scroll = QScrollArea(self)
@@ -95,10 +101,18 @@ class Dashboard(QScrollArea):
             header_scroll.horizontalScrollBar().setValue
         )
 
+        #sync scrollbars for various QScrollAreas 
+        data_content_scroll.verticalScrollBar().valueChanged.connect(meter_scroll.verticalScrollBar().setValue)
+        meter_scroll.verticalScrollBar().valueChanged.connect(data_content_scroll.verticalScrollBar().setValue)
+
+        data_content_scroll.horizontalScrollBar().valueChanged.connect(header_scroll.horizontalScrollBar().setValue)
+        header_scroll.horizontalScrollBar().valueChanged.connect(data_content_scroll.horizontalScrollBar().setValue)
+
         self.viewport = data_content_scroll.viewport()
 
-        layout.addWidget(header_content)
-        layout.addWidget(data_content_scroll)
+        layout.addWidget(meter_scroll, 1, 0)
+        layout.addWidget(header_content, 0, 1)
+        layout.addWidget(data_content_scroll, 1, 1)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
 
