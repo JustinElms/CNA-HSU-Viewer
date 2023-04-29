@@ -1,7 +1,7 @@
 import numpy as np
 from PySide6.QtCore import QPoint, Slot
 from PySide6.QtGui import QColor, QPainter, QPixmap
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpacerItem
 
 
 class Meter(QWidget):
@@ -22,6 +22,7 @@ class Meter(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addStretch()
+        self.layout.addSpacing(17)
         self.setLayout(self.layout)
 
     def add_meter_tiles(self) -> None:
@@ -48,16 +49,18 @@ class Meter(QWidget):
         self.add_meter_tiles()
 
     def insert_tile(self, tile: QLabel) -> None:
-        if self.layout.count() == 0:
+        if self.layout.count() == 1:
             self.layout.addWidget(tile)
             self.layout.addStretch()
         else:
-            self.layout.insertWidget(self.layout.count() - 1, tile)
+            self.layout.insertWidget(self.layout.count() - 2, tile)
 
     def _clear_meter(self):
         for i in reversed(range(self.layout.count() - 1)):
-            self.layout.itemAt(i).widget().setVisible(False)
-            self.layout.itemAt(i).widget().deleteLater()
+            item = self.layout.itemAt(i)
+            if not isinstance(item, QSpacerItem):
+                item.widget().setVisible(False)
+                item.widget().deleteLater()
 
     def _draw_meter_pixmaps(self) -> list:
         tile_height = 500  # height of tile in pixels

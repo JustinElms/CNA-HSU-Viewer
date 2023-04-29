@@ -18,17 +18,8 @@ class DraggableContainer(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignTop)
         self.header = header
-        self.start_idx = 0
-        self.end_index = -1
         if header:
-            self.start_idx = 1
-            self.end_index = -2
-            start_spacer = QWidget()
-            start_spacer.setFixedWidth(55)
-            end_spacer = QWidget()
-            end_spacer.setFixedWidth(17)
-            self.layout.addWidget(start_spacer)
-            self.layout.addWidget(end_spacer)
+            self.layout.addSpacing(17)
 
         self.setLayout(self.layout)
 
@@ -58,7 +49,7 @@ class DraggableContainer(QWidget):
         self.insert_panel(panel)
 
     def insert_panel(self, panel: DataPanel) -> None:
-        if self.layout.count() == self.start_idx:
+        if self.layout.count() == 0:
             self.layout.addWidget(panel)
             self.layout.addStretch()
         else:
