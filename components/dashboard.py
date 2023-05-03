@@ -102,12 +102,20 @@ class Dashboard(QScrollArea):
             header_scroll.horizontalScrollBar().setValue
         )
 
-        #sync scrollbars for various QScrollAreas 
-        data_content_scroll.verticalScrollBar().valueChanged.connect(meter_scroll.verticalScrollBar().setValue)
-        meter_scroll.verticalScrollBar().valueChanged.connect(data_content_scroll.verticalScrollBar().setValue)
+        # sync scrollbars for various QScrollAreas
+        data_content_scroll.verticalScrollBar().valueChanged.connect(
+            meter_scroll.verticalScrollBar().setValue
+        )
+        meter_scroll.verticalScrollBar().valueChanged.connect(
+            data_content_scroll.verticalScrollBar().setValue
+        )
 
-        data_content_scroll.horizontalScrollBar().valueChanged.connect(header_scroll.horizontalScrollBar().setValue)
-        header_scroll.horizontalScrollBar().valueChanged.connect(data_content_scroll.horizontalScrollBar().setValue)
+        data_content_scroll.horizontalScrollBar().valueChanged.connect(
+            header_scroll.horizontalScrollBar().setValue
+        )
+        header_scroll.horizontalScrollBar().valueChanged.connect(
+            data_content_scroll.horizontalScrollBar().setValue
+        )
 
         self.viewport = data_content_scroll.viewport()
 
@@ -176,7 +184,10 @@ class Dashboard(QScrollArea):
             * METER_RES_LEVELS[self.zoom_level]
         )
 
-        if dataset_args.get("data_subtype") not in ["Composite Images"]:
+        if dataset_args.get("data_subtype") not in [
+            "Composite Images",
+            "Composite Plot",
+        ]:
             image_name = (
                 "_".join(dataset_args.values()).replace(" ", "_") + ".png"
             )

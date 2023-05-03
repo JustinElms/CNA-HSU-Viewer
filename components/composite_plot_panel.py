@@ -15,6 +15,19 @@ TODO
 -add offset at top of panel
 """
 
+TEMP_COLORS = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+]
+
 
 class CompositePlotPanel(DataPanel):
     def __init__(
@@ -33,22 +46,26 @@ class CompositePlotPanel(DataPanel):
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
 
-        self.setToolTip(f"{self.dataset_name} {self.data_name}")
+        self.setToolTip(self.composite_tooltip())
 
         self._load_spectral_data()
         self._plot_spectral_data()
 
     def _load_spectral_data(self) -> None:
+        mineral_columns = [min["column"] for min in self.dataset_info.values()]
+        meter_from_column = self.dataset_info[self.data_name[0]]["meter_from"]
+        meter_to_column = self.dataset_info[self.data_name[0]]["meter_to"]
+
         data = np.genfromtxt(
-            self.csv_data["path"],
+            Path(self.csv_data["path"]),
             delimiter=",",
             dtype="float",
             comments=None,
             skip_header=5,
             usecols=[
-                self.dataset_info.get("meter_from"),
-                self.dataset_info.get("meter_to"),
-                self.dataset_info.get("column"),
+                meter_from_column,
+                meter_to_column,
+                *mineral_columns,
             ],
         )
 
@@ -60,7 +77,7 @@ class CompositePlotPanel(DataPanel):
         self.bar_centers = (data[:, 0] + data[:, 1]) / 2
         self.meter_start = data[0, 0]
         self.meter_end = data[-1, 1]
-        self.spectral_data = data[:, 2]
+        self.spectral_data = data[:, 2:]
 
     def _plot_spectral_data(self) -> None:
         # create plot figure and canvas
@@ -87,21 +104,21 @@ class CompositePlotPanel(DataPanel):
         #     " ",
         # )
 
-        try:
-            axis_min = float(self.dataset_info.get("min_value"))
-            axis_max = float(self.dataset_info.get("max_value"))
-        except ValueError:
-            if self.datasubtype == "Position":
-                [min, max] = self.dataname.split(" ")
-                axis_min = float(min)
-                axis_max = float(max)
-            else:
-                axis_min = self.spectral_data.min()
-                axis_max = self.spectral_data.max()
+        axis_min = 0.0
+        axis_max = 1.0
 
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
-        plot.barh(self.bar_centers, self.spectral_data, self.bar_widths)
+        left = np.zeros(self.spectral_data.shape[0])
+        for idx, spec in enumerate(self.spectral_data.transpose()):
+            plot.barh(
+                self.bar_centers,
+                spec,
+                self.bar_widths,
+                left=left,
+                facecolor=TEMP_COLORS[idx],
+            )
+            left = left + spec
         plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
         plot.set_ylim(self.meter_end, self.meter_start)
         plot.set_xlim(axis_min, axis_max)
@@ -125,3 +142,17 @@ class CompositePlotPanel(DataPanel):
             self.layout.addStretch()
         else:
             self.layout.insertWidget(self.layout.count() - 1, plot)
+
+    def composite_tooltip(self) -> str:
+        tag = ""
+        for idx, mineral in enumerate(self.data_name):
+            tag = (
+                tag
+                + '<font color="'
+                + TEMP_COLORS[idx]
+                + '">■</font> '
+                + mineral
+            )
+            if idx != len(self.data_name) - 1:
+                tag = tag + "<br>"
+        return tag
