@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 
 from components.data_header import DataHeader
 from components.composite_image_panel import CompositeImagePanel
+from components.composite_plot_panel import CompositePlotPanel
 from components.core_image_panel import CoreImagePanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
@@ -101,12 +102,20 @@ class Dashboard(QScrollArea):
             header_scroll.horizontalScrollBar().setValue
         )
 
-        #sync scrollbars for various QScrollAreas 
-        data_content_scroll.verticalScrollBar().valueChanged.connect(meter_scroll.verticalScrollBar().setValue)
-        meter_scroll.verticalScrollBar().valueChanged.connect(data_content_scroll.verticalScrollBar().setValue)
+        # sync scrollbars for various QScrollAreas
+        data_content_scroll.verticalScrollBar().valueChanged.connect(
+            meter_scroll.verticalScrollBar().setValue
+        )
+        meter_scroll.verticalScrollBar().valueChanged.connect(
+            data_content_scroll.verticalScrollBar().setValue
+        )
 
-        data_content_scroll.horizontalScrollBar().valueChanged.connect(header_scroll.horizontalScrollBar().setValue)
-        header_scroll.horizontalScrollBar().valueChanged.connect(data_content_scroll.horizontalScrollBar().setValue)
+        data_content_scroll.horizontalScrollBar().valueChanged.connect(
+            header_scroll.horizontalScrollBar().setValue
+        )
+        header_scroll.horizontalScrollBar().valueChanged.connect(
+            data_content_scroll.horizontalScrollBar().setValue
+        )
 
         self.viewport = data_content_scroll.viewport()
 
@@ -151,12 +160,20 @@ class Dashboard(QScrollArea):
                     **dataset_args,
                 )
             case "Spectral Data":
-                panel = SpectralPlotPanel(
-                    self.data_container,
-                    METER_RES_LEVELS[self.zoom_level],
-                    dataset_config,
-                    **dataset_args,
-                )
+                if dataset_args.get("data_subtype") == "Composite Plot":
+                    panel = CompositePlotPanel(
+                        self.data_container,
+                        METER_RES_LEVELS[self.zoom_level],
+                        dataset_config,
+                        **dataset_args,
+                    )
+                else:
+                    panel = SpectralPlotPanel(
+                        self.data_container,
+                        METER_RES_LEVELS[self.zoom_level],
+                        dataset_config,
+                        **dataset_args,
+                    )
 
         header = DataHeader(
             self.header_container, panel.width, dataset_config, **dataset_args
@@ -167,7 +184,10 @@ class Dashboard(QScrollArea):
             * METER_RES_LEVELS[self.zoom_level]
         )
 
-        if dataset_args.get("data_subtype") not in ["Composite Images"]:
+        if dataset_args.get("data_subtype") not in [
+            "Composite Images",
+            "Composite Plot",
+        ]:
             image_name = (
                 "_".join(dataset_args.values()).replace(" ", "_") + ".png"
             )

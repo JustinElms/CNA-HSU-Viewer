@@ -8,7 +8,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
-    QAbstractItemView,
     QLineEdit,
     QTreeView,
     QVBoxLayout,
@@ -141,12 +140,10 @@ class FilterList(QWidget):
         for selected in self.selected:
             selected.setBackground(Qt.NoBrush)
         self.selected = []
-        self.model_view.setSelectionMode(QAbstractItemView.MultiSelection)
         self.multi_select = True
 
     def disable_multi(self) -> None:
         for selected in self.selected:
             selected.setBackground(Qt.NoBrush)
         self.selected = []
-        self.model_view.setSelectionMode(QAbstractItemView.SingleSelection)
         self.multi_select = False

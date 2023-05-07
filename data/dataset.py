@@ -64,13 +64,19 @@ class Dataset:
         selection: str | None = None,
     ) -> dict:
         if isinstance(selection, list):
+            data_dict = {}
             if datatype == "Composite Images":
                 datatype = "Mineral"
-            data_dict = {}
-            for value in selection:
-                data_dict[value] = self.config[product_group][datatype][value][
-                    "path"
-                ]
+                for value in selection:
+                    data_dict[value] = self.config[product_group][datatype][
+                        value
+                    ]["path"]
+            elif datatype == "Composite Plot":
+                datatype = "Mineral Percent"
+                for value in selection:
+                    data_dict[value] = self.config[product_group][datatype][
+                        value
+                    ]
             return data_dict
 
         return self.config[product_group][datatype][selection]
