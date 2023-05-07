@@ -104,9 +104,6 @@ class CompositePlotPanel(DataPanel):
         #     " ",
         # )
 
-        axis_min = 0.0
-        axis_max = 1.0
-
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
         left = np.zeros(self.spectral_data.shape[0])
@@ -119,9 +116,10 @@ class CompositePlotPanel(DataPanel):
                 facecolor=TEMP_COLORS[idx],
             )
             left = left + spec
-        plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
+        axis_max = np.max(left)
+        plot.set_xticks([0, axis_max / 2, axis_max])
         plot.set_ylim(self.meter_end, self.meter_start)
-        plot.set_xlim(axis_min, axis_max)
+        plot.set_xlim(0, axis_max)
         plot.set_frame_on(False)
         plot.grid(color="#323232")
         plot.xaxis.set_major_formatter(NullFormatter())
