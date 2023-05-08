@@ -1,9 +1,10 @@
 from PySide6.QtCore import QPoint, QRect, Qt, Signal, Slot
-from PySide6.QtGui import QResizeEvent, QPixmap
+from PySide6.QtGui import QResizeEvent, QPixmap, QIcon
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QGridLayout,
+    QPushButton,
     QScrollArea,
 )
 
@@ -117,6 +118,20 @@ class Dashboard(QScrollArea):
             data_content_scroll.horizontalScrollBar().setValue
         )
 
+        self.add_dataset_button = QPushButton(self)
+        self.add_dataset_button.setIcon(QIcon(QPixmap(":/plus.svg")))
+        self.add_dataset_button.setFixedSize(50, 50)
+        self.add_dataset_button.raise_()
+        self.add_dataset_button.setToolTip("Add Data Panel")
+        self.add_dataset_button.setStyleSheet(
+            """
+            QToolTip {background-color: black;}
+            color: white;
+            background-color: green;
+            border-radius : 25;
+            border: 2px solid white"""
+        )
+
         self.viewport = data_content_scroll.viewport()
 
         layout.addWidget(meter_scroll, 1, 0)
@@ -226,6 +241,7 @@ class Dashboard(QScrollArea):
             self.meter_height = 669
         max_depth = self.data_container.max_panel_depth()
         self.meter_changed.emit(max_depth, self.meter_height)
+        self.add_dataset_button.move(self.width() - 85, self.height() - 85)
 
     def save_panel_image(
         self,

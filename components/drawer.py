@@ -76,12 +76,12 @@ class Drawer(QWidget):
         if self._expanded:
             self.content_panel.hide()
             self.drawer_button.setIcon(
-            QIcon(QPixmap(":/caret_right.svg").scaledToWidth(12))
-        )
+                QIcon(QPixmap(":/caret_right.svg").scaledToWidth(12))
+            )
             self._expanded = False
         else:
             self.content_panel.show()
             self.drawer_button.setIcon(
-            QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
-        )
+                QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
+            )
             self._expanded = True

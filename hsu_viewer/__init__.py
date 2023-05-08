@@ -39,7 +39,6 @@ HSU_STYLES = """
         border: 1px solid rgb(222, 222, 222);
         color: rgb(222, 222, 222)
     }
-
     QMainWindow{
         background-color: rgb(10,15,20);
         border: 1px transparent;
@@ -133,6 +132,9 @@ class HSUViewer(QMainWindow):
         )
 
         drawer.add_dataset_button.clicked.connect(self._open_dataset_selector)
+        self.dashboard.add_dataset_button.clicked.connect(
+            self._open_dataset_selector
+        )
 
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
@@ -142,7 +144,6 @@ class HSUViewer(QMainWindow):
             self.dataset_selector.resize(self.width(), self.height())
 
     def _open_dataset_selector(self) -> None:
-
         self.dataset_selector_open = True
 
         self.dataset_selector = DatasetSelector(
