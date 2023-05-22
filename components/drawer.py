@@ -4,7 +4,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QPushButton,
     QWidget,
+    QLabel,
 )
+
+from components.mineral_legend import MineralLegend
 
 
 class Drawer(QWidget):
@@ -19,9 +22,13 @@ class Drawer(QWidget):
         self.add_dataset_button = QPushButton("Add Data")
         self.add_dataset_button.setStyleSheet("background-color: green;")
 
+        self.mineral_legend = MineralLegend(self)
+
         content_panel_layout = QVBoxLayout(self.content_panel)
         content_panel_layout.setContentsMargins(5, 20, 5, 20)
         content_panel_layout.addWidget(self.add_dataset_button)
+        content_panel_layout.addStretch()
+        content_panel_layout.addWidget(self.mineral_legend)
         content_panel_layout.addStretch()
 
         self.button_panel = QWidget(self)
@@ -85,3 +92,25 @@ class Drawer(QWidget):
                 QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
             )
             self._expanded = True
+
+    def appendToLegend(self, idx) -> None:
+        """
+        creates entries for the mineral legend in the options drawer including
+        color swatch buttons.
+        keep as seperate function so that signals remain unique
+        idx is the index of the mineral in minList
+        """
+        colorButton = QPushButton()
+        colorButton.setStyleSheet(
+            "background-color:"
+            + self.plotColorDict[self.minList[idx]]
+            + "; border: 1 px solid"
+        )
+        colorButton.setFixedSize(10, 10)
+        colorButton.clicked.connect(lambda: self.changeMinColor(idx))
+        legendLabel = QLabel(self.legendArea)
+        legendLabel.setText(self.minList[idx])
+        self.legendAreaLayout.addWidget(colorButton, idx, 0)
+        self.legendAreaLayout.addWidget(legendLabel, idx, 1)
+        self.minColorButtonGroup.addButton(colorButton)
+        self.minColorButtonGroup.setId(colorButton, idx)

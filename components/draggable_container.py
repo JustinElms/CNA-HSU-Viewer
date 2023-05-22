@@ -67,3 +67,15 @@ class DraggableContainer(QWidget):
         if not depths:
             return 0
         return np.max(depths)
+
+    def get_current_minerals(self) -> list:
+        mineral_list = []
+        for i in range(self.layout.count() - 1):
+            minerals = self.layout.itemAt(i).widget().data_name
+            if not isinstance(minerals, list):
+                mineral_list.append(minerals)
+            else:
+                for mineral in minerals:
+                    mineral_list.append(mineral)
+
+        return mineral_list

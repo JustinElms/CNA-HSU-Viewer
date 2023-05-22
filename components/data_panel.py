@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import numpy as np
+
 from data.dataset import Dataset
 
 
@@ -42,3 +44,20 @@ class DataPanel(QWidget):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.resize_panel.emit(self.geometry().width())
+
+    def hex_to_rgb(self, hex):
+        return np.array([int(hex[i: i + 2], 16) for i in (0, 2, 4)])
+
+    def composite_tooltip(self, plot_colors: dict) -> str:
+        tag = ""
+        for idx, mineral in enumerate(self.data_name):
+            tag = (
+                tag
+                + '<font color="'
+                + plot_colors.get(mineral)
+                + '">■</font> '
+                + mineral
+            )
+            if idx != len(self.data_name) - 1:
+                tag = tag + "<br>"
+        return tag

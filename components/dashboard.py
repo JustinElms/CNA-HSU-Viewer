@@ -40,10 +40,12 @@ class Dashboard(QScrollArea):
     zoom_changed = Signal(int)
     meter_changed = Signal(float, int)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, mineral_legend: QWidget = None) -> None:
         super().__init__(parent)
 
         self.zoom_level = 0
+        self.mineral_legend = mineral_legend
+        self.colormap = {}
 
         layout = QGridLayout(self)
 
@@ -147,6 +149,10 @@ class Dashboard(QScrollArea):
         dataset_config = dataset_args.get("config")
         dataset_args.pop("config")
         meter_end = dataset_config.meter_end()
+
+        self.mineral_legend.add_minerals(dataset_args.get("data_name"))
+        plot_colors = self.mineral_legend.color(dataset_args.get("data_name"))
+
         if meter_end > self.data_container.max_panel_depth():
             meter_height = self.viewport.height()
             self.meter_changed.emit(meter_end, meter_height)
@@ -158,6 +164,7 @@ class Dashboard(QScrollArea):
                         self.data_container,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
+                        plot_colors,
                         **dataset_args,
                     )
                 else:
@@ -180,6 +187,7 @@ class Dashboard(QScrollArea):
                         self.data_container,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
+                        plot_colors,
                         **dataset_args,
                     )
                 else:
@@ -187,6 +195,7 @@ class Dashboard(QScrollArea):
                         self.data_container,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
+                        plot_colors,
                         **dataset_args,
                     )
 
@@ -199,6 +208,13 @@ class Dashboard(QScrollArea):
             * METER_RES_LEVELS[self.zoom_level]
         )
 
+        self.zoom_changed.connect(panel.zoom_changed)
+        panel.resize_panel.connect(header.resize_header)
+        header.close_panel.connect(panel.close_panel)
+        header.close_panel.connect(
+            lambda: self.remove_legend_mineral(dataset_args["data_name"])
+        )
+
         if dataset_args.get("data_subtype") not in [
             "Composite Images",
             "Composite Plot",
@@ -207,10 +223,15 @@ class Dashboard(QScrollArea):
                 "_".join(dataset_args.values()).replace(" ", "_") + ".png"
             )
         else:
-            dataset_args.pop("data_name")
-            dataset_args.pop("comp")
             image_name = (
-                "_".join(dataset_args.values()).replace(" ", "_") + ".png"
+                "_".join(
+                    [
+                        dataset_args.get("dataset_name"),
+                        dataset_args.get("data_subtype"),
+                        *dataset_args.get("data_name"),
+                    ]
+                ).replace(" ", "_")
+                + ".png"
             )
         panel_image = panel.grab(
             QRect(QPoint(0, 0), QPoint(panel.width, image_height))
@@ -218,9 +239,6 @@ class Dashboard(QScrollArea):
         header.save_image.connect(
             lambda: self.save_panel_image(panel_image, image_name)
         )
-        self.zoom_changed.connect(panel.zoom_changed)
-        panel.resize_panel.connect(header.resize_header)
-        header.close_panel.connect(panel.close_panel)
 
         self.header_container.insert_panel(header)
         self.data_container.insert_panel(panel)
@@ -242,6 +260,16 @@ class Dashboard(QScrollArea):
         max_depth = self.data_container.max_panel_depth()
         self.meter_changed.emit(max_depth, self.meter_height)
         self.add_dataset_button.move(self.width() - 85, self.height() - 85)
+
+    def remove_legend_mineral(self, closed_minerals: str | list) -> None:
+        if not isinstance(closed_minerals, list):
+            closed_minerals = [closed_minerals]
+
+        mineral_list = self.data_container.get_current_minerals()
+
+        for mineral in closed_minerals:
+            if mineral_list.count(mineral) == 1:
+                self.mineral_legend.remove_mineral(mineral)
 
     def save_panel_image(
         self,

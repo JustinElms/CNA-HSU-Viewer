@@ -58,6 +58,8 @@ HSU_STYLES = """
     }
 """
 
+hsu_icons = icons
+
 
 class HSUViewer(QMainWindow):
     """
@@ -76,7 +78,7 @@ class HSUViewer(QMainWindow):
         super().__init__()
         """
         initializes widget sylesheets, image sizes, and lists of minerals and
-        images. Calls self.initUI() to create widgets
+        images.
         """
 
         self.setStyleSheet(HSU_STYLES)
@@ -100,19 +102,6 @@ class HSUViewer(QMainWindow):
         self.setMinimumSize(1000, 750)
 
         # initialize app widgets
-        self.initUI()
-
-        # track which overlays/modals are open
-        self.dataset_selector_open = False
-
-        # display app
-        self.show()
-
-    def initUI(self) -> None:
-        """
-        initUI creates the widgets for the application
-        """
-
         os.chdir(self.rootDir)
         self.setWindowTitle("CNA Core Viewer")
 
@@ -125,7 +114,7 @@ class HSUViewer(QMainWindow):
 
         drawer = Drawer(self.main)
 
-        self.dashboard = Dashboard(self.main)
+        self.dashboard = Dashboard(self.main, drawer.mineral_legend)
         drawer.zoom_in_button.clicked.connect(lambda: self.dashboard.zoom_in())
         drawer.zoom_out_button.clicked.connect(
             lambda: self.dashboard.zoom_out()
@@ -138,6 +127,12 @@ class HSUViewer(QMainWindow):
 
         mainLayout.addWidget(drawer)
         mainLayout.addWidget(self.dashboard)
+
+        # track which overlays/modals are open
+        self.dataset_selector_open = False
+
+        # display app
+        self.show()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         if self.dataset_selector_open:
