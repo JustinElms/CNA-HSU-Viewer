@@ -22,6 +22,7 @@ class SpectralPlotPanel(DataPanel):
         parent=None,
         resolution: int = 0,
         dataset: Dataset = None,
+        plot_colors: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -34,6 +35,8 @@ class SpectralPlotPanel(DataPanel):
         self.depth = dataset.meter_end()
 
         self.setToolTip(f"{self.dataset_name} {self.data_name}")
+
+        self.plot_colors = plot_colors
 
         self._load_spectral_data()
         self._plot_spectral_data()
@@ -66,6 +69,7 @@ class SpectralPlotPanel(DataPanel):
 
     def _plot_spectral_data(self) -> None:
         # create plot figure and canvas
+        plot_color = self.plot_colors.get(self.data_name)
         height = (self.meter_end - self.meter_start) * self.resolution
         plot_fig = Figure(
             figsize=(self.width / 100, height / 100),
@@ -93,8 +97,8 @@ class SpectralPlotPanel(DataPanel):
             axis_min = float(self.dataset_info.get("min_value"))
             axis_max = float(self.dataset_info.get("max_value"))
         except ValueError:
-            if self.datasubtype == "Position":
-                [min, max] = self.dataname.split(" ")
+            if self.data_subtype == "Position":
+                [min, max] = self.data_name.split(" ")
                 axis_min = float(min)
                 axis_max = float(max)
             else:
@@ -103,7 +107,12 @@ class SpectralPlotPanel(DataPanel):
 
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
-        plot.barh(self.bar_centers, self.spectral_data, self.bar_widths)
+        plot.barh(
+            self.bar_centers,
+            self.spectral_data,
+            self.bar_widths,
+            color=plot_color,
+        )
         plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
         plot.set_ylim(self.meter_end, self.meter_start)
         plot.set_xlim(axis_min, axis_max)

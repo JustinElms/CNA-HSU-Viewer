@@ -14,20 +14,8 @@ from data.dataset import Dataset
 TODO
 -on resize enlarge current images while async get fresh copies at desired size
 -add offset at top of panel
+-increase brightness
 """
-
-TEMP_COLORS = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
-]
 
 
 class CompositeImagePanel(DataPanel):
@@ -36,6 +24,7 @@ class CompositeImagePanel(DataPanel):
         parent=None,
         resolution: int = 0,
         dataset: Dataset = None,
+        plot_colors: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -46,8 +35,10 @@ class CompositeImagePanel(DataPanel):
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
 
+        self.plot_colors = plot_colors
+
         self.image_frame = QWidget(self)
-        self.image_frame.setToolTip(self.composite_tooltip())
+        self.image_frame.setToolTip(self.composite_tooltip(self.plot_colors))
         self.image_frame_layout = QVBoxLayout(self.image_frame)
 
         self.layout.addWidget(self.image_frame)
@@ -75,15 +66,23 @@ class CompositeImagePanel(DataPanel):
                 image_array = np.asarray(image) / 255
                 if image_array.shape[2] > 3:
                     image_array = image_array[:, :, :3]
-                min_color = self.hex_to_rgb(TEMP_COLORS[min_idx][1:])
+                min_color = self.hex_to_rgb(
+                    self.plot_colors.get(self.data_name[min_idx])[1:]
+                )
                 colored_image = min_color * image_array
 
                 if np.any(colored_image):
                     row_image = row_image + colored_image
                     n_ims = n_ims + 1
-            result = Image.fromarray(
-                (row_image / n_ims).astype(np.uint8), "RGB"
-            )
+
+            if n_ims > 0:
+                result = Image.fromarray(
+                    (row_image / n_ims).astype(np.uint8), "RGB"
+                )
+            else:
+                result = Image.fromarray(
+                    (image_array * 0).astype(np.uint8), "RGB"
+                )
             pixmap = QPixmap(ImageQt.ImageQt(result))
             total_image_height = total_image_height + pixmap.height()
             if pixmap.width() > self.width:
@@ -118,20 +117,3 @@ class CompositeImagePanel(DataPanel):
         self.image_frame.setFixedSize(new_width, new_height)
         self.width = new_width
         self.resolution = resolution
-
-    def hex_to_rgb(self, hex):
-        return np.array([int(hex[i: i + 2], 16) for i in (0, 2, 4)])
-
-    def composite_tooltip(self) -> str:
-        tag = ""
-        for idx, mineral in enumerate(self.data_name):
-            tag = (
-                tag
-                + '<font color="'
-                + TEMP_COLORS[idx]
-                + '">■</font> '
-                + mineral
-            )
-            if idx != len(self.data_name) - 1:
-                tag = tag + "<br>"
-        return tag

@@ -15,19 +15,6 @@ TODO
 -add offset at top of panel
 """
 
-TEMP_COLORS = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
-]
-
 
 class CompositePlotPanel(DataPanel):
     def __init__(
@@ -35,6 +22,7 @@ class CompositePlotPanel(DataPanel):
         parent=None,
         resolution: int = 0,
         dataset: Dataset = None,
+        plot_colors: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -46,7 +34,9 @@ class CompositePlotPanel(DataPanel):
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
 
-        self.setToolTip(self.composite_tooltip())
+        self.plot_colors = plot_colors
+
+        self.setToolTip(self.composite_tooltip(self.plot_colors))
 
         self._load_spectral_data()
         self._plot_spectral_data()
@@ -108,12 +98,13 @@ class CompositePlotPanel(DataPanel):
         plot = plot_fig.add_axes([0, 0, 1, 1])
         left = np.zeros(self.spectral_data.shape[0])
         for idx, spec in enumerate(self.spectral_data.transpose()):
+            plot_color = self.plot_colors.get(self.data_name[idx])
             plot.barh(
                 self.bar_centers,
                 spec,
                 self.bar_widths,
                 left=left,
-                facecolor=TEMP_COLORS[idx],
+                facecolor=plot_color,
             )
             left = left + spec
         axis_max = np.max(left)
@@ -140,17 +131,3 @@ class CompositePlotPanel(DataPanel):
             self.layout.addStretch()
         else:
             self.layout.insertWidget(self.layout.count() - 1, plot)
-
-    def composite_tooltip(self) -> str:
-        tag = ""
-        for idx, mineral in enumerate(self.data_name):
-            tag = (
-                tag
-                + '<font color="'
-                + TEMP_COLORS[idx]
-                + '">■</font> '
-                + mineral
-            )
-            if idx != len(self.data_name) - 1:
-                tag = tag + "<br>"
-        return tag
