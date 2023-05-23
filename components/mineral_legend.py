@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
-    QGroupBox,
     QGridLayout,
     QPushButton,
     QLabel,
@@ -10,11 +9,11 @@ from PySide6.QtWidgets import (
 from data.colormap import hsu_colormap
 
 
-class MineralLegend(QGroupBox):
+class MineralLegend(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
 
-        self.setTitle("Mineral Legend")
+        title = QLabel("Mineral Legend", self)
         self.colormap = {}
 
         layout = QVBoxLayout(self)
@@ -22,6 +21,7 @@ class MineralLegend(QGroupBox):
         self.legend_container = QWidget(self)
         self.legend_container_layout = QGridLayout(self.legend_container)
 
+        layout.addWidget(title)
         layout.addWidget(self.legend_container)
 
     def add_minerals(self, minerals: str) -> None:
