@@ -9,6 +9,7 @@ from PySide6.QtGui import QPixmap
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
+from hsu_viewer.worker import Worker
 
 """
 TODO
@@ -22,6 +23,7 @@ class CompositeImagePanel(DataPanel):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         plot_colors: dict = None,
@@ -31,7 +33,8 @@ class CompositeImagePanel(DataPanel):
             parent=parent, resolution=resolution, dataset=dataset, **kwargs
         )
 
-        self.width = 0
+        self.threadpool = threadpool
+        self.width = 100
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
 
@@ -44,9 +47,46 @@ class CompositeImagePanel(DataPanel):
         self.layout.addWidget(self.image_frame)
         self.layout.addStretch()
 
-        self._load_core_images()
+        self.get_images()
 
-    def _load_core_images(self) -> QWidget:
+    def get_images(self) -> None:
+        self.loading.emit(True)
+        if self.threadpool:
+            worker = Worker(self._load_core_images)
+            worker.signals.result.connect(self._display_core_images)
+            worker.signals.finished.connect(self._on_finish)
+            self.threadpool.start(worker)
+        else:
+            result = self._load_core_images()
+            self._display_core_images(result)
+            self.loading.emit(False)
+
+    @Slot()
+    def _on_finish(self) -> None:
+        self.loading.emit(False)
+
+    def _display_core_images(self, result: tuple) -> None:
+        pixmaps, pixmap_width, total_image_height = result
+
+        for pixmap in pixmaps:
+            image = QLabel()
+            image.setScaledContents(True)
+            image.setPixmap(pixmap)
+            self.insert_tile(image)
+
+        self.image_frame_layout.setSpacing(0)
+        self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
+
+        frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
+        frame_width = int(pixmap_width * frame_height / total_image_height)
+        self.image_frame.setFixedSize(frame_width, frame_height)
+        self.width = frame_width
+        self.setFixedWidth(self.width)
+
+    def _load_core_images(self) -> tuple:
+        pixmaps = []
+        pixmap_width = self.width
+
         self.meter = self.dataset.get_row_meter()
 
         if self.meter.max() >= 9999:
@@ -85,20 +125,12 @@ class CompositeImagePanel(DataPanel):
                 )
             pixmap = QPixmap(ImageQt.ImageQt(result))
             total_image_height = total_image_height + pixmap.height()
-            if pixmap.width() > self.width:
-                new_width = pixmap.width()
-            image = QLabel()
-            image.setScaledContents(True)
-            image.setPixmap(pixmap)
-            self.insert_tile(image)
+            if pixmap.width() > pixmap_width:
+                pixmap_width = pixmap.width()
 
-        self.image_frame_layout.setSpacing(0)
-        self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
+            pixmaps.append(pixmap)
 
-        frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
-        frame_width = int(new_width * frame_height / total_image_height)
-        self.image_frame.setFixedSize(frame_width, frame_height)
-        self.width = frame_width
+        return pixmaps, pixmap_width, total_image_height
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.image_frame_layout.count() == 0:
