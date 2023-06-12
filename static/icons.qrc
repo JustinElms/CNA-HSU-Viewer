@@ -9,5 +9,6 @@
     <file>plus.svg</file>
     <file>minus.svg</file>
     <file>save.svg</file>
+    <file>loading.gif</file>
   </qresource>
 </RCC>
