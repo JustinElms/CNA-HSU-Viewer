@@ -53,6 +53,7 @@ class DataPanel(QWidget):
 
     @Slot(bool)
     def set_loading(self, show_spinner) -> None:
+        self.loading_panel.raise_()
         if show_spinner:
             self.loading_panel.show()
         else:
@@ -60,7 +61,7 @@ class DataPanel(QWidget):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.resize_header.emit(self.geometry().width())
-        self.resize_spinner.emit(self.width, self.geometry().height())
+        self.resize_spinner.emit(self.width, self.parent().height())
 
     def hex_to_rgb(self, hex):
         return np.array([int(hex[i: i + 2], 16) for i in (0, 2, 4)])
