@@ -1,6 +1,7 @@
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import QResizeEvent
 from PySide6.QtWidgets import (
+    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
@@ -19,12 +20,14 @@ class DataPanel(QWidget):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         **kwargs
     ) -> None:
         super().__init__(parent=parent)
 
+        self.threadpool = threadpool
         self.resolution = resolution
         self.dataset = dataset
         self.dataset_name = kwargs.get("dataset_name")
@@ -59,6 +62,10 @@ class DataPanel(QWidget):
         else:
             self.loading_panel.hide()
 
+    @Slot()
+    def _on_finish(self) -> None:
+        self.loading.emit(False)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.resize_header.emit(self.geometry().width())
         self.resize_spinner.emit(self.width, self.parent().height())
@@ -79,3 +86,10 @@ class DataPanel(QWidget):
             if idx != len(self.data_name) - 1:
                 tag = tag + "<br>"
         return tag
+
+    def clear_image_tiles(self) -> None:
+        for i in reversed(range(self.image_frame_layout.count())):
+            item = self.image_frame_layout.itemAt(i)
+            if not isinstance(item, QSpacerItem):
+                item.widget().setVisible(False)
+                item.widget().deleteLater()

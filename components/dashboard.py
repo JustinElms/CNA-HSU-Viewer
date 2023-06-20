@@ -173,6 +173,7 @@ class Dashboard(QScrollArea):
                 else:
                     panel = CoreImagePanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         **dataset_args,
@@ -180,6 +181,7 @@ class Dashboard(QScrollArea):
             case "Corebox Images":
                 panel = CoreImagePanel(
                     self.data_container,
+                    self.threadpool,
                     METER_RES_LEVELS[self.zoom_level],
                     dataset_config,
                     **dataset_args,
@@ -188,6 +190,7 @@ class Dashboard(QScrollArea):
                 if dataset_args.get("data_subtype") == "Composite Plot":
                     panel = CompositePlotPanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         plot_colors,
@@ -196,6 +199,7 @@ class Dashboard(QScrollArea):
                 else:
                     panel = SpectralPlotPanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         plot_colors,

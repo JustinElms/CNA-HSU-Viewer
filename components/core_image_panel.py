@@ -20,12 +20,17 @@ class CoreImagePanel(DataPanel):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         **kwargs,
     ) -> None:
         super().__init__(
-            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+            parent=parent,
+            resolution=resolution,
+            dataset=dataset,
+            threadpool=threadpool,
+            **kwargs,
         )
 
         self.width = 0
@@ -53,10 +58,6 @@ class CoreImagePanel(DataPanel):
             result = self._load_core_images()
             self._display_core_images(result)
             self.loading.emit(False)
-
-    @Slot()
-    def _on_finish(self) -> None:
-        self.loading.emit(False)
 
     def _load_core_images(self) -> QWidget:
         pixmaps = []
@@ -122,5 +123,6 @@ class CoreImagePanel(DataPanel):
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.loading.emit(True)
+        self.clear_image_tiles()
         self.resolution = resolution
         self.get_images()

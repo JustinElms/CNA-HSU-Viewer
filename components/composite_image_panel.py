@@ -29,10 +29,13 @@ class CompositeImagePanel(DataPanel):
         **kwargs,
     ) -> None:
         super().__init__(
-            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+            parent=parent,
+            resolution=resolution,
+            dataset=dataset,
+            threadpool=threadpool,
+            **kwargs,
         )
 
-        self.threadpool = threadpool
         self.width = 120
         self.image_resolution = resolution
         self.depth = dataset.meter_end()
@@ -59,10 +62,6 @@ class CompositeImagePanel(DataPanel):
             result = self._load_core_images()
             self._display_core_images(result)
             self.loading.emit(False)
-
-    @Slot()
-    def _on_finish(self) -> None:
-        self.loading.emit(False)
 
     def _load_core_images(self) -> tuple:
         pixmaps = []
@@ -148,5 +147,6 @@ class CompositeImagePanel(DataPanel):
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.loading.emit(True)
+        self.clear_image_tiles()
         self.resolution = resolution
         self.get_images()
