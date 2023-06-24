@@ -1,5 +1,14 @@
 from PySide6.QtCore import Qt, QMimeData, QPoint, Signal, Slot
-from PySide6.QtGui import QAction, QDrag, QPixmap, QIcon
+from PySide6.QtGui import (
+    QAction,
+    QDrag,
+    QPixmap,
+    QIcon,
+    QColor,
+    QPainter,
+    QFont,
+    QFontMetrics,
+)
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -23,8 +32,12 @@ class DataHeader(QWidget):
 
         dataset_name = kwargs.get("dataset_name")
         data_type = kwargs.get("data_type")
-        data_subtype = kwargs.get("data_subtype")
-        data_name = kwargs.get("data_name")
+        self.data_subtype = kwargs.get("data_subtype")
+        self.data_name = kwargs.get("data_name")
+
+        self.dataset_info = dataset.data(
+            data_type, self.data_subtype, self.data_name
+        )
 
         self.csv_data = dataset.config.get("csv_data")
 
@@ -57,7 +70,8 @@ class DataHeader(QWidget):
         )
 
         self.context_menu = QMenu(self)
-        self.context_menu.setFixedWidth(width - 40)
+        if width > 40:
+            self.context_menu.setFixedWidth(width - 40)
         self.context_menu.setStyleSheet(
             "background-color: rgba(100,100,100,150)"
         )
@@ -84,8 +98,8 @@ class DataHeader(QWidget):
 
         datatype_label = QLabel(title_container)
         datatype_label.setFixedHeight(20)
-        datatype_label.setText(f"{data_type}: {data_subtype}")
-        datatype_label.setToolTip(f"{data_type}: {data_subtype}")
+        datatype_label.setText(f"{data_type}: {self.data_subtype}")
+        datatype_label.setToolTip(f"{data_type}: {self.data_subtype}")
         datatype_label.setStyleSheet(
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
@@ -98,43 +112,15 @@ class DataHeader(QWidget):
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
         )
-        if isinstance(data_name, str):
-            dataname_label.setText(data_name)
-            dataname_label.setToolTip(data_name)
-        elif isinstance(data_name, list):
-            label_text = " ".join(data_name)
+        if isinstance(self.data_name, str):
+            dataname_label.setText(self.data_name)
+            dataname_label.setToolTip(self.data_name)
+        elif isinstance(self.data_name, list):
+            label_text = " ".join(self.data_name)
             dataname_label.setText(label_text)
             dataname_label.setToolTip(label_text)
 
-        axis_limits = self.axis_limits()
-        # area for axis limits
-        axis_limits_container = QWidget(self)
-        axis_limits_container.setFixedHeight(20)
-        axis_limits_layout = QHBoxLayout(axis_limits_container)
-        axis_limits_layout.setSpacing(0)
-        axis_limits_layout.setContentsMargins(0, 0, 0, 0)
-
-        # label for axis minimum
-        axis_start_label = QLabel(axis_limits_container)
-        axis_start_label.setFixedHeight(20)
-        axis_start_label.setStyleSheet(
-            "background-color: transparent; \
-                font: bold 10pt; border: transparent"
-        )
-        axis_start_label.setText(axis_limits[0])
-
-        # label for axis maximum
-        axis_end_label = QLabel(axis_limits_container)
-        axis_end_label.setFixedHeight(20)
-        axis_end_label.setStyleSheet(
-            "background-color: transparent; \
-                font: bold 10pt; border: transparent"
-        )
-        axis_end_label.setText(axis_limits[1])
-
-        axis_limits_layout.addWidget(axis_start_label)
-        axis_limits_layout.addStretch()
-        axis_limits_layout.addWidget(axis_end_label)
+        self.axis_limits_label = QLabel(self)
 
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(0)
@@ -144,9 +130,9 @@ class DataHeader(QWidget):
         self.layout.addWidget(title_container)
         self.layout.addWidget(datatype_label)
         self.layout.addWidget(dataname_label)
-        self.layout.addWidget(axis_limits_container)
+        self.layout.addWidget(self.axis_limits_label)
 
-        self.setFixedSize(width, 60)
+        self.setFixedSize(width, 80)
 
     def mouseMoveEvent(self, e) -> None:
         if e.buttons() == Qt.LeftButton:
@@ -163,6 +149,7 @@ class DataHeader(QWidget):
     @Slot(int)
     def resize_header(self, width: int) -> None:
         self.setFixedWidth(width)
+        self.draw_axis_scale(width)
         self.context_menu.setFixedWidth(width)
 
     def panel_closed(self) -> None:
@@ -171,11 +158,11 @@ class DataHeader(QWidget):
 
     def axis_limits(self) -> list:
         try:
-            axis_min = self.csv_data.get("min_value")
-            axis_max = self.csv_data.get("max_value")
+            axis_min = self.dataset_info.get("min_value")
+            axis_max = self.dataset_info.get("max_value")
         except ValueError:
-            if self.datasubtype == "Position":
-                [min, max] = self.dataname.split(" ")
+            if self.data_subtype == "Position":
+                [min, max] = self.data_name.split(" ")
                 axis_min = min
                 axis_max = max
             else:
@@ -191,3 +178,33 @@ class DataHeader(QWidget):
 
     def save_panel_image(self) -> None:
         self.save_image.emit()
+
+    def draw_axis_scale(self, width: int) -> None:
+        axis_limits = self.axis_limits()
+        unit = self.dataset_info.get("unit")
+        if unit == "percent":
+            unit = "%"
+        pixmap = QPixmap(width, 20)
+
+        qp = QPainter(pixmap)  # initiate painter
+        qp.setBrush(QColor(0, 0, 0))  # paint meter background black
+        qp.drawRect(0, 0, width, 20)
+        qp.setBrush(QColor(222, 222, 222))  # set color for ticks and text
+        qp.setPen(QColor(222, 222, 222))
+        qp.drawRect(0, 0, 1, 20)
+        qp.drawRect(width - 2, 0, 1, 20)
+        qp.drawRect(int(width / 2), 10, 0.5, 10)
+
+        if axis_limits[0] and axis_limits[1]:
+            font_metric = QFontMetrics(QFont())
+            axis_limits = [f"{limit} {unit}" for limit in axis_limits]
+            right_label_width = font_metric.size(
+                Qt.TextSingleLine, axis_limits[1]
+            ).width()
+
+            qp.drawText(5, 15, axis_limits[0])
+            qp.drawText(width - right_label_width - 5, 15, axis_limits[1])
+
+        qp.end()
+
+        self.axis_limits_label.setPixmap(pixmap)

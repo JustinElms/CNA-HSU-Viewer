@@ -77,6 +77,8 @@ class Dataset:
                     data_dict[value] = self.config[product_group][datatype][
                         value
                     ]
+            else:
+                data_dict = self.config[product_group][datatype][value]
             return data_dict
 
         return self.config[product_group][datatype][selection]

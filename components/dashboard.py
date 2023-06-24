@@ -67,7 +67,7 @@ class Dashboard(QScrollArea):
         meter_scroll.setFixedWidth(60)
 
         header_content = QWidget()
-        header_content.setFixedHeight(60)
+        header_content.setFixedHeight(80)
 
         self.header_container = DraggableContainer(self, header=True)
 
@@ -76,7 +76,7 @@ class Dashboard(QScrollArea):
         header_scroll.setWidgetResizable(True)
         header_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         header_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        header_scroll.setFixedHeight(60)
+        header_scroll.setFixedHeight(80)
 
         header_content_layout = QHBoxLayout(header_content)
         header_content_layout.setSpacing(0)
