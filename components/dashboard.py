@@ -1,4 +1,4 @@
-from PySide6.QtCore import QPoint, QRect, Qt, Signal, Slot
+from PySide6.QtCore import QPoint, QRect, Qt, Signal, Slot, QThreadPool
 from PySide6.QtGui import QResizeEvent, QPixmap, QIcon
 from PySide6.QtWidgets import (
     QWidget,
@@ -42,6 +42,8 @@ class Dashboard(QScrollArea):
 
     def __init__(self, parent=None, mineral_legend: QWidget = None) -> None:
         super().__init__(parent)
+
+        self.threadpool = QThreadPool()
 
         self.zoom_level = 0
         self.mineral_legend = mineral_legend
@@ -162,6 +164,7 @@ class Dashboard(QScrollArea):
                 if dataset_args.get("data_subtype") == "Composite Images":
                     panel = CompositeImagePanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         plot_colors,
@@ -170,6 +173,7 @@ class Dashboard(QScrollArea):
                 else:
                     panel = CoreImagePanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         **dataset_args,
@@ -177,6 +181,7 @@ class Dashboard(QScrollArea):
             case "Corebox Images":
                 panel = CoreImagePanel(
                     self.data_container,
+                    self.threadpool,
                     METER_RES_LEVELS[self.zoom_level],
                     dataset_config,
                     **dataset_args,
@@ -185,6 +190,7 @@ class Dashboard(QScrollArea):
                 if dataset_args.get("data_subtype") == "Composite Plot":
                     panel = CompositePlotPanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         plot_colors,
@@ -193,6 +199,7 @@ class Dashboard(QScrollArea):
                 else:
                     panel = SpectralPlotPanel(
                         self.data_container,
+                        self.threadpool,
                         METER_RES_LEVELS[self.zoom_level],
                         dataset_config,
                         plot_colors,
@@ -209,7 +216,7 @@ class Dashboard(QScrollArea):
         )
 
         self.zoom_changed.connect(panel.zoom_changed)
-        panel.resize_panel.connect(header.resize_header)
+        panel.resize_header.connect(header.resize_header)
         header.close_panel.connect(panel.close_panel)
         header.close_panel.connect(
             lambda: self.remove_legend_mineral(dataset_args["data_name"])

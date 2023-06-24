@@ -8,6 +8,7 @@ from PySide6.QtCore import Slot
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
+from hsu_viewer.worker import Worker
 
 """
 TODO
@@ -20,13 +21,18 @@ class CompositePlotPanel(DataPanel):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         plot_colors: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(
-            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+            parent=parent,
+            resolution=resolution,
+            dataset=dataset,
+            threadpool=threadpool,
+            **kwargs,
         )
 
         self.width = 180
@@ -38,8 +44,19 @@ class CompositePlotPanel(DataPanel):
 
         self.setToolTip(self.composite_tooltip(self.plot_colors))
 
-        self._load_spectral_data()
-        self._plot_spectral_data()
+        self.loading.emit(True)
+        self.get_plot()
+
+    def get_plot(self) -> None:
+        if self.threadpool:
+            worker = Worker(self._load_spectral_data)
+            worker.signals.result.connect(self._plot_spectral_data)
+            worker.signals.finished.connect(self._on_finish)
+            self.threadpool.start(worker)
+        else:
+            result = self._load_spectral_data()
+            self._plot_spectral_data(result)
+            self.loading.emit(False)
 
     def _load_spectral_data(self) -> None:
         mineral_columns = [min["column"] for min in self.dataset_info.values()]
@@ -63,15 +80,22 @@ class CompositePlotPanel(DataPanel):
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
-        self.bar_widths = data[:, 1] - data[:, 0]
-        self.bar_centers = (data[:, 0] + data[:, 1]) / 2
-        self.meter_start = data[0, 0]
-        self.meter_end = data[-1, 1]
-        self.spectral_data = data[:, 2:]
+        bar_widths = data[:, 1] - data[:, 0]
+        bar_centers = (data[:, 0] + data[:, 1]) / 2
+        meter_start = data[0, 0]
+        meter_end = data[-1, 1]
+        spectral_data = data[:, 2:]
 
-    def _plot_spectral_data(self) -> None:
+        return bar_widths, bar_centers, meter_start, meter_end, spectral_data
+
+    def _plot_spectral_data(self, result: tuple) -> None:
         # create plot figure and canvas
-        height = (self.meter_end - self.meter_start) * self.resolution
+        bar_widths, bar_centers, meter_start, meter_end, spectral_data = result
+
+        if self.layout.count() > 0:
+            self.layout.itemAt(0).widget().deleteLater()
+
+        height = (meter_end - meter_start) * self.resolution
         plot_fig = Figure(
             figsize=(self.width / 100, height / 100),
             dpi=100,
@@ -96,20 +120,20 @@ class CompositePlotPanel(DataPanel):
 
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
-        left = np.zeros(self.spectral_data.shape[0])
-        for idx, spec in enumerate(self.spectral_data.transpose()):
+        left = np.zeros(spectral_data.shape[0])
+        for idx, spec in enumerate(spectral_data.transpose()):
             plot_color = self.plot_colors.get(self.data_name[idx])
             plot.barh(
-                self.bar_centers,
+                bar_centers,
                 spec,
-                self.bar_widths,
+                bar_widths,
                 left=left,
                 facecolor=plot_color,
             )
             left = left + spec
         axis_max = np.max(left)
         plot.set_xticks([0, axis_max / 2, axis_max])
-        plot.set_ylim(self.meter_end, self.meter_start)
+        plot.set_ylim(meter_end, meter_start)
         plot.set_xlim(0, axis_max)
         plot.set_frame_on(False)
         plot.grid(color="#323232")
@@ -121,9 +145,9 @@ class CompositePlotPanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        self.loading.emit(True)
         self.resolution = resolution
-        self.layout.itemAt(0).widget().deleteLater()
-        self._plot_spectral_data()
+        self.get_plot()
 
     def insert_plot(self, plot: FigureCanvasQTAgg) -> None:
         if self.layout.count() == 0:

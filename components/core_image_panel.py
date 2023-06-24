@@ -8,10 +8,10 @@ from PySide6.QtGui import QPixmap
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
+from hsu_viewer.worker import Worker
 
 """
 TODO
--on resize enlarge current images while async get fresh copies at desired size
 -add offset at top of panel
 """
 
@@ -20,12 +20,17 @@ class CoreImagePanel(DataPanel):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         **kwargs,
     ) -> None:
         super().__init__(
-            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+            parent=parent,
+            resolution=resolution,
+            dataset=dataset,
+            threadpool=threadpool,
+            **kwargs,
         )
 
         self.width = 0
@@ -40,9 +45,24 @@ class CoreImagePanel(DataPanel):
         self.layout.addWidget(self.image_frame)
         self.layout.addStretch()
 
-        self._load_core_images()
+        self.loading.emit(True)
+        self.get_images()
+
+    def get_images(self) -> None:
+        if self.threadpool:
+            worker = Worker(self._load_core_images)
+            worker.signals.result.connect(self._display_core_images)
+            worker.signals.finished.connect(self._on_finish)
+            self.threadpool.start(worker)
+        else:
+            result = self._load_core_images()
+            self._display_core_images(result)
+            self.loading.emit(False)
 
     def _load_core_images(self) -> QWidget:
+        pixmaps = []
+        pixmap_width = 0
+
         match self.data_type:
             case "Spectral Images":
                 self.meter = self.dataset.get_row_meter()
@@ -58,11 +78,27 @@ class CoreImagePanel(DataPanel):
         )
         total_image_height = 0
 
-        for path in image_paths:
+        for row_idx, path in enumerate(image_paths):
             pixmap = QPixmap(path)
+            pixmap_height = np.ceil(
+                (self.meter[row_idx][1] - self.meter[row_idx][0])
+                * self.resolution
+            )
+            pixmap = pixmap.scaledToHeight(pixmap_height)
             total_image_height = total_image_height + pixmap.height()
-            if pixmap.width() > self.width:
-                new_width = pixmap.width()
+            if pixmap.width() > pixmap_width:
+                pixmap_width = pixmap.width()
+
+            pixmaps.append(pixmap)
+
+        return pixmaps, pixmap_width, total_image_height
+
+    def _display_core_images(self, result: tuple) -> None:
+        pixmaps, pixmap_width, total_image_height = result
+
+        self.clear_image_tiles()
+
+        for pixmap in pixmaps:
             image = QLabel()
             image.setScaledContents(True)
             image.setPixmap(pixmap)
@@ -72,9 +108,10 @@ class CoreImagePanel(DataPanel):
         self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
 
         frame_height = (self.meter[-1][1] - self.meter[0][0]) * self.resolution
-        frame_width = int(new_width * frame_height / total_image_height)
+        frame_width = int(pixmap_width * frame_height / total_image_height)
         self.image_frame.setFixedSize(frame_width, frame_height)
         self.width = frame_width
+        self.setFixedWidth(self.width)
 
     def insert_tile(self, tile: QLabel) -> None:
         if self.image_frame_layout.count() == 0:
@@ -87,9 +124,6 @@ class CoreImagePanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
-        zoom_ratio = resolution / self.resolution
-        new_height = np.floor(self.image_frame.height() * zoom_ratio)
-        new_width = np.floor(self.image_frame.width() * zoom_ratio)
-        self.image_frame.setFixedSize(new_width, new_height)
-        self.width = new_width
+        self.loading.emit(True)
         self.resolution = resolution
+        self.get_images()

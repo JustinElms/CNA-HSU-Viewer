@@ -8,6 +8,7 @@ from PySide6.QtCore import Slot
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
+from hsu_viewer.worker import Worker
 
 """
 TODO
@@ -20,13 +21,18 @@ class SpectralPlotPanel(DataPanel):
     def __init__(
         self,
         parent=None,
+        threadpool=None,
         resolution: int = 0,
         dataset: Dataset = None,
         plot_colors: dict = None,
         **kwargs,
     ) -> None:
         super().__init__(
-            parent=parent, resolution=resolution, dataset=dataset, **kwargs
+            parent=parent,
+            resolution=resolution,
+            dataset=dataset,
+            threadpool=threadpool,
+            **kwargs,
         )
 
         self.width = 180
@@ -38,8 +44,19 @@ class SpectralPlotPanel(DataPanel):
 
         self.plot_colors = plot_colors
 
-        self._load_spectral_data()
-        self._plot_spectral_data()
+        self.loading.emit(True)
+        self.get_plot()
+
+    def get_plot(self) -> None:
+        if self.threadpool:
+            worker = Worker(self._load_spectral_data)
+            worker.signals.result.connect(self._plot_spectral_data)
+            worker.signals.finished.connect(self._on_finish)
+            self.threadpool.start(worker)
+        else:
+            result = self._load_spectral_data()
+            self._plot_spectral_data(result)
+            self.loading.emit(False)
 
     def _load_spectral_data(self) -> None:
         csv_path = Path(self.csv_data.get("path"))
@@ -61,16 +78,23 @@ class SpectralPlotPanel(DataPanel):
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
-        self.bar_widths = data[:, 1] - data[:, 0]
-        self.bar_centers = (data[:, 0] + data[:, 1]) / 2
-        self.meter_start = data[0, 0]
-        self.meter_end = data[-1, 1]
-        self.spectral_data = data[:, 2]
+        bar_widths = data[:, 1] - data[:, 0]
+        bar_centers = (data[:, 0] + data[:, 1]) / 2
+        meter_start = data[0, 0]
+        meter_end = data[-1, 1]
+        spectral_data = data[:, 2]
 
-    def _plot_spectral_data(self) -> None:
+        return bar_widths, bar_centers, meter_start, meter_end, spectral_data
+
+    def _plot_spectral_data(self, result: tuple) -> None:
         # create plot figure and canvas
+        bar_widths, bar_centers, meter_start, meter_end, spectral_data = result
+
+        if self.layout.count() > 0:
+            self.layout.itemAt(0).widget().deleteLater()
+
         plot_color = self.plot_colors.get(self.data_name)
-        height = (self.meter_end - self.meter_start) * self.resolution
+        height = (meter_end - meter_start) * self.resolution
         plot_fig = Figure(
             figsize=(self.width / 100, height / 100),
             dpi=100,
@@ -102,19 +126,19 @@ class SpectralPlotPanel(DataPanel):
                 axis_min = float(min)
                 axis_max = float(max)
             else:
-                axis_min = self.spectral_data.min()
-                axis_max = self.spectral_data.max()
+                axis_min = spectral_data.min()
+                axis_max = spectral_data.max()
 
         plot_fig.clear()
         plot = plot_fig.add_axes([0, 0, 1, 1])
         plot.barh(
-            self.bar_centers,
-            self.spectral_data,
-            self.bar_widths,
+            bar_centers,
+            spectral_data,
+            bar_widths,
             color=plot_color,
         )
         plot.set_xticks([axis_min, (axis_max + axis_min) / 2, axis_max])
-        plot.set_ylim(self.meter_end, self.meter_start)
+        plot.set_ylim(meter_end, meter_start)
         plot.set_xlim(axis_min, axis_max)
         plot.set_frame_on(False)
         plot.grid(color="#323232")
@@ -126,9 +150,9 @@ class SpectralPlotPanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        self.loading.emit(True)
         self.resolution = resolution
-        self.layout.itemAt(0).widget().deleteLater()
-        self._plot_spectral_data()
+        self.get_plot()
 
     def insert_plot(self, plot: FigureCanvasQTAgg) -> None:
         if self.layout.count() == 0:
