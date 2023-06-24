@@ -14,7 +14,7 @@ class LoadingPanel(QWidget):
         spinner = QMovie(":/loading.gif")
 
         loading_label = QLabel(self)
-        loading_label.setMovie(spinner)
+        loading_label.setText("Loading...")
 
         spinner.start()
 

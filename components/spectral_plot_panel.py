@@ -90,6 +90,9 @@ class SpectralPlotPanel(DataPanel):
         # create plot figure and canvas
         bar_widths, bar_centers, meter_start, meter_end, spectral_data = result
 
+        if self.layout.count() > 0:
+            self.layout.itemAt(0).widget().deleteLater()
+
         plot_color = self.plot_colors.get(self.data_name)
         height = (meter_end - meter_start) * self.resolution
         plot_fig = Figure(
@@ -149,7 +152,6 @@ class SpectralPlotPanel(DataPanel):
     def zoom_changed(self, resolution: int) -> None:
         self.loading.emit(True)
         self.resolution = resolution
-        self.layout.itemAt(0).widget().deleteLater()
         self.get_plot()
 
     def insert_plot(self, plot: FigureCanvasQTAgg) -> None:

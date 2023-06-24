@@ -96,6 +96,8 @@ class CoreImagePanel(DataPanel):
     def _display_core_images(self, result: tuple) -> None:
         pixmaps, pixmap_width, total_image_height = result
 
+        self.clear_image_tiles()
+
         for pixmap in pixmaps:
             image = QLabel()
             image.setScaledContents(True)
@@ -123,6 +125,5 @@ class CoreImagePanel(DataPanel):
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         self.loading.emit(True)
-        self.clear_image_tiles()
         self.resolution = resolution
         self.get_images()
