@@ -67,7 +67,7 @@ class Dashboard(QScrollArea):
         meter_scroll.setFixedWidth(60)
 
         header_content = QWidget()
-        header_content.setFixedHeight(60)
+        header_content.setFixedHeight(80)
 
         self.header_container = DraggableContainer(self, header=True)
 
@@ -76,7 +76,7 @@ class Dashboard(QScrollArea):
         header_scroll.setWidgetResizable(True)
         header_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         header_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        header_scroll.setFixedHeight(60)
+        header_scroll.setFixedHeight(80)
 
         header_content_layout = QHBoxLayout(header_content)
         header_content_layout.setSpacing(0)
@@ -217,6 +217,8 @@ class Dashboard(QScrollArea):
 
         self.zoom_changed.connect(panel.zoom_changed)
         panel.resize_header.connect(header.resize_header)
+        if dataset_args.get("data_subtype") == "Composite Plot":
+            panel.update_axis_limits.connect(header.update_axis_limits)
         header.close_panel.connect(panel.close_panel)
         header.close_panel.connect(
             lambda: self.remove_legend_mineral(dataset_args["data_name"])

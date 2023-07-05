@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.ticker import NullFormatter
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Signal, Slot
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
@@ -18,6 +18,8 @@ TODO
 
 
 class CompositePlotPanel(DataPanel):
+    update_axis_limits = Signal(list)
+
     def __init__(
         self,
         parent=None,
@@ -41,6 +43,8 @@ class CompositePlotPanel(DataPanel):
         self.depth = dataset.meter_end()
 
         self.plot_colors = plot_colors
+
+        self.axis_limits = [0, 1]
 
         self.setToolTip(self.composite_tooltip(self.plot_colors))
 
@@ -132,6 +136,7 @@ class CompositePlotPanel(DataPanel):
             )
             left = left + spec
         axis_max = np.max(left)
+        self.update_axis_limits.emit([0, axis_max])
         plot.set_xticks([0, axis_max / 2, axis_max])
         plot.set_ylim(meter_end, meter_start)
         plot.set_xlim(0, axis_max)
