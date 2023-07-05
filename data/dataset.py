@@ -60,28 +60,28 @@ class Dataset:
     def data(
         self,
         product_group: str | None = None,
-        datatype: str | None = None,
+        data_type: str | None = None,
         selection: str | None = None,
     ) -> dict:
         if isinstance(selection, list):
             data_dict = {}
-            if datatype == "Composite Images":
-                datatype = "Mineral"
+            if data_type == "Composite Images":
+                data_type = "Mineral"
                 for value in selection:
-                    data_dict[value] = self.config[product_group][datatype][
+                    data_dict[value] = self.config[product_group][data_type][
                         value
                     ]["path"]
-            elif datatype == "Composite Plot":
-                datatype = "Mineral Percent"
+            elif data_type == "Composite Plot":
+                data_type = "Mineral Percent"
                 for value in selection:
-                    data_dict[value] = self.config[product_group][datatype][
+                    data_dict[value] = self.config[product_group][data_type][
                         value
                     ]
             else:
-                data_dict = self.config[product_group][datatype][value]
+                data_dict = self.config[product_group][data_type][selection]
             return data_dict
 
-        return self.config[product_group][datatype][selection]
+        return self.config[product_group][data_type][selection]
 
     def path(
         self,

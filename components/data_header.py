@@ -31,12 +31,12 @@ class DataHeader(QWidget):
         super().__init__(parent=parent)
 
         dataset_name = kwargs.get("dataset_name")
-        data_type = kwargs.get("data_type")
+        self.data_type = kwargs.get("data_type")
         self.data_subtype = kwargs.get("data_subtype")
         self.data_name = kwargs.get("data_name")
 
         self.dataset_info = dataset.data(
-            data_type, self.data_subtype, self.data_name
+            self.data_type, self.data_subtype, self.data_name
         )
 
         self.csv_data = dataset.config.get("csv_data")
@@ -98,8 +98,8 @@ class DataHeader(QWidget):
 
         datatype_label = QLabel(title_container)
         datatype_label.setFixedHeight(20)
-        datatype_label.setText(f"{data_type}: {self.data_subtype}")
-        datatype_label.setToolTip(f"{data_type}: {self.data_subtype}")
+        datatype_label.setText(f"{self.data_type}: {self.data_subtype}")
+        datatype_label.setToolTip(f"{self.data_type}: {self.data_subtype}")
         datatype_label.setStyleSheet(
             "background-color: transparent; \
                 font: bold 10pt; border: transparent"
@@ -120,6 +120,8 @@ class DataHeader(QWidget):
             dataname_label.setText(label_text)
             dataname_label.setToolTip(label_text)
 
+        self.axis_limits = self.get_axis_limits()
+        self.axis_unit = self.get_axis_unit()
         self.axis_limits_label = QLabel(self)
 
         self.layout = QVBoxLayout(self)
@@ -156,20 +158,41 @@ class DataHeader(QWidget):
         self.close_panel.emit()
         self.deleteLater()
 
-    def axis_limits(self) -> list:
+    def get_axis_limits(self) -> list:
         try:
-            axis_min = self.dataset_info.get("min_value")
-            axis_max = self.dataset_info.get("max_value")
-        except ValueError:
-            if self.data_subtype == "Position":
-                [min, max] = self.data_name.split(" ")
-                axis_min = min
-                axis_max = max
-            else:
-                axis_min = ""
-                axis_max = ""
+            axis_min = float(self.dataset_info.get("min_value"))
+            axis_max = float(self.dataset_info.get("max_value"))
+            if (
+                self.data_subtype == "Mineral Percent"
+                or self.data_subtype == "Chemistry"
+            ):
+                axis_min = axis_min * 100
+                axis_max = axis_max * 100
+        except TypeError:
+            axis_min = None
+            axis_max = None
 
         return [axis_min, axis_max]
+
+    def get_axis_unit(self) -> str:
+        unit = self.dataset_info.get("unit")
+
+        if unit == "percent" or self.data_subtype == "Composite Plot":
+            unit = "%"
+            if self.axis_limits[0] and self.axis_limits[1]:
+                self.axis_limits = [
+                    float(limit) * 100 for limit in self.axis_limits
+                ]
+        elif unit == "nanometer":
+            unit = "nm"
+
+        return unit
+
+    def update_axis_limits(self, new_axis_limits: list) -> None:
+        self.axis_limits = new_axis_limits
+        if self.axis_unit == "%" or self.data_subtype == "Composite Plot":
+            self.axis_limits = [limit * 100 for limit in self.axis_limits]
+        self.draw_axis_scale(self.width())
 
     def show_menu(self):
         self.context_menu.popup(
@@ -180,10 +203,6 @@ class DataHeader(QWidget):
         self.save_image.emit()
 
     def draw_axis_scale(self, width: int) -> None:
-        axis_limits = self.axis_limits()
-        unit = self.dataset_info.get("unit")
-        if unit == "percent":
-            unit = "%"
         pixmap = QPixmap(width, 20)
 
         qp = QPainter(pixmap)  # initiate painter
@@ -195,15 +214,17 @@ class DataHeader(QWidget):
         qp.drawRect(width - 2, 0, 1, 20)
         qp.drawRect(int(width / 2), 10, 0.5, 10)
 
-        if axis_limits[0] and axis_limits[1]:
+        if self.axis_limits[0] is not None and self.axis_limits[1] is not None:
             font_metric = QFontMetrics(QFont())
-            axis_limits = [f"{limit} {unit}" for limit in axis_limits]
+            axis_limit_str = [
+                f"{limit:.2f} {self.axis_unit}" for limit in self.axis_limits
+            ]
             right_label_width = font_metric.size(
-                Qt.TextSingleLine, axis_limits[1]
+                Qt.TextSingleLine, axis_limit_str[1]
             ).width()
 
-            qp.drawText(5, 15, axis_limits[0])
-            qp.drawText(width - right_label_width - 5, 15, axis_limits[1])
+            qp.drawText(5, 15, axis_limit_str[0])
+            qp.drawText(width - right_label_width - 5, 15, axis_limit_str[1])
 
         qp.end()
 

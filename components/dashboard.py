@@ -217,6 +217,8 @@ class Dashboard(QScrollArea):
 
         self.zoom_changed.connect(panel.zoom_changed)
         panel.resize_header.connect(header.resize_header)
+        if dataset_args.get("data_subtype") == "Composite Plot":
+            panel.update_axis_limits.connect(header.update_axis_limits)
         header.close_panel.connect(panel.close_panel)
         header.close_panel.connect(
             lambda: self.remove_legend_mineral(dataset_args["data_name"])
