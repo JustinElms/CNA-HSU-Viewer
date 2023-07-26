@@ -47,6 +47,15 @@ class DatasetSelector(Modal):
             "border: 1px solid rgb(222, 222, 222);"
         )
         import_dataset_button.clicked.connect(self._import_dataset)
+
+        import_geochem_button = QPushButton(
+            "Import Geochemistry Data", info_panel
+        )
+        import_geochem_button.setStyleSheet(
+            "border: 1px solid rgb(222, 222, 222);"
+        )
+        import_geochem_button.clicked.connect(self._import_geochem)
+
         self.meta_table = MetadataTable(info_panel)
 
         button_panel = QWidget(info_panel)
@@ -69,6 +78,7 @@ class DatasetSelector(Modal):
 
         info_panel_layout = QVBoxLayout(info_panel)
         info_panel_layout.addWidget(import_dataset_button)
+        info_panel_layout.addWidget(import_geochem_button)
         info_panel_layout.addStretch()
         info_panel_layout.addWidget(self.comp_image_button)
         info_panel_layout.addWidget(self.comp_plot_button)
@@ -132,9 +142,25 @@ class DatasetSelector(Modal):
         dataset_path = QFileDialog.getExistingDirectory(
             self, "Select Main Directory"
         )
-        self.hsu_config.add_dataset(dataset_path)
-        self.dataset_list.clear_list()
+        dataset_name = self.hsu_config.add_dataset(dataset_path)
+        self._clear_lists()
         self.dataset_list.set_items(self.hsu_config.datasets())
+        self.dataset_list.select(dataset_name)
+
+    def _import_geochem(self) -> None:
+        geochem_path = QFileDialog.getOpenFileName(
+            self, "Select Geochemistry Data", filter="(*.xlsx)"
+        )[0]
+
+        dataset_name = self.hsu_config.add_geochem(geochem_path)
+        self._clear_lists()
+        self.dataset_list.set_items(self.hsu_config.datasets())
+        self.dataset_list.select(dataset_name)
+
+    def _clear_lists(self) -> None:
+        self.dataset_list.clear_list()
+        self.datatypes_list.clear_list()
+        self.data_list.clear_list()
 
     def _update_table(self) -> None:
         self.meta_table.set_label(
