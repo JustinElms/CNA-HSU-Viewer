@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+from openpyxl import load_workbook
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.ticker import NullFormatter
@@ -49,12 +50,18 @@ class SpectralPlotPanel(DataPanel):
 
     def get_plot(self) -> None:
         if self.threadpool:
-            worker = Worker(self._load_spectral_data)
+            if self.data_subtype == "Geochemistry":
+                worker = Worker(self._load_geochem_data)
+            else:
+                worker = Worker(self._load_spectral_data)
             worker.signals.result.connect(self._plot_spectral_data)
             worker.signals.finished.connect(self._on_finish)
             self.threadpool.start(worker)
         else:
-            result = self._load_spectral_data()
+            if self.data_subtype == "Geochemistry":
+                result = self._load_geochem_data()
+            else:
+                result = self._load_spectral_data()
             self._plot_spectral_data(result)
             self.loading.emit(False)
 
@@ -78,6 +85,11 @@ class SpectralPlotPanel(DataPanel):
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
+        if data[0, 0] != 0:
+            data = np.insert(
+                data.astype(float), 0, [0, data[0, 0], np.nan], axis=0
+            )
+
         bar_widths = data[:, 1] - data[:, 0]
         bar_centers = (data[:, 0] + data[:, 1]) / 2
         meter_start = data[0, 0]
@@ -85,6 +97,45 @@ class SpectralPlotPanel(DataPanel):
         spectral_data = data[:, 2]
 
         return bar_widths, bar_centers, meter_start, meter_end, spectral_data
+
+    def _load_geochem_data(self) -> None:
+        geochem_path = self.dataset.geochem_path(self.data_name)
+
+        wb = load_workbook(filename=geochem_path)
+        ws = wb["Geochemistry"]
+        meter_start = None
+        meter_end = None
+        mineral_unit = self.dataset.data(
+            self.data_type, self.data_subtype, self.data_name
+        ).get("unit")
+
+        for col in ws.iter_cols(min_row=2, min_col=2, values_only=True):
+            header = col[0]
+            col_data = [
+                c for c in col if isinstance(c, int) or isinstance(c, float)
+            ]
+            if header == "depth_start":
+                meter_start = np.array(col_data)
+            elif header == "depth_end":
+                meter_end = np.array(col_data)
+            elif header == f"{self.data_name}_{mineral_unit}":
+                data = np.array(col_data)
+
+        if meter_end[-1] >= 9999:
+            meter_start = np.arange(0, data.shape[0], 1)
+            meter_end = np.arange(1, data.shape[0] + 1, 1)
+
+        if meter_start[0] != 0:
+            meter_start = np.insert(meter_start, 0, 0)
+            meter_end = np.insert(meter_end, 0, meter_start[0])
+            data = np.insert(data.astype(float), 0, np.nan)
+
+        bar_widths = meter_end - meter_start
+        bar_centers = (meter_end + meter_start) / 2
+        meter_start = meter_start[0]
+        meter_end = meter_end[-1]
+
+        return bar_widths, bar_centers, meter_start, meter_end, data
 
     def _plot_spectral_data(self, result: tuple) -> None:
         # create plot figure and canvas

@@ -4,7 +4,7 @@ import numpy as np
 from natsort import os_sorted
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QColor, QPainter, QPixmap
 
 from components.data_panel import DataPanel
 from data.dataset import Dataset
@@ -80,7 +80,7 @@ class CoreImagePanel(DataPanel):
 
         for row_idx, path in enumerate(image_paths):
             pixmap = QPixmap(path)
-            pixmap_height = np.ceil(
+            pixmap_height = np.rint(
                 (self.meter[row_idx][1] - self.meter[row_idx][0])
                 * self.resolution
             )
@@ -90,6 +90,24 @@ class CoreImagePanel(DataPanel):
                 pixmap_width = pixmap.width()
 
             pixmaps.append(pixmap)
+
+        if self.meter[0, 0] != 0:
+            self.meter = np.insert(
+                self.meter.astype(float), 0, [0, self.meter[0, 0]], axis=0
+            )
+
+            pixmap_height = np.ceil(
+                (self.meter[0][1] - self.meter[0][0]) * self.resolution
+            )
+
+            pixmap = QPixmap(pixmap_width, pixmap_height)
+
+            qp = QPainter(pixmap)  # initiate painter
+            qp.setBrush(QColor(0, 0, 0))  # paint meter background black
+            qp.drawRect(0, 0, pixmap_width, pixmap_height)
+
+            total_image_height = total_image_height + pixmap_height
+            pixmaps.insert(0, pixmap)
 
         return pixmaps, pixmap_width, total_image_height
 

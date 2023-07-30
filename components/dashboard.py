@@ -150,7 +150,18 @@ class Dashboard(QScrollArea):
     def add_data_panel(self, dataset_args: dict) -> None:
         dataset_config = dataset_args.get("config")
         dataset_args.pop("config")
-        meter_end = dataset_config.meter_end()
+        if dataset_args["data_subtype"] == "Geochemistry":
+            geochem_info = dataset_config.data(
+                dataset_args["data_type"],
+                dataset_args["data_subtype"],
+                dataset_args["data_name"],
+            )
+            meter_end = geochem_info["meter_end"]
+            meter_start = geochem_info["meter_start"]
+
+        else:
+            meter_end = dataset_config.meter_end()
+            meter_start = dataset_config.meter_start()
 
         self.mineral_legend.add_minerals(dataset_args.get("data_name"))
         plot_colors = self.mineral_legend.color(dataset_args.get("data_name"))
@@ -205,14 +216,22 @@ class Dashboard(QScrollArea):
                         plot_colors,
                         **dataset_args,
                     )
+            case "Additional Data":
+                panel = SpectralPlotPanel(
+                    self.data_container,
+                    self.threadpool,
+                    METER_RES_LEVELS[self.zoom_level],
+                    dataset_config,
+                    plot_colors,
+                    **dataset_args,
+                )
 
         header = DataHeader(
             self.header_container, panel.width, dataset_config, **dataset_args
         )
 
         image_height = int(
-            (dataset_config.meter_end() - dataset_config.meter_start())
-            * METER_RES_LEVELS[self.zoom_level]
+            (meter_end - meter_start) * METER_RES_LEVELS[self.zoom_level]
         )
 
         self.zoom_changed.connect(panel.zoom_changed)

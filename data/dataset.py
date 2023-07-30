@@ -40,9 +40,9 @@ class Dataset:
             return {}
 
     def data_types(self) -> dict:
-        data_types = list(self.config.keys())
+        data_types = list(self.config["data"].keys())
         data_types = [dt for dt in data_types if dt not in SKIP_COLUMNS]
-        return {dt: list(self.config[dt].keys()) for dt in data_types}
+        return {dt: list(self.config["data"][dt].keys()) for dt in data_types}
 
     def data_options(
         self,
@@ -52,7 +52,7 @@ class Dataset:
         if product_group and datatype:
             options = None
             try:
-                options = list(self.config[product_group][datatype])
+                options = list(self.config["data"][product_group][datatype])
             except KeyError:
                 pass
             return options
@@ -68,20 +68,22 @@ class Dataset:
             if data_type == "Composite Images":
                 data_type = "Mineral"
                 for value in selection:
-                    data_dict[value] = self.config[product_group][data_type][
-                        value
-                    ]["path"]
+                    data_dict[value] = self.config["data"][product_group][
+                        data_type
+                    ][value]["path"]
             elif data_type == "Composite Plot":
                 data_type = "Mineral Percent"
                 for value in selection:
-                    data_dict[value] = self.config[product_group][data_type][
-                        value
-                    ]
+                    data_dict[value] = self.config["data"][product_group][
+                        data_type
+                    ][value]
             else:
-                data_dict = self.config[product_group][data_type][selection]
+                data_dict = self.config["data"][product_group][data_type][
+                    selection
+                ]
             return data_dict
 
-        return self.config[product_group][data_type][selection]
+        return self.config["data"][product_group][data_type][selection]
 
     def path(
         self,
@@ -93,17 +95,31 @@ class Dataset:
             return Path(self.config["csv_data"]["path"])
         else:
             return Path(
-                self.config[product_group][datatype][selection]["path"]
+                self.config["data"][product_group][datatype][selection]["path"]
             )
 
     def n_rows(self) -> int:
         return self.config["csv_data"]["n_rows"]
 
     def meter_start(self) -> float:
-        return self.config["csv_data"]["meter_start"]
+        try:
+            return self.config["csv_data"]["meter_start"]
+        except KeyError:
+            return None
 
     def meter_end(self) -> float:
-        return self.config["csv_data"]["meter_end"]
+        try:
+            return self.config["csv_data"]["meter_end"]
+        except KeyError:
+            return None
+
+    def geochem_only(self) -> bool:
+        return self.config.get("geochem_only")
+
+    def geochem_path(self, mineral: str) -> str:
+        return self.config["data"]["Additional Data"]["Geochemistry"][mineral][
+            "path"
+        ]
 
     def meter(self) -> np.array:
         meter_from = self.config["meter_from"]

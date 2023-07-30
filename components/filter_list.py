@@ -36,6 +36,8 @@ class FilterList(QWidget):
         self.model_view = QTreeView(self)
         self.model_view.setHeaderHidden(True)
         self.model = QStandardItemModel()
+        # self.model_root = self.model.invisibleRootItem()
+
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy_model.setRecursiveFilteringEnabled(True)
@@ -106,9 +108,12 @@ class FilterList(QWidget):
 
                 self.model_view.expandAll()
 
-    def select(self, index: int | list) -> None:
+    def select(self, index: int | list | str) -> None:
         if isinstance(self.options, list):
-            item = self.model.item(index)
+            if isinstance(index, str):
+                item = self.model.findItems(index)[0]
+            else:
+                item = self.model.item(index)
             item.setBackground(Qt.blue)
             self.selection_model.setCurrentIndex(
                 self.model.indexFromItem(item),
@@ -135,6 +140,7 @@ class FilterList(QWidget):
     def clear_list(self) -> None:
         if self.model.item(0):
             self.model.clear()
+        self.selected = []
 
     def enable_multi(self) -> None:
         for selected in self.selected:

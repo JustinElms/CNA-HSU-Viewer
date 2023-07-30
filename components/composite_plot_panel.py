@@ -84,6 +84,12 @@ class CompositePlotPanel(DataPanel):
             data[:, 0] = np.arange(0, data.shape[0], 1)
             data[:, 1] = np.arange(1, data.shape[0] + 1, 1)
 
+        if data[0, 0] != 0:
+            top_row = np.full([1, data.shape[1]], np.nan)
+            top_row[0, 0] = 0
+            top_row[0, 1] = data[0, 0]
+            data = np.insert(data.astype(float), 0, top_row, axis=0)
+
         bar_widths = data[:, 1] - data[:, 0]
         bar_centers = (data[:, 0] + data[:, 1]) / 2
         meter_start = data[0, 0]
@@ -135,7 +141,7 @@ class CompositePlotPanel(DataPanel):
                 facecolor=plot_color,
             )
             left = left + spec
-        axis_max = np.max(left)
+        axis_max = np.nanmax(left)
         self.update_axis_limits.emit([0, axis_max])
         plot.set_xticks([0, axis_max / 2, axis_max])
         plot.set_ylim(meter_end, meter_start)

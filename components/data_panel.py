@@ -37,7 +37,7 @@ class DataPanel(QWidget):
         self.dataset_info = dataset.data(
             self.data_type, self.data_subtype, self.data_name
         )
-        self.csv_data = self.dataset.config["csv_data"]
+        self.csv_data = self.dataset.config.get("csv_data")
 
         self.loading_panel = LoadingPanel(self)
         self.loading_panel.raise_()

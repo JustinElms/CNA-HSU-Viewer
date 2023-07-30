@@ -57,7 +57,8 @@ class MetadataTable(QWidget):
         exclamation_label.setFont(QFont("Times", 32))
         exclamation_label.setStyleSheet("border: none; color: red;")
         warning_label = QLabel(
-            "This dataset does not contain valid meter data. Assuming depth of 1m per row.",
+            "This dataset does not contain valid meter data. \
+            Assuming depth of 1m per row.",
             self.warning_container,
         )
         warning_label.setWordWrap(True)
@@ -109,26 +110,26 @@ class MetadataTable(QWidget):
                 1,
                 1,
                 QTableWidgetItem(
-                    config[self.selected_datatype][self.selected_subtype][
-                        self.selected_dataname
-                    ]["path"]
+                    config["data"][self.selected_datatype][
+                        self.selected_subtype
+                    ][self.selected_dataname]["path"]
                 ),
             )
-        self.table.setItem(2, 0, QTableWidgetItem("Starting Depth"))
-        self.table.setItem(
-            2, 1, QTableWidgetItem(str(config["csv_data"]["meter_start"]))
-        )
-        self.table.setItem(3, 0, QTableWidgetItem("Ending Depth"))
-        self.table.setItem(
-            3, 1, QTableWidgetItem(str(config["csv_data"]["meter_end"]))
-        )
+        if config.get("csv_data"):
+            self.table.setItem(2, 0, QTableWidgetItem("Starting Depth"))
+            self.table.setItem(
+                2, 1, QTableWidgetItem(str(config["csv_data"]["meter_start"]))
+            )
+            self.table.setItem(3, 0, QTableWidgetItem("Ending Depth"))
+            self.table.setItem(
+                3, 1, QTableWidgetItem(str(config["csv_data"]["meter_end"]))
+            )
+            if config["csv_data"].get("meter_missing"):
+                self.warning_container.show()
+            else:
+                self.warning_container.hide()
 
         self.table.resizeRowsToContents()
-
-        if config["csv_data"].get("meter_missing"):
-            self.warning_container.show()
-        else:
-            self.warning_container.hide()
 
     def add_multi_data(self, config: dict, items: list) -> None:
         self.table.setRowCount(3)
@@ -147,9 +148,9 @@ class MetadataTable(QWidget):
             row_idx = 3
             for item in items:
                 self.table.setRowCount(self.table.rowCount() + 2)
-                data = config[self.selected_datatype][self.selected_subtype][
-                    item
-                ]
+                data = config["data"][self.selected_datatype][
+                    self.selected_subtype
+                ][item]
                 mineral_item = QTableWidgetItem(data["name"])
                 mineral_item.setBackground(QColor("blue"))
                 self.table.setItem(row_idx, 0, mineral_item)

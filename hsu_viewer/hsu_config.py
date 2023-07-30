@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from openpyxl import load_workbook
 
 
 """
@@ -53,6 +54,9 @@ class HSUConfig:
         self.hsu_config_path: Path = config_path
         self.hsu_config: dict = self._get_hsu_config()
 
+    def __getitem__(self, key: str) -> dict:
+        return self.hsu_config.get(key)
+
     def _get_hsu_config(self) -> dict:
         cwd = Path(__file__).parent
 
@@ -62,7 +66,7 @@ class HSUConfig:
         except FileNotFoundError:
             return {}
 
-    def add_dataset(self, dataset_path: str) -> None:
+    def add_dataset(self, dataset_path: str) -> str:
         dataset_path = Path(dataset_path)
         dataset_name = dataset_path.name
         dataset_config_path = dataset_path.joinpath(f"{dataset_name}.cfg")
@@ -74,22 +78,129 @@ class HSUConfig:
         if len(csv_files) > 0:
             spec_data, csv_data = self._parse_csv_data(csv_files[0])
 
-        with open(dataset_config_path, "w") as f:
-            json.dump(
-                {
-                    "path": dataset_path.as_posix(),
-                    "csv_data": {"path": csv_files[0].as_posix(), **csv_data},
-                    "Spectral Images": spec_images,
-                    "Spectral Data": spec_data,
-                    "Corebox Images": core_images,
-                },
-                f,
-            )
-
-        self.hsu_config[dataset_name] = {
-            "path": dataset_config_path.as_posix()
+        config_data = {
+            "path": dataset_path.as_posix(),
+            "csv_data": {"path": csv_files[0].as_posix(), **csv_data},
+            "data": {
+                "Spectral Images": spec_images,
+                "Spectral Data": spec_data,
+                "Corebox Images": core_images,
+            },
         }
 
+        if self.hsu_config.get(dataset_name) and self.hsu_config[
+            dataset_name
+        ].get("geochem_path"):
+            geochem_path = Path(
+                self.hsu_config[dataset_name].get("geochem_path")
+            )
+            geochem_data = self._get_geochem_data(geochem_path.as_posix())
+            config_data["data"]["Additional Data"] = {
+                "Geochemistry": {
+                    **geochem_data,
+                }
+            }
+            self.hsu_config[dataset_name] = {
+                "path": dataset_config_path.as_posix(),
+                "geochem_path": geochem_path.as_posix(),
+            }
+        else:
+            self.hsu_config[dataset_name] = {
+                "path": dataset_config_path.as_posix()
+            }
+
+        with open(dataset_config_path, "w") as f:
+            json.dump(config_data, f)
+
+        self._save_hsu_config()
+
+        return dataset_name
+
+    def add_geochem(
+        self,
+        geochem_path: str,
+    ) -> str:
+        geochem_path = Path(geochem_path)
+        dataset_name = geochem_path.name.replace(".xlsx", "")
+
+        geochem_data = self._get_geochem_data(geochem_path.as_posix())
+
+        if self.hsu_config.get(dataset_name):
+            dataset_config_path = self.hsu_config[dataset_name]["path"]
+            # TODO: add catch if cannot open config
+            with open(dataset_config_path, "r") as f:
+                dataset_config = json.load(f)
+            dataset_config["data"]["Additional Data"] = {
+                "Geochemistry": {
+                    **geochem_data,
+                }
+            }
+            with open(dataset_config_path, "w") as f:
+                json.dump(dataset_config, f)
+        else:
+            dataset_config_path = geochem_path.parent.joinpath(
+                f"{dataset_name}.cfg"
+            )
+            with open(dataset_config_path, "w") as f:
+                json.dump(
+                    {
+                        "path": geochem_path.as_posix(),
+                        "geochem_only": True,
+                        "data": {
+                            "Additional Data": {
+                                "Geochemistry": {
+                                    **geochem_data,
+                                }
+                            },
+                        },
+                    },
+                    f,
+                )
+
+            self.hsu_config[dataset_name] = {
+                "path": dataset_config_path.as_posix(),
+                "geochem_path": geochem_path.as_posix(),
+                "geochem_only": True,
+            }
+
+        self._save_hsu_config()
+
+        return dataset_name
+
+    def _get_geochem_data(self, geochem_path: str) -> dict:
+        wb = load_workbook(filename=geochem_path)
+        ws = wb["Geochemistry"]
+        col_headers = []
+        meter_start = None
+        meter_end = None
+        geochem_data = {}
+        for col in ws.iter_cols(min_row=2, min_col=2, values_only=True):
+            header = col[0]
+            col_headers.append(header)
+            col_data = [
+                c for c in col if isinstance(c, int) or isinstance(c, float)
+            ]
+            if header == "depth_start":
+                meter_start = col_data[0]
+            elif header == "depth_end":
+                meter_end = col_data[-1]
+            elif header is not None:
+                header_pts = header.split("_")
+                mineral_name = " ".join(header_pts[:-1])
+                mineral_unit = header_pts[-1]
+                geochem_data[mineral_name] = {
+                    "name": mineral_name,
+                    "unit": mineral_unit,
+                    "path": geochem_path,
+                    "meter_start": meter_start,
+                    "meter_end": meter_end,
+                    "min_value": min(col_data),
+                    "max_value": max(col_data),
+                }
+
+        return geochem_data
+
+    def _save_hsu_config(self) -> None:
         keys = list(self.hsu_config.keys())
         keys.sort()
         self.hsu_config = {key: self.hsu_config[key] for key in keys}
@@ -98,7 +209,7 @@ class HSUConfig:
             json.dump(self.hsu_config, f)
 
     def dataset_path(self, dataset: str) -> dict:
-        return self.hsu_config[dataset]["path"]
+        return self.hsu_config[dataset].get("path")
 
     def datasets(self) -> list:
         if self.hsu_config:
