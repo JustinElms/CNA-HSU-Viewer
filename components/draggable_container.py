@@ -18,8 +18,6 @@ class DraggableContainer(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(Qt.AlignTop)
         self.header = header
-        if header:
-            self.layout.addSpacing(17)
 
         self.setLayout(self.layout)
 
@@ -52,17 +50,21 @@ class DraggableContainer(QWidget):
         if self.layout.count() == 0:
             self.layout.addWidget(panel)
             self.layout.addStretch()
+            if self.header:
+                self.layout.addSpacing(117)
+            else:
+                self.layout.addSpacing(100)
         else:
-            self.layout.insertWidget(self.layout.count() - 1, panel)
+            self.layout.insertWidget(self.layout.count() - 2, panel)
 
     @Slot(int, int)
     def insert_dragged_widget(self, start_index, end_index):
-        widget = self.layout.itemAt(start_index - 1).widget()
-        self.layout.insertWidget(end_index - 1, widget)
+        widget = self.layout.itemAt(start_index).widget()
+        self.layout.insertWidget(end_index, widget)
 
     def max_panel_depth(self) -> int:
         depths = []
-        for i in range(self.layout.count() - 1):
+        for i in range(self.layout.count() - 2):
             depths.append(self.layout.itemAt(i).widget().depth)
         if not depths:
             return 0
@@ -70,7 +72,7 @@ class DraggableContainer(QWidget):
 
     def get_current_minerals(self) -> list:
         mineral_list = []
-        for i in range(self.layout.count() - 1):
+        for i in range(self.layout.count() - 2):
             minerals = self.layout.itemAt(i).widget().data_name
             if not isinstance(minerals, list):
                 mineral_list.append(minerals)
