@@ -10,13 +10,13 @@ from components.data_panel import DataPanel
 from data.dataset import Dataset
 from hsu_viewer.worker import Worker
 
-"""
-TODO
--add offset at top of panel
-"""
-
 
 class CoreImagePanel(DataPanel):
+    """Component to display Core Images
+
+    Handles production, manipulation, and display of core images.
+    """
+
     def __init__(
         self,
         parent=None,
@@ -25,6 +25,17 @@ class CoreImagePanel(DataPanel):
         dataset: Dataset = None,
         **kwargs,
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            threadpool(None/QThreadpool): The threadpool used to handle async
+                operations.
+            resolution(int): The curently selected resolution (px/m)
+            dataset(Dataset): The dataset object for the selected mineral data.
+            plot_colors(dict): A dictionary of colors to be assigned to each
+                mineral.
+        """
         super().__init__(
             parent=parent,
             resolution=resolution,
@@ -49,6 +60,9 @@ class CoreImagePanel(DataPanel):
         self.get_images()
 
     def get_images(self) -> None:
+        """Handles the process of loading and displying images in the widget.
+        Can be run asynchronously if a theadpool was assigned.
+        """
         if self.threadpool:
             worker = Worker(self._load_core_images)
             worker.signals.result.connect(self._display_core_images)
@@ -60,6 +74,7 @@ class CoreImagePanel(DataPanel):
             self.loading.emit(False)
 
     def _load_core_images(self) -> QWidget:
+        """Loads each image to needed for selected mineral."""
         pixmaps = []
         pixmap_width = 0
 
@@ -112,6 +127,12 @@ class CoreImagePanel(DataPanel):
         return pixmaps, pixmap_width, total_image_height
 
     def _display_core_images(self, result: tuple) -> None:
+        """Scales the images and adds them to the image_frame object.
+
+        Args:
+            result(tuple): A tuple containing image data and size parameters.
+
+        """
         pixmaps, pixmap_width, total_image_height = result
 
         self.clear_image_tiles()
@@ -120,7 +141,7 @@ class CoreImagePanel(DataPanel):
             image = QLabel()
             image.setScaledContents(True)
             image.setPixmap(pixmap)
-            self.insert_tile(image)
+            self.insert_row(image)
 
         self.image_frame_layout.setSpacing(0)
         self.image_frame_layout.setContentsMargins(0, 0, 0, 0)
@@ -131,7 +152,13 @@ class CoreImagePanel(DataPanel):
         self.width = frame_width
         self.setFixedWidth(self.width)
 
-    def insert_tile(self, tile: QLabel) -> None:
+    def insert_row(self, tile: QLabel) -> None:
+        """Inserts each row image into the image_fram object.
+
+        Args:
+            tile(QLabel): A QLabel object containing the image to be displayed.
+
+        """
         if self.image_frame_layout.count() == 0:
             self.image_frame_layout.addWidget(tile)
             self.image_frame_layout.addStretch()
@@ -142,6 +169,12 @@ class CoreImagePanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        """Updates the image sizes when the resolution is changed.
+
+        Args:
+            resolution(int): The new resoltuion (px/m).
+
+        """
         self.loading.emit(True)
         self.resolution = resolution
         self.get_images()

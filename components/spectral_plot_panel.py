@@ -13,12 +13,16 @@ from hsu_viewer.worker import Worker
 
 """
 TODO
--resize plot instead of replotting it?
--add offset at top of panel
+- tooltip
 """
 
 
 class SpectralPlotPanel(DataPanel):
+    """Component for Plot Images
+
+    Handles production, manipulation, and display of plot images.
+    """
+
     def __init__(
         self,
         parent=None,
@@ -28,6 +32,17 @@ class SpectralPlotPanel(DataPanel):
         plot_colors: dict = None,
         **kwargs,
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            threadpool(None/QThreadpool): The threadpool used to handle async
+                operations.
+            resolution(int): The curently selected resolution (px/m)
+            dataset(Dataset): The dataset object for the selected mineral data.
+            plot_colors(dict): A dictionary of colors to be assigned to each
+                mineral.
+        """
         super().__init__(
             parent=parent,
             resolution=resolution,
@@ -49,6 +64,12 @@ class SpectralPlotPanel(DataPanel):
         self.get_plot()
 
     def get_plot(self) -> None:
+        """Handles the process of loading data and displying the resulting
+        plot. Can be run asynchronously if a theadpool was assigned.
+
+        Args:
+            self: The object instance.
+        """
         if self.threadpool:
             if self.data_subtype == "Geochemistry":
                 worker = Worker(self._load_geochem_data)
@@ -66,6 +87,12 @@ class SpectralPlotPanel(DataPanel):
             self.loading.emit(False)
 
     def _load_spectral_data(self) -> None:
+        """Loads spectral data from csv.
+
+        Args:
+            self: The object instance.
+
+        """
         csv_path = Path(self.csv_data.get("path"))
 
         data = np.genfromtxt(
@@ -99,6 +126,12 @@ class SpectralPlotPanel(DataPanel):
         return bar_widths, bar_centers, meter_start, meter_end, spectral_data
 
     def _load_geochem_data(self) -> None:
+        """Loads geochemistry data from xlsx.
+
+        Args:
+            self: The object instance.
+
+        """
         geochem_path = self.dataset.geochem_path(self.data_name)
 
         wb = load_workbook(filename=geochem_path)
@@ -138,6 +171,14 @@ class SpectralPlotPanel(DataPanel):
         return bar_widths, bar_centers, meter_start, meter_end, data
 
     def _plot_spectral_data(self, result: tuple) -> None:
+        """Plots the data in a horiztonal bar plot.
+
+        Args:
+            self: The object instance.
+            result(tuple): A tuple containing spectral data and bar size
+                parameters.
+
+        """
         # create plot figure and canvas
         bar_widths, bar_centers, meter_start, meter_end, spectral_data = result
 
@@ -201,11 +242,24 @@ class SpectralPlotPanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        """Updates the image sizes when the resolution is changed.
+        Args:
+            self: The object instance.
+            resolution(int): The new resoltuion (px/m).
+
+        """
         self.loading.emit(True)
         self.resolution = resolution
         self.get_plot()
 
     def insert_plot(self, plot: FigureCanvasQTAgg) -> None:
+        """Inserts the plot into the component layout.
+
+        Args:
+            self: The object instance.
+            plot(FigureCanvasQTAgg): The plot objects.
+
+        """
         if self.layout.count() == 0:
             self.layout.addWidget(plot)
             self.layout.addStretch()

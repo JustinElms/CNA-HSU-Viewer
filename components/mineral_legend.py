@@ -10,6 +10,10 @@ from data.colormap import hsu_colormap
 
 
 class MineralLegend(QWidget):
+    """A legend that displays the assigned color of each mineral displayed in
+    the applicaiton.
+    """
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
 
@@ -24,7 +28,12 @@ class MineralLegend(QWidget):
         layout.addWidget(title)
         layout.addWidget(self.legend_container)
 
-    def add_minerals(self, minerals: str) -> None:
+    def add_minerals(self, minerals: list | str) -> None:
+        """Adds new minerals to the legend.
+
+        Args:
+            minerals(list|str): Minerals to be added to the legend.
+        """
         if not isinstance(minerals, list):
             minerals = [minerals]
 
@@ -56,6 +65,11 @@ class MineralLegend(QWidget):
                 )
 
     def remove_mineral(self, mineral: str) -> None:
+        """Removes a mineral from the legend.
+
+        Args:
+            minerals(str): Minerals to be removed from the legend.
+        """
         self.colormap.pop(mineral)
 
         for idx in range(self.legend_container_layout.rowCount()):
@@ -69,6 +83,11 @@ class MineralLegend(QWidget):
                 ).widget().deleteLater()
 
     def color(self, minerals: str | list) -> str:
+        """Returns the color currently assigned to one or more minerals.
+
+        Args:
+            minerals(str|list): A list of minerals to fetch colors for.
+        """
         if isinstance(minerals, str):
             minerals = [minerals]
 
@@ -78,5 +97,8 @@ class MineralLegend(QWidget):
         return colors
 
     def _available_colors(self) -> list:
+        """Returns a list of colors that have not yet been assigned to a
+        mineral.
+        """
         current_colors = list(self.colormap.values())
         return [color for color in hsu_colormap if color not in current_colors]

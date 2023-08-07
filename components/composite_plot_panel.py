@@ -11,13 +11,23 @@ from data.dataset import Dataset
 from hsu_viewer.worker import Worker
 
 """
-TODO
--resize plot instead of replotting it?
--add offset at top of panel
+TODO: 
+    tooltip
 """
 
 
 class CompositePlotPanel(DataPanel):
+    """Component for Composite Plot Images
+
+    Handles production, manipulation, and display of stacked (composite) plot
+    images.
+
+    signals:
+        update_axis_limits(list): Update the range displayed in the related
+            header component.
+
+    """
+
     update_axis_limits = Signal(list)
 
     def __init__(
@@ -29,6 +39,17 @@ class CompositePlotPanel(DataPanel):
         plot_colors: dict = None,
         **kwargs,
     ) -> None:
+        """Initialize component
+        
+        Args:
+            parent(None/QWidget): The parent widget.
+            threadpool(None/QThreadpool): The threadpool used to handle async
+                operations.
+            resolution(int): The curently selected resolution (px/m)
+            dataset(Dataset): The dataset object for the selected mineral data.
+            plot_colors(dict): A dictionary of colors to be assigned to each
+                mineral.
+        """
         super().__init__(
             parent=parent,
             resolution=resolution,
@@ -52,6 +73,9 @@ class CompositePlotPanel(DataPanel):
         self.get_plot()
 
     def get_plot(self) -> None:
+        """Handles the process of loading data and displying the resulting
+        plot. Can be run asynchronously if a theadpool was assigned.
+        """
         if self.threadpool:
             worker = Worker(self._load_spectral_data)
             worker.signals.result.connect(self._plot_spectral_data)
@@ -63,6 +87,9 @@ class CompositePlotPanel(DataPanel):
             self.loading.emit(False)
 
     def _load_spectral_data(self) -> None:
+        """Loads spectral data from csv and shifts as needed to produce
+        stacked plot.
+        """
         mineral_columns = [min["column"] for min in self.dataset_info.values()]
         meter_from_column = self.dataset_info[self.data_name[0]]["meter_from"]
         meter_to_column = self.dataset_info[self.data_name[0]]["meter_to"]
@@ -99,6 +126,13 @@ class CompositePlotPanel(DataPanel):
         return bar_widths, bar_centers, meter_start, meter_end, spectral_data
 
     def _plot_spectral_data(self, result: tuple) -> None:
+        """Plots the data in a horiztonal bar plot.
+
+        Args:
+            result(tuple): A tuple containing spectral data and bar size
+                parameters.
+
+        """
         # create plot figure and canvas
         bar_widths, bar_centers, meter_start, meter_end, spectral_data = result
 
@@ -156,11 +190,22 @@ class CompositePlotPanel(DataPanel):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        """Updates the image sizes when the resolution is changed.
+        Args:
+            resolution(int): The new resoltuion (px/m).
+
+        """
         self.loading.emit(True)
         self.resolution = resolution
         self.get_plot()
 
     def insert_plot(self, plot: FigureCanvasQTAgg) -> None:
+        """Inserts the plot into the component layout.
+
+        Args:
+            plot(FigureCanvasQTAgg): The plot objects.
+
+        """
         if self.layout.count() == 0:
             self.layout.addWidget(plot)
             self.layout.addStretch()

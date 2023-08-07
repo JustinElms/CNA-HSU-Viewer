@@ -22,12 +22,26 @@ from data.dataset import Dataset
 
 
 class DataHeader(QWidget):
+    """Header component for data panels.
+
+    Signals:
+        close_panel(): Signals that this panel will close.
+        save_image(): Saves the data panel as an image.
+    """
+
     close_panel = Signal()
     save_image = Signal()
 
     def __init__(
         self, parent=None, width: int = None, dataset: Dataset = None, **kwargs
     ) -> None:
+        """Initialize component
+        
+        Args:
+            parent(None/QWidget): The parent widget.
+            width(QWidget): The width in pixels of the matching data panel.
+            dataset(Dataset): The dataset object for the selected mineral.
+        """
         super().__init__(parent=parent)
 
         dataset_name = kwargs.get("dataset_name")
@@ -136,8 +150,14 @@ class DataHeader(QWidget):
 
         self.setFixedSize(width, 80)
 
-    def mouseMoveEvent(self, e) -> None:
-        if e.buttons() == Qt.LeftButton:
+    def mouseMoveEvent(self, event) -> None:
+        """Event triggered on mouse movement. Used for drag/drop
+        functionality.
+
+        Args:
+            event: The event object emited by mouse movement.
+        """
+        if event.buttons() == Qt.LeftButton:
             drag = QDrag(self)
             mime = QMimeData()
             drag.setMimeData(mime)
@@ -175,6 +195,7 @@ class DataHeader(QWidget):
         return [axis_min, axis_max]
 
     def get_axis_unit(self) -> str:
+        """Gets unit string of the selected mineral."""
         unit = self.dataset_info.get("unit")
 
         if unit == "percent" or self.data_subtype == "Composite Plot":
@@ -189,20 +210,32 @@ class DataHeader(QWidget):
         return unit
 
     def update_axis_limits(self, new_axis_limits: list) -> None:
+        """Updates the displayed axis limits for the displayed data.
+
+        Args:
+            new_axis_limits: The min and max values of the new limits.
+        """
         self.axis_limits = new_axis_limits
         if self.axis_unit == "%" or self.data_subtype == "Composite Plot":
             self.axis_limits = [limit * 100 for limit in self.axis_limits]
         self.draw_axis_scale(self.width())
 
     def show_menu(self):
+        """Opens the header menu and sets its size."""
         self.context_menu.popup(
             self.menu_button.mapToGlobal(QPoint(40 - self.width(), 20))
         )
 
     def save_panel_image(self) -> None:
+        """Emits the save_image signal to save the data panel image."""
         self.save_image.emit()
 
     def draw_axis_scale(self, width: int) -> None:
+        """Draws and displays the pixmap for the panels axis limits.
+
+        Args:
+            width(int): The width of the axis limit pixmal in pixels.
+        """
         pixmap = QPixmap(width, 20)
 
         qp = QPainter(pixmap)  # initiate painter

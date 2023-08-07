@@ -16,6 +16,10 @@ from components.modal import Modal
 
 
 class SavePanelWindow(Modal):
+    """Used to save a panel as an image and provide users with some basic
+    options.
+    """
+
     def __init__(
         self,
         parent: QWidget,
@@ -23,6 +27,14 @@ class SavePanelWindow(Modal):
         meter_image: QPixmap,
         image_name: str,
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            panel_image(QPixmap): The panel pixmap to be saved.
+            meter_image(QPixmap): The meter pixmap to be saved.
+            image_name(str): The file name for the image output.
+        """
         super().__init__(parent=parent, text="Save Panel Image", size="sm")
 
         layout = QVBoxLayout(self)
@@ -80,6 +92,7 @@ class SavePanelWindow(Modal):
         super().add_content(self)
 
     def set_path(self) -> None:
+        """Provides a file dialog to specify the output image path."""
         new_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save As",
@@ -91,6 +104,7 @@ class SavePanelWindow(Modal):
             self.image_name_label.setText(new_path)
 
     def save_image(self) -> None:
+        """Saves the image with the specified parameters."""
         if self.meter_checkbox.isChecked():
             temp_widget = QWidget()
             temp_layout = QHBoxLayout(temp_widget)
@@ -116,4 +130,5 @@ class SavePanelWindow(Modal):
         self._close()
 
     def _close(self) -> None:
+        """Closes the window."""
         super()._close()

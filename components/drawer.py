@@ -14,7 +14,7 @@ class Drawer(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
 
-        self._expanded = True
+        self._expanded = False
 
         self.content_panel = QWidget(self)
         self.content_panel.setFixedWidth(300)
@@ -30,6 +30,7 @@ class Drawer(QWidget):
         content_panel_layout.addStretch()
         content_panel_layout.addWidget(self.mineral_legend)
         content_panel_layout.addStretch()
+        self.content_panel.hide()
 
         self.button_panel = QWidget(self)
         self.button_panel.setFixedWidth(30)
@@ -50,7 +51,7 @@ class Drawer(QWidget):
         # create button to toggle drawer
         self.drawer_button = QPushButton(self.button_panel)
         self.drawer_button.setIcon(
-            QIcon(QPixmap(":/caret_left.svg").scaledToWidth(12))
+            QIcon(QPixmap(":/caret_right.svg").scaledToWidth(12))
         )
         self.drawer_button.setStyleSheet(
             "background-color: grey; font: bold 12pt"

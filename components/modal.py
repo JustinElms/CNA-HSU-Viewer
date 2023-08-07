@@ -10,11 +10,20 @@ from PySide6.QtWidgets import (
 
 
 class Modal(QWidget):
+    """Base class for modal (overlay) components"""
+
     modal_closed = Signal()
 
     def __init__(
         self, parent: QWidget = None, text: str = None, size: str = "lg"
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            text(str): Text to display at top of modal.
+            size(str): Which size modal to be displayed.
+        """
         super().__init__(parent=parent)
 
         self.background = QWidget(parent)
@@ -58,9 +67,15 @@ class Modal(QWidget):
         self.background.show()
 
     def add_content(self, content: QWidget = None) -> None:
+        """Adds content to the modal layout.
+
+        Args:
+            content(QWidget): A component to be added.
+        """
         self.content_layout.addWidget(content)
 
     def _close(self) -> None:
+        """Closes the modal."""
         self.background.deleteLater()
         self.content.deleteLater()
         self.deleteLater()

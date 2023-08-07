@@ -11,7 +11,16 @@ from PySide6.QtWidgets import (
 
 
 class MetadataTable(QWidget):
+    """A table component used to display metadata for the currently selected
+    mineral and dataset.
+    """
+
     def __init__(self, parent=None) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+        """
         super().__init__(parent=parent)
 
         layout = QVBoxLayout(self)
@@ -20,7 +29,7 @@ class MetadataTable(QWidget):
         self.selected_datatype = None
         self.selected_subtype = None
         self.selected_dataname = None
-        self.multi_data = False
+        self.comp_data = False
 
         self.dataset_label = QLabel(self)
         self.dataset_label.setFont(QFont("Arial", 18))
@@ -77,6 +86,15 @@ class MetadataTable(QWidget):
     def set_label(
         self, dataset: str, data_type: str, data_subtype: str, data_name: str
     ) -> None:
+        """Displays the selected dataset selection above the table.
+
+        Args:
+            dataset(str): The name of the selected dataset.
+            data_type(str): The type of data selected.
+            data_subtype(str): The subtype of data selected.
+            data_name(str): The name of the mineral selected.
+
+        """
         self.selected_dataset = dataset
         self.selected_datatype = data_type
         self.selected_subtype = data_subtype
@@ -87,16 +105,28 @@ class MetadataTable(QWidget):
             f"{data_type}:\
                 {data_subtype}"
         )
-        if not self.multi_data:
+        if not self.comp_data:
             self.name_label.setText(data_name)
 
     def add_items(self, config: dict, items: list = None) -> None:
-        if self.multi_data:
-            self.add_multi_data(config, items)
+        """Adds items to the table. Differentiates between composite and
+        single mineral products.
+
+        Args:
+            config(dict): The dataset configuration data.
+            items(list): The items to display (composite only)
+        """
+        if self.comp_data:
+            self.add_comp_data(config, items)
         else:
             self.add_single_data(config)
 
     def add_single_data(self, config: dict) -> None:
+        """Adds data from single mineral products to the table.
+
+        Args:
+            config(dict): The dataset configuration data.
+        """
         self.table.setRowCount(5)
         self.table.setItem(0, 0, QTableWidgetItem("Dataset Path"))
         self.table.setItem(0, 1, QTableWidgetItem(config["path"]))
@@ -131,7 +161,13 @@ class MetadataTable(QWidget):
 
         self.table.resizeRowsToContents()
 
-    def add_multi_data(self, config: dict, items: list) -> None:
+    def add_comp_data(self, config: dict, items: list) -> None:
+        """Adds data from composite products to the table.
+
+        Args:
+            config(dict): The dataset configuration data.
+            items(list): The items to display.
+        """
         self.table.setRowCount(3)
         self.table.setItem(0, 0, QTableWidgetItem("Dataset Path"))
         self.table.setItem(0, 1, QTableWidgetItem(config["path"]))
@@ -166,8 +202,13 @@ class MetadataTable(QWidget):
                 else:
                     row_idx = row_idx + 1
 
-    def set_multi_data(self, enabled: bool) -> None:
-        self.multi_data = enabled
+    def set_comp_data(self, enabled: bool) -> None:
+        """Hides the mineral name label if a composite product is selected.
+
+        Args:
+            enable(bool): True if composite product.
+        """
+        self.comp_data = enabled
         if enabled:
             self.name_label.hide()
         else:
