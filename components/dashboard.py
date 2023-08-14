@@ -160,7 +160,6 @@ class Dashboard(QScrollArea):
     @Slot(dict)
     def add_data_panel(self, dataset_args: dict) -> None:
         dataset_config = dataset_args.get("config")
-        dataset_args.pop("config")
         if dataset_args["data_subtype"] == "Geochemistry":
             geochem_info = dataset_config.data(
                 dataset_args["data_type"],
@@ -238,7 +237,11 @@ class Dashboard(QScrollArea):
                 )
 
         header = DataHeader(
-            self.header_container, panel.width, dataset_config, **dataset_args
+            self.header_container,
+            panel.width,
+            dataset_config,
+            self.add_data_panel,
+            **dataset_args,
         )
 
         image_height = int(
@@ -259,7 +262,9 @@ class Dashboard(QScrollArea):
             "Composite Plot",
         ]:
             image_name = (
-                "_".join(dataset_args.values()).replace(" ", "_") + ".png"
+                f"{dataset_args.get('dataset_name')}_"
+                + f"{dataset_args.get('data_subtype')}_"
+                + f"{dataset_args.get('data_name')}.png"
             )
         else:
             image_name = (

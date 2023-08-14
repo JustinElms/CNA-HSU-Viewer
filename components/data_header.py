@@ -1,3 +1,5 @@
+from typing import Callable
+
 from PySide6.QtCore import Qt, QMimeData, QPoint, Signal, Slot
 from PySide6.QtGui import (
     QAction,
@@ -33,10 +35,15 @@ class DataHeader(QWidget):
     save_image = Signal()
 
     def __init__(
-        self, parent=None, width: int = None, dataset: Dataset = None, **kwargs
+        self,
+        parent=None,
+        width: int = None,
+        dataset: Dataset = None,
+        add_data_panel: Callable[[dict], None] = None,
+        **kwargs,
     ) -> None:
         """Initialize component
-        
+
         Args:
             parent(None/QWidget): The parent widget.
             width(QWidget): The width in pixels of the matching data panel.
@@ -48,6 +55,7 @@ class DataHeader(QWidget):
         self.data_type = kwargs.get("data_type")
         self.data_subtype = kwargs.get("data_subtype")
         self.data_name = kwargs.get("data_name")
+        self.add_data_panel = add_data_panel
 
         self.dataset_info = dataset.data(
             self.data_type, self.data_subtype, self.data_name
@@ -72,6 +80,8 @@ class DataHeader(QWidget):
                 font: bold 10pt; border: transparent"
         )
 
+        other_panel_options = self._get_other_panel_options(dataset)
+
         self.menu_button = QPushButton(title_container)
         self.menu_button.setIcon(
             QIcon(QPixmap(":/caret_down.svg").scaledToWidth(10))
@@ -83,17 +93,33 @@ class DataHeader(QWidget):
                 font: bold 6pt; border: transparent"
         )
 
-        self.context_menu = QMenu(self)
-        if width > 40:
-            self.context_menu.setFixedWidth(width - 40)
+        self.context_menu = QMenu()
         self.context_menu.setStyleSheet(
-            "background-color: rgba(100,100,100,150)"
+            "background-color: rgba(100,100,100,150); color: rgb(222,222,222);"
         )
 
-        save_action = QAction("Save panel to image", self)
+        save_action = QAction("Export panel to image", self)
         save_action.triggered.connect(self.save_panel_image)
 
         self.context_menu.addAction(save_action)
+        self.context_menu.addSeparator()
+
+        for option in other_panel_options:
+            args = {
+                **kwargs.copy(),
+                "data_type": option[0],
+                "data_subtype": option[1],
+                "config": dataset,
+            }
+            action = QAction(
+                f"Add {option[0]}: {option[1]} panel to image",
+                self,
+            )
+            action.triggered.connect(
+                # chk is a placeholder for triggered checked arg
+                lambda chk=None, args=args: self.add_data_panel(args)
+            )
+            self.context_menu.addAction(action)
 
         self.close_button = QPushButton(title_container)
         self.close_button.setIcon(QIcon(QPixmap(":/close.svg")))
@@ -225,6 +251,7 @@ class DataHeader(QWidget):
         self.context_menu.popup(
             self.menu_button.mapToGlobal(QPoint(40 - self.width(), 20))
         )
+        self.context_menu.setFixedWidth(300)
 
     def save_panel_image(self) -> None:
         """Emits the save_image signal to save the data panel image."""
@@ -262,3 +289,23 @@ class DataHeader(QWidget):
         qp.end()
 
         self.axis_limits_label.setPixmap(pixmap)
+
+    def _get_other_panel_options(self, dataset: Dataset) -> dict:
+        """Returns a list of other panels for the selected mineral.
+
+        Args:
+            dataset(Dataset): The dataset object for the selected mineral.
+        """
+        opts = []
+
+        data_types = dataset.config["data"]
+
+        for type in data_types.items():
+            subtypes = type[1].keys()
+            for subtype in subtypes:
+                if type != self.data_type and subtype != self.data_subtype:
+                    mins = type[1][subtype].keys()
+                    if self.data_name in mins:
+                        opts.append([type[0], subtype])
+
+        return opts
