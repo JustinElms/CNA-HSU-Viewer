@@ -16,11 +16,23 @@ from PySide6.QtWidgets import (
 
 
 class FilterList(QWidget):
+    """Lists options in dataset seletor window. Can display options as a
+    nested list.
+    """
+
     def __init__(
         self,
         parent: QWidget = None,
         set_selected: Callable[[str], None] = None,
     ) -> None:
+        """Initializes component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            set_selected(callable): Callback function used when an option is
+                selected.
+
+        """
         super().__init__(parent=parent)
 
         self.setMinimumWidth(100)
@@ -57,9 +69,19 @@ class FilterList(QWidget):
         layout.addWidget(self.model_view)
 
     def _on_filter(self, filter_text: str) -> None:
+        """Filter the list options using the provided text.
+
+        Args:
+            filter_text(str): Text used to filter options.
+        """
         self.proxy_model.setFilterRegularExpression(filter_text)
 
     def _on_changed(self, index: QModelIndex) -> None:
+        """Highlights the selected option when changed.
+
+        Args:
+            index(QModelIndex): The index of the newly selected option.
+        """
         item = self.model.itemFromIndex(self.proxy_model.mapToSource(index))
         if not self.multi_select:
             for selected in self.selected:
@@ -84,6 +106,12 @@ class FilterList(QWidget):
                 self.selected = [item]
 
     def set_items(self, items: list | dict, filter_text: str = None) -> None:
+        """Filter the list Add options to the list widget.
+
+        Args:
+            items(list | dict): Options to add to the component.
+            filter_text(str)L Text used to filter the list.
+        """
         self.model_root = self.model.invisibleRootItem()
         if items:
             self.options = items
@@ -109,6 +137,13 @@ class FilterList(QWidget):
                 self.model_view.expandAll()
 
     def select(self, index: int | list | str) -> None:
+        """Called when a user selects an item from the list.
+
+        Args:
+            index(int|list|str): The selected item. Int if given an index,
+                list if multiple selected, str if selecting option by
+                displayed text.
+        """
         if isinstance(self.options, list):
             if isinstance(index, str):
                 item = self.model.findItems(index)[0]
@@ -138,17 +173,20 @@ class FilterList(QWidget):
             self.set_selected(parent_item.text(), child_item.text())
 
     def clear_list(self) -> None:
+        """Clears options from the list."""
         if self.model.item(0):
             self.model.clear()
         self.selected = []
 
     def enable_multi(self) -> None:
+        """Enables multiple option selection."""
         for selected in self.selected:
             selected.setBackground(Qt.NoBrush)
         self.selected = []
         self.multi_select = True
 
     def disable_multi(self) -> None:
+        """Disables multiple option selection."""
         for selected in self.selected:
             selected.setBackground(Qt.NoBrush)
         self.selected = []

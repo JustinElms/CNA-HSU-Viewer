@@ -103,7 +103,7 @@ class HSUViewer(QMainWindow):
 
         # initialize app widgets
         os.chdir(self.rootDir)
-        self.setWindowTitle("CNA Core Viewer")
+        self.setWindowTitle("CNA HSU Viewer")
 
         # create main widget and layout
         self.main = QWidget(self)

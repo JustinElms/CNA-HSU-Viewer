@@ -19,11 +19,23 @@ from hsu_viewer.hsu_config import HSUConfig
 
 
 class DatasetSelector(Modal):
+    """Dataset Selector window used to display data in the app.
+
+    Signals:
+        data_selected(dict): Displays the selected data.
+    """
+
     data_selected = Signal(dict)
 
     def __init__(
         self, parent: QWidget = None, config_path: Path | str = None
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            config_path(Path | str): The path of the HSU configuratin file.
+        """
         super().__init__(parent=parent, text="Select Dataset")
 
         self.config_path = config_path
@@ -111,11 +123,23 @@ class DatasetSelector(Modal):
         super().add_content(self)
 
     def resize(self, width: int, height: int) -> None:
+        """Resizes window and contents.
+
+        Args:
+            width(int): New width of window.
+            height(int): New height of window.
+        """
         self.background.setFixedSize(width, height)
         self.content.setMaximumWidth(width - 100)
         self.content.setMaximumHeight(height - 100)
 
     def _dataset_changed(self, selected: str) -> None:
+        """Updates the datatype and mineral lists when a dataset is selected.
+
+        Args:
+            selected(str): the key of the selected dataset.
+
+        """
         path = self.hsu_config.dataset_path(selected)
         self.dataset = Dataset(path)
         self.selected_dataset = selected
@@ -125,6 +149,13 @@ class DatasetSelector(Modal):
         self.datatypes_list.select([0, 0])
 
     def _datatype_changed(self, group: str, selected: str) -> None:
+        """Updates the mineral list when data type is changed.
+
+        Args:
+            group(str): The key of the data group selected (e.g. Spectral
+                Images).
+            selected(str): The key ofthe sub-group selected (e.g. Chemistry).
+        """
         self.selected_datatype = group
         self.selected_subtype = selected
         self.selected_data = None
@@ -135,10 +166,21 @@ class DatasetSelector(Modal):
             self.data_list.select(0)
 
     def _dataname_changed(self, selected: list | QListWidgetItem) -> None:
+        """Updates the metadata table list when a mineral is selected.
+
+        Args:
+            selected(list | QListWidgetItem): Keys of one or more seleceted
+                minerals.
+
+        """
         self.selected_dataname = selected
         self._update_table()
 
     def _import_dataset(self) -> None:
+        """Open the directory selection window for users to select a dataset
+        to add.
+
+        """
         dataset_path = QFileDialog.getExistingDirectory(
             self, "Select Main Directory"
         )
@@ -148,6 +190,10 @@ class DatasetSelector(Modal):
         self.dataset_list.select(dataset_name)
 
     def _import_geochem(self) -> None:
+        """Imports geochemistry data from xlsx file and adds to hsu config
+        and/or dataset config.
+
+        """
         geochem_path = QFileDialog.getOpenFileName(
             self, "Select Geochemistry Data", filter="(*.xlsx)"
         )[0]
@@ -158,11 +204,13 @@ class DatasetSelector(Modal):
         self.dataset_list.select(dataset_name)
 
     def _clear_lists(self) -> None:
+        """Clears all options in listview widgets."""
         self.dataset_list.clear_list()
         self.datatypes_list.clear_list()
         self.data_list.clear_list()
 
     def _update_table(self) -> None:
+        """Updates metadata displated in metadata table."""
         self.meta_table.set_label(
             self.selected_dataset,
             self.selected_datatype,
@@ -178,9 +226,11 @@ class DatasetSelector(Modal):
             self.meta_table.add_items(self.dataset.config)
 
     def _close(self) -> None:
+        """Closes the dataset selector window."""
         super()._close()
 
     def _add_data(self) -> None:
+        """Adds the selected data to the dashboard and closes this window."""
         args = {
             "config": self.dataset,
             "dataset_name": self.selected_dataset,
@@ -200,6 +250,9 @@ class DatasetSelector(Modal):
         super()._close()
 
     def create_comp_image(self) -> None:
+        """Beings the process of adding a composite core image to the
+        dashboard.
+        """
         if self.comp_image_button.isChecked():
             self.comp_plot_button.setChecked(False)
             self.meta_table.set_multi_data(True)
@@ -216,6 +269,7 @@ class DatasetSelector(Modal):
             self.data_list.select(0)
 
     def create_comp_plot(self) -> None:
+        """Beings the process of adding a composite plot to the dashboard."""
         if self.comp_plot_button.isChecked():
             self.comp_image_button.setChecked(False)
             self.meta_table.set_multi_data(True)

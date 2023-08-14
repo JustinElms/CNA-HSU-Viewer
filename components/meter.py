@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpacerItem
 
 
 class Meter(QWidget):
+    """Main meter component and meter drawing functionality."""
+
     def __init__(
         self,
         parent=None,
@@ -12,6 +14,14 @@ class Meter(QWidget):
         height: int = 669,
         depth: int | float = 100,
     ) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            resolution(int): The current resolution (px/m).
+            height(int): The height of the display area.
+            depth(int): The maximum depth of the meter.
+        """
         super().__init__(parent=parent)
 
         self.resolution = resolution
@@ -26,6 +36,7 @@ class Meter(QWidget):
         self.setLayout(self.layout)
 
     def add_meter_tiles(self) -> None:
+        """Adds pixmap tiles to the meter component."""
         self._clear_meter()
 
         tile_pixmaps = self._draw_meter_pixmaps()
@@ -37,11 +48,22 @@ class Meter(QWidget):
 
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
+        """Updates meter when resoltuion changes.
+
+        Args:
+            resolution(int): New resolution (px/m).
+        """
         self.resolution = resolution
         self.add_meter_tiles()
 
     @Slot(float, float)
     def update_size(self, new_max: int | float, new_height: int) -> None:
+        """Updates meter when display area size changes.
+
+        Args:
+            new_max(int): The new max depth (m).
+            new_height(int): The new display area height (px).
+        """
         if self.depth == new_max and self.height == new_height:
             return
         self.height = new_height
@@ -49,6 +71,11 @@ class Meter(QWidget):
         self.add_meter_tiles()
 
     def insert_tile(self, tile: QLabel) -> None:
+        """Inserts pixmap tile into component.
+
+        Args:
+            tile(QLabel): The tile to be inserted.
+        """
         if self.layout.count() == 1:
             self.layout.addWidget(tile)
             self.layout.addStretch()
@@ -56,6 +83,7 @@ class Meter(QWidget):
             self.layout.insertWidget(self.layout.count() - 2, tile)
 
     def _clear_meter(self):
+        """Clears tile from the meter."""
         for i in reversed(range(self.layout.count() - 1)):
             item = self.layout.itemAt(i)
             if not isinstance(item, QSpacerItem):
@@ -63,6 +91,7 @@ class Meter(QWidget):
                 item.widget().deleteLater()
 
     def _draw_meter_pixmaps(self) -> list:
+        """Draws pixmap tiles that make up the meter."""
         tile_height = 500  # height of tile in pixels
         total_height = self.depth * self.resolution
 

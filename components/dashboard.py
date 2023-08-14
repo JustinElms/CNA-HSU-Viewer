@@ -17,11 +17,6 @@ from components.meter import Meter
 from components.save_panel_window import SavePanelWindow
 from components.spectral_plot_panel import SpectralPlotPanel
 
-"""
-TODO:
-- docstrings
-"""
-
 METER_RES_LEVELS = {
     0: 5,
     1: 10,
@@ -37,10 +32,26 @@ METER_RES_LEVELS = {
 
 
 class Dashboard(QScrollArea):
+    """Main display area for spectral image and data
+
+    Signals:
+        zoom_changed(int): Resizes panels on zoom in/out actions.
+        meter_changed(float, int): Updates panels when the meter is updated
+            i.e. the app is resized or someone loads data that extends
+            beyond the curent meter.
+    """
+
     zoom_changed = Signal(int)
     meter_changed = Signal(float, int)
 
     def __init__(self, parent=None, mineral_legend: QWidget = None) -> None:
+        """Initialize component
+
+        Args:
+            parent(None/QWidget): The parent widget.
+            mineral_legend(QWidget): A component used to display the currently
+            displayed minerals and their assigned colours.
+        """
         super().__init__(parent)
 
         self.threadpool = QThreadPool()
@@ -149,7 +160,6 @@ class Dashboard(QScrollArea):
     @Slot(dict)
     def add_data_panel(self, dataset_args: dict) -> None:
         dataset_config = dataset_args.get("config")
-        dataset_args.pop("config")
         if dataset_args["data_subtype"] == "Geochemistry":
             geochem_info = dataset_config.data(
                 dataset_args["data_type"],
@@ -227,7 +237,11 @@ class Dashboard(QScrollArea):
                 )
 
         header = DataHeader(
-            self.header_container, panel.width, dataset_config, **dataset_args
+            self.header_container,
+            panel.width,
+            dataset_config,
+            self.add_data_panel,
+            **dataset_args,
         )
 
         image_height = int(
@@ -248,7 +262,9 @@ class Dashboard(QScrollArea):
             "Composite Plot",
         ]:
             image_name = (
-                "_".join(dataset_args.values()).replace(" ", "_") + ".png"
+                f"{dataset_args.get('dataset_name')}_"
+                + f"{dataset_args.get('data_subtype')}_"
+                + f"{dataset_args.get('data_name')}.png"
             )
         else:
             image_name = (
@@ -272,16 +288,24 @@ class Dashboard(QScrollArea):
         self.data_container.insert_panel(panel)
 
     def zoom_in(self) -> None:
+        """Increases the resolution of the spectral data (px/m)."""
         if self.zoom_level < 9:
             self.zoom_level += 1
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def zoom_out(self) -> None:
+        """Decreases the resolution of the spectral data (px/m)."""
         if self.zoom_level > 0:
             self.zoom_level -= 1
             self.zoom_changed.emit(METER_RES_LEVELS[self.zoom_level])
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        """Handles resizing of displayed components when the application is
+        resized or zoom is changed.
+
+        Args:
+            event (QResizeEvent): The QResize event triggering this change.
+        """
         self.meter_height = self.viewport.height()
         if self.meter_height < 669:
             self.meter_height = 669
@@ -290,6 +314,12 @@ class Dashboard(QScrollArea):
         self.add_dataset_button.move(self.width() - 85, self.height() - 85)
 
     def remove_legend_mineral(self, closed_minerals: str | list) -> None:
+        """Removes minerals from the legend when a panel is closed.
+
+        Args:
+            closed_minerals (str | list): A string or list of minerals to be
+            removed from the legend.
+        """
         if not isinstance(closed_minerals, list):
             closed_minerals = [closed_minerals]
 
@@ -304,6 +334,12 @@ class Dashboard(QScrollArea):
         panel_image: QPixmap,
         image_name: str,
     ) -> None:
+        """Allows the user to export the selected panel as a png image.
+
+        Args:
+            panel_image(QPixmap): The pixmap of the selected panel.
+            image_name(str): The resulting image's file name.
+        """
         meter_image = self.meter.grab(
             QRect(
                 QPoint(0, 0), QPoint(self.meter.width(), panel_image.height())

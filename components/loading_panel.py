@@ -1,5 +1,4 @@
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QMovie
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -8,15 +7,15 @@ from PySide6.QtWidgets import (
 
 
 class LoadingPanel(QWidget):
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent=parent)
+    """An overlay that displays "Loading..." during a panel's async operation.
+    """
 
-        spinner = QMovie(":/loading.gif")
+    def __init__(self, parent=None) -> None:
+        """Initialize component"""
+        super().__init__(parent=parent)
 
         loading_label = QLabel(self)
         loading_label.setText("Loading...")
-
-        spinner.start()
 
         self.layout = QVBoxLayout(self)
         self.layout.setAlignment(Qt.AlignCenter)
@@ -27,4 +26,5 @@ class LoadingPanel(QWidget):
 
     @Slot(int, int)
     def resize_panel(self, width: int, height: int) -> None:
+        """Resizes the overlay."""
         self.setFixedSize(width, height)
