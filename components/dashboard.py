@@ -12,6 +12,7 @@ from components.data_header import DataHeader
 from components.composite_image_panel import CompositeImagePanel
 from components.composite_plot_panel import CompositePlotPanel
 from components.core_image_panel import CoreImagePanel
+from components.data_panel import DataPanel
 from components.draggable_container import DraggableContainer
 from components.meter import Meter
 from components.save_panel_window import SavePanelWindow
@@ -277,11 +278,10 @@ class Dashboard(QScrollArea):
                 ).replace(" ", "_")
                 + ".png"
             )
-        panel_image = panel.grab(
-            QRect(QPoint(0, 0), QPoint(panel.width, image_height))
-        )
         header.save_image.connect(
-            lambda: self.save_panel_image(panel_image, image_name)
+            lambda panel=panel, image_name=image_name, image_height=image_height: self.save_panel_image(
+                panel, image_name, image_height
+            )
         )
 
         self.header_container.insert_panel(header)
@@ -330,9 +330,7 @@ class Dashboard(QScrollArea):
                 self.mineral_legend.remove_mineral(mineral)
 
     def save_panel_image(
-        self,
-        panel_image: QPixmap,
-        image_name: str,
+        self, panel: DataPanel, image_name: str, image_height: int
     ) -> None:
         """Allows the user to export the selected panel as a png image.
 
@@ -340,8 +338,11 @@ class Dashboard(QScrollArea):
             panel_image(QPixmap): The pixmap of the selected panel.
             image_name(str): The resulting image's file name.
         """
+        panel_image = panel.grab(
+            rectangle=QRect(QPoint(0, 0), QPoint(panel.width, image_height))
+        )
         meter_image = self.meter.grab(
-            QRect(
+            rectangle=QRect(
                 QPoint(0, 0), QPoint(self.meter.width(), panel_image.height())
             )
         )
