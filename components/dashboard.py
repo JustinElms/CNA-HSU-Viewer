@@ -279,9 +279,8 @@ class Dashboard(QScrollArea):
                 + ".png"
             )
         header.save_image.connect(
-            lambda panel=panel, image_name=image_name, image_height=image_height: self.save_panel_image(
-                panel, image_name, image_height
-            )
+            lambda panel=panel, img_name=image_name, img_height=image_height:
+                self.save_panel_image(panel, img_name, img_height)
         )
 
         self.header_container.insert_panel(header)
