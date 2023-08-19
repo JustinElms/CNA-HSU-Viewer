@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 from natsort import os_sorted
-from PIL import Image, ImageQt
+from PIL import Image, ImageEnhance, ImageQt
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout
 from PySide6.QtGui import QColor, QPainter, QPixmap
@@ -10,11 +10,6 @@ from PySide6.QtGui import QColor, QPainter, QPixmap
 from components.data_panel import DataPanel
 from data.dataset import Dataset
 from hsu_viewer.worker import Worker
-
-"""
-TODO
--increase brightness
-"""
 
 
 class CompositeImagePanel(DataPanel):
@@ -118,14 +113,16 @@ class CompositeImagePanel(DataPanel):
                     n_ims = n_ims + 1
 
             if n_ims > 0:
-                result = Image.fromarray(
+                comp_image = Image.fromarray(
                     (row_image / n_ims).astype(np.uint8), "RGB"
                 )
             else:
-                result = Image.fromarray(
+                comp_image = Image.fromarray(
                     (image_array * 0).astype(np.uint8), "RGB"
                 )
-            pixmap = QPixmap(ImageQt.ImageQt(result))
+            enhancer = ImageEnhance.Brightness(comp_image)
+            comp_image = enhancer.enhance(5)
+            pixmap = QPixmap(ImageQt.ImageQt(comp_image))
             pixmap_height = np.rint(
                 (self.meter[row_idx][1] - self.meter[row_idx][0])
                 * self.resolution
