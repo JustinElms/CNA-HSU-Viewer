@@ -300,12 +300,13 @@ class DataHeader(QWidget):
 
         data_types = dataset.config["data"]
 
-        for type in data_types.items():
-            subtypes = type[1].keys()
-            for subtype in subtypes:
-                if type != self.data_type and subtype != self.data_subtype:
-                    mins = type[1][subtype].keys()
-                    if self.data_name in mins:
-                        opts.append([type[0], subtype])
+        if self.data_subtype not in ["Composite Images", "Composite Plot"]:
+            for type in data_types.items():
+                subtypes = type[1].keys()
+                for subtype in subtypes:
+                    if type != self.data_type and subtype != self.data_subtype:
+                        mins = type[1][subtype].keys()
+                        if self.data_name in mins:
+                            opts.append([type[0], subtype])
 
         return opts

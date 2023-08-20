@@ -255,7 +255,7 @@ class DatasetSelector(Modal):
         """
         if self.comp_image_button.isChecked():
             self.comp_plot_button.setChecked(False)
-            self.meta_table.set_multi_data(True)
+            self.meta_table.set_comp_data(True)
 
             self.datatypes_list.clear_list()
             self.datatypes_list.set_items({"Spectral Images": ["Mineral"]})
@@ -264,7 +264,7 @@ class DatasetSelector(Modal):
 
         elif not self.comp_plot_button.isChecked():
             self._dataset_changed(self.selected_dataset)
-            self.meta_table.set_multi_data(False)
+            self.meta_table.set_comp_data(False)
             self.data_list.disable_multi()
             self.data_list.select(0)
 

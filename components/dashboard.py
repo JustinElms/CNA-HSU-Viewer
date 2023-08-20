@@ -103,6 +103,12 @@ class Dashboard(QScrollArea):
 
         self.data_container = DraggableContainer(data_content)
 
+        self.meter.depth_marker_toggled[bool, int].connect(
+            lambda show_marker, y: self.data_container.toggle_depth_marker(
+                show_marker, y
+            )
+        )
+
         self.header_container.widget_dragged.connect(
             self.data_container.insert_dragged_widget
         )
@@ -160,6 +166,11 @@ class Dashboard(QScrollArea):
 
     @Slot(dict)
     def add_data_panel(self, dataset_args: dict) -> None:
+        """Adds a new data panel to the dashboard.
+
+        Args:
+            dataset_args (dict): Parameters for the new dataset.
+        """
         dataset_config = dataset_args.get("config")
         if dataset_args["data_subtype"] == "Geochemistry":
             geochem_info = dataset_config.data(
@@ -280,7 +291,9 @@ class Dashboard(QScrollArea):
             )
         header.save_image.connect(
             lambda panel=panel, img_name=image_name, img_height=image_height:
-                self.save_panel_image(panel, img_name, img_height)
+                self.save_panel_image(
+                    panel, img_name, img_height
+                )
         )
 
         self.header_container.insert_panel(header)
