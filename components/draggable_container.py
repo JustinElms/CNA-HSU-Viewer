@@ -1,5 +1,6 @@
 import numpy as np
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
+from PySide6.QtGui import QResizeEvent
 from PySide6.QtCore import Qt, Signal, Slot
 
 from components.data_panel import DataPanel
@@ -26,6 +27,15 @@ class DraggableContainer(QWidget):
         super().__init__(parent=parent)
         self.setAcceptDrops(True)
 
+        self.show_depth_marker = False
+
+        self.depth_marker = QLabel(self)
+        self.depth_marker.setFixedSize(self.width(), 2)
+        self.depth_marker.setStyleSheet("background-color: rgba(255,0,0,125)")
+        self.depth_marker.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.depth_marker.raise_()
+        self.depth_marker.hide()
+
         self.layout = QHBoxLayout()
         self.layout.setSpacing(5)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -33,6 +43,12 @@ class DraggableContainer(QWidget):
         self.header = header
 
         self.setLayout(self.layout)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        if self.show_depth_marker:
+            self.update_depth_marker(self.depth_marker.y())
+            self.depth_marker.setFixedWidth(self.width())
+        return super().resizeEvent(event)
 
     def dragEnterEvent(self, e) -> None:
         """Event to signal that the drag action has begun."""
@@ -108,3 +124,19 @@ class DraggableContainer(QWidget):
                     mineral_list.append(mineral)
 
         return mineral_list
+
+    @Slot(bool, int)
+    def toggle_depth_marker(self, show_depth_marker: bool, y: int) -> None:
+        """Toggles display of depth marker on dashboard."""
+        if show_depth_marker:
+            self.update_depth_marker(y)
+        else:
+            self.show_depth_marker = False
+            self.depth_marker.hide()
+
+    def update_depth_marker(self, y: int) -> None:
+        self.depth_marker.move(0, y)
+        self.depth_marker.setFixedWidth(self.width())
+        self.show_depth_marker = True
+        self.depth_marker.raise_()
+        self.depth_marker.show()

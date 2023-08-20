@@ -1,10 +1,11 @@
 import numpy as np
-from PySide6.QtCore import QPoint, Slot
-from PySide6.QtGui import QColor, QPainter, QPixmap
+from PySide6.QtCore import Qt, QPoint, Signal, Slot
+from PySide6.QtGui import QColor, QCursor, QPainter, QPixmap
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSpacerItem
 
 
 class Meter(QWidget):
+    depth_marker_toggled = Signal(bool, int)
     """Main meter component and meter drawing functionality."""
 
     def __init__(
@@ -27,6 +28,14 @@ class Meter(QWidget):
         self.resolution = resolution
         self.height = height
         self.depth = depth
+        self.show_depth_marker = False
+
+        self.depth_marker = QLabel(self)
+        self.depth_marker.setFixedSize(self.width(), 2)
+        self.depth_marker.setStyleSheet("background-color: rgba(255,0,0,125)")
+        self.depth_marker.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.depth_marker.raise_()
+        self.depth_marker.hide()
 
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(0)
@@ -46,6 +55,9 @@ class Meter(QWidget):
             tile.setPixmap(pixmap)
             self.insert_tile(tile)
 
+    def mousePressEvent(self, event):
+        self.toggle_depth_marker()
+
     @Slot(int)
     def zoom_changed(self, resolution: int) -> None:
         """Updates meter when resoltuion changes.
@@ -53,8 +65,14 @@ class Meter(QWidget):
         Args:
             resolution(int): New resolution (px/m).
         """
+        new_marker_pos = resolution * self.depth_marker.y() / self.resolution
         self.resolution = resolution
         self.add_meter_tiles()
+        if self.show_depth_marker:
+            self.update_depth_marker(new_marker_pos)
+            self.depth_marker_toggled.emit(
+                self.show_depth_marker, new_marker_pos
+            )
 
     @Slot(float, float)
     def update_size(self, new_max: int | float, new_height: int) -> None:
@@ -69,6 +87,11 @@ class Meter(QWidget):
         self.height = new_height
         self.depth = new_max
         self.add_meter_tiles()
+        if self.show_depth_marker:
+            self.update_depth_marker(self.depth_marker.y())
+            self.depth_marker_toggled.emit(
+                self.show_depth_marker, self.depth_marker.y()
+            )
 
     def insert_tile(self, tile: QLabel) -> None:
         """Inserts pixmap tile into component.
@@ -142,3 +165,20 @@ class Meter(QWidget):
             pixmaps.append(pixmap)
 
         return pixmaps
+
+    def toggle_depth_marker(self) -> None:
+        """Toggles display of depth marker on dashboard."""
+        if self.show_depth_marker:
+            self.show_depth_marker = False
+            self.depth_marker.hide()
+            self.depth_marker_toggled.emit(self.show_depth_marker, 0)
+        else:
+            pos = self.mapFromGlobal(QCursor.pos())
+            self.update_depth_marker(pos.y())
+            self.depth_marker_toggled.emit(self.show_depth_marker, pos.y())
+
+    def update_depth_marker(self, y: int) -> None:
+        self.depth_marker.move(2, y)
+        self.show_depth_marker = True
+        self.depth_marker.raise_()
+        self.depth_marker.show()
