@@ -158,13 +158,20 @@ class FilterList(QWidget):
             self.set_selected(item.text())
 
         elif isinstance(self.options, dict) and isinstance(index, list):
-            idx = index[0]
-            while not self.model.item(idx).hasChildren():
-                idx = idx + 1
-            parent_item = self.model.item(idx)
-            child_item = parent_item.child(idx, index[1])
-            child_item.setBackground(Qt.blue)
-
+            if isinstance(index[0], int):
+                idx = index[0]
+                while not self.model.item(idx).hasChildren():
+                    idx = idx + 1
+                parent_item = self.model.item(idx)
+                child_item = parent_item.child(idx, index[1])
+                child_item.setBackground(Qt.blue)
+            elif isinstance(index[0], str):
+                parent_item = self.model.findItems(index[0])[0]
+                for row in range(parent_item.rowCount()):
+                    row_item = parent_item.child(row,0)
+                    if row_item.text() == index[1]:
+                        child_item = row_item
+                        break
             self.selection_model.select(
                 self.model.indexFromItem(child_item),
                 QItemSelectionModel.Select,

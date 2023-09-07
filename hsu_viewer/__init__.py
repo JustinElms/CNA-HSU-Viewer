@@ -82,35 +82,19 @@ class HSUViewer(QMainWindow):
         """
 
         self.setStyleSheet(HSU_STYLES)
-
-        # save the apps root directory for future reference
-        self.rootDir = os.getcwd()
-        screenGeometry = QScreen.availableGeometry(
-            QApplication.primaryScreen()
-        )  # gets screen resolution
-        self.meterWidth = 60
-        self.startHeight = screenGeometry.height() - 60
-        self.dataWidgetHeight = self.startHeight
-        self.startWidth = []
-        self.dataWidgetWidth = (
-            []
-        )  # initialize variable, gets corrected when data is loaded
-
         self.setWindowIcon(QIcon(":/Icon.ico"))
 
         # set minimum size of app
         self.setMinimumSize(1000, 750)
 
-        # initialize app widgets
-        os.chdir(self.rootDir)
         self.setWindowTitle("CNA HSU Viewer")
 
         # create main widget and layout
         self.main = QWidget(self)
         self.setCentralWidget(self.main)
-        mainLayout = QHBoxLayout(self.main)
-        mainLayout.setSpacing(0)
-        mainLayout.setContentsMargins(0, 0, 0, 0)
+        layout = QHBoxLayout(self.main)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         drawer = Drawer(self.main)
 
@@ -125,11 +109,13 @@ class HSUViewer(QMainWindow):
             self._open_dataset_selector
         )
 
-        mainLayout.addWidget(drawer)
-        mainLayout.addWidget(self.dashboard)
+        layout.addWidget(drawer)
+        layout.addWidget(self.dashboard)
 
         # track which overlays/modals are open
         self.dataset_selector_open = False
+
+        self.last_added = None
 
         # display app
         self.show()
@@ -142,19 +128,18 @@ class HSUViewer(QMainWindow):
         self.dataset_selector_open = True
 
         self.dataset_selector = DatasetSelector(
-            self, config_path=Path.cwd().joinpath("hsu_datasets.cfg")
+            self, config_path=Path.cwd().joinpath("hsu_datasets.cfg"), last_added=self.last_added
         )
-        self.dataset_selector.data_selected.connect(
-            self.dashboard.add_data_panel
-        )
+        self.dataset_selector.data_selected[dict].connect(self.add_data)
         self.dataset_selector.modal_closed.connect(
             self._close_dataset_selector
         )
         self.dataset_selector.show()
 
+    def add_data(self, args: dict) -> None:
+        self.last_added = args
+        self.dashboard.add_data_panel(args)
+
     def _close_dataset_selector(self) -> None:
         self.dataset_selector = None
         self.dataset_selector_open = False
-
-    def _add_data(self, kwargs) -> None:
-        self.dashboard.add_data_panel(kwargs)

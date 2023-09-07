@@ -28,13 +28,14 @@ class DatasetSelector(Modal):
     data_selected = Signal(dict)
 
     def __init__(
-        self, parent: QWidget = None, config_path: Path | str = None
+        self, parent: QWidget = None, config_path: Path | str = None, last_added: dict = None
     ) -> None:
         """Initialize component
 
         Args:
             parent(None/QWidget): The parent widget.
             config_path(Path | str): The path of the HSU configuratin file.
+            last_added(dict): The previously selected dataset arguments. 
         """
         super().__init__(parent=parent, text="Select Dataset")
 
@@ -108,9 +109,10 @@ class DatasetSelector(Modal):
 
         self.dataset_list.set_items(self.hsu_config.datasets())
 
-        self.dataset_list.select(0)
-        self.datatypes_list.select([0, 0])
-        self.data_list.select(0)
+        if not last_added:
+            self.dataset_list.select(0)
+            self.datatypes_list.select([0, 0])
+            self.data_list.select(0)
 
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.dataset_list)
@@ -121,6 +123,10 @@ class DatasetSelector(Modal):
         self.setLayout(layout)
 
         super().add_content(self)
+
+        self.last_added = last_added
+        if self.last_added:
+            self.set_selected_items(last_added)
 
     def resize(self, width: int, height: int) -> None:
         """Resizes window and contents.
@@ -286,3 +292,9 @@ class DatasetSelector(Modal):
             self.meta_table.set_multi_data(False)
             self.data_list.disable_multi()
             self.data_list.select(0)
+
+    def set_selected_items(self, last_added: dict)-> None:
+        print(last_added)
+        self.dataset_list.select(last_added.get("dataset_name"))
+        self.datatypes_list.select([last_added.get("data_type"),last_added.get("data_subtype")])
+        self.data_list.select(last_added.get("data_name"))
