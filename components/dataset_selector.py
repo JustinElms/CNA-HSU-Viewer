@@ -28,14 +28,17 @@ class DatasetSelector(Modal):
     data_selected = Signal(dict)
 
     def __init__(
-        self, parent: QWidget = None, config_path: Path | str = None, last_added: dict = None
+        self,
+        parent: QWidget = None,
+        config_path: Path | str = None,
+        last_added: dict = None,
     ) -> None:
         """Initialize component
 
         Args:
             parent(None/QWidget): The parent widget.
             config_path(Path | str): The path of the HSU configuratin file.
-            last_added(dict): The previously selected dataset arguments. 
+            last_added(dict): The previously selected dataset arguments.
         """
         super().__init__(parent=parent, text="Select Dataset")
 
@@ -53,6 +56,7 @@ class DatasetSelector(Modal):
         self.selected_subtype = None
         self.selected_dataname = None
         self.composite_type = None
+        self.last_added = last_added
 
         info_panel = QWidget(self)
         import_dataset_button = QPushButton("Import Dataset", info_panel)
@@ -111,8 +115,8 @@ class DatasetSelector(Modal):
 
         if not last_added:
             self.dataset_list.select(0)
-            self.datatypes_list.select([0, 0])
-            self.data_list.select(0)
+        else:
+            self.dataset_list.select(last_added.get("dataset_name"))
 
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.dataset_list)
@@ -123,10 +127,6 @@ class DatasetSelector(Modal):
         self.setLayout(layout)
 
         super().add_content(self)
-
-        self.last_added = last_added
-        if self.last_added:
-            self.set_selected_items(last_added)
 
     def resize(self, width: int, height: int) -> None:
         """Resizes window and contents.
@@ -152,7 +152,15 @@ class DatasetSelector(Modal):
         datatypes = self.dataset.data_types()
         self.datatypes_list.clear_list()
         self.datatypes_list.set_items(datatypes)
-        self.datatypes_list.select([0, 0])
+        if self.last_added:
+            self.datatypes_list.select(
+                [
+                    self.last_added.get("data_type"),
+                    self.last_added.get("data_subtype"),
+                ]
+            )
+        else:
+            self.datatypes_list.select([0, 0])
 
     def _datatype_changed(self, group: str, selected: str) -> None:
         """Updates the mineral list when data type is changed.
@@ -169,7 +177,11 @@ class DatasetSelector(Modal):
         self.data_list.clear_list()
         if data:
             self.data_list.set_items(data)
-            self.data_list.select(0)
+            if self.last_added:
+                self.data_list.select(self.last_added.get("data_name"))
+                self.last_added = None
+            else:
+                self.data_list.select(0)
 
     def _dataname_changed(self, selected: list | QListWidgetItem) -> None:
         """Updates the metadata table list when a mineral is selected.
@@ -292,9 +304,3 @@ class DatasetSelector(Modal):
             self.meta_table.set_multi_data(False)
             self.data_list.disable_multi()
             self.data_list.select(0)
-
-    def set_selected_items(self, last_added: dict)-> None:
-        print(last_added)
-        self.dataset_list.select(last_added.get("dataset_name"))
-        self.datatypes_list.select([last_added.get("data_type"),last_added.get("data_subtype")])
-        self.data_list.select(last_added.get("data_name"))

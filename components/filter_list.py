@@ -164,14 +164,14 @@ class FilterList(QWidget):
                     idx = idx + 1
                 parent_item = self.model.item(idx)
                 child_item = parent_item.child(idx, index[1])
-                child_item.setBackground(Qt.blue)
             elif isinstance(index[0], str):
                 parent_item = self.model.findItems(index[0])[0]
                 for row in range(parent_item.rowCount()):
-                    row_item = parent_item.child(row,0)
+                    row_item = parent_item.child(row, 0)
                     if row_item.text() == index[1]:
                         child_item = row_item
                         break
+            child_item.setBackground(Qt.blue)
             self.selection_model.select(
                 self.model.indexFromItem(child_item),
                 QItemSelectionModel.Select,
