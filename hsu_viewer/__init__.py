@@ -1,10 +1,9 @@
-import os
 from pathlib import Path
 
 import matplotlib
-from PySide6.QtGui import QIcon, QScreen, QResizeEvent
-from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QApplication
-from PySide6.QtCore import Signal
+from PySide6.QtGui import QIcon, QResizeEvent
+from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout
+from PySide6.QtCore import Signal, Slot
 from static import icons
 
 try:
@@ -17,6 +16,7 @@ except ImportError:
     pass
 
 from components.dashboard import Dashboard
+from components.mineral_color_selector import MineralColorSelector
 
 # from components.data_widget import DataWidget
 from components.dataset_selector import DatasetSelector
@@ -105,6 +105,7 @@ class HSUViewer(QMainWindow):
         )
 
         drawer.add_dataset_button.clicked.connect(self._open_dataset_selector)
+        drawer.mineral_legend.color_clicked.connect(self._open_color_selector)
         self.dashboard.add_dataset_button.clicked.connect(
             self._open_dataset_selector
         )
@@ -128,7 +129,9 @@ class HSUViewer(QMainWindow):
         self.dataset_selector_open = True
 
         self.dataset_selector = DatasetSelector(
-            self, config_path=Path.cwd().joinpath("hsu_datasets.cfg"), last_added=self.last_added
+            self,
+            config_path=Path.cwd().joinpath("hsu_datasets.cfg"),
+            last_added=self.last_added,
         )
         self.dataset_selector.data_selected[dict].connect(self.add_data)
         self.dataset_selector.modal_closed.connect(
@@ -143,3 +146,8 @@ class HSUViewer(QMainWindow):
     def _close_dataset_selector(self) -> None:
         self.dataset_selector = None
         self.dataset_selector_open = False
+
+    @Slot(str, list)
+    def _open_color_selector(self, mineral: str, colors: dict) -> None:
+        color_selector = MineralColorSelector(self, mineral, colors)
+        color_selector.show()
