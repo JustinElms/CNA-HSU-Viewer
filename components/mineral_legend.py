@@ -117,3 +117,17 @@ class MineralLegend(QWidget):
     def show_color_selector(self, mineral: str) -> None:
         colors = self._available_colors()
         self.color_clicked.emit(mineral, colors)
+
+    def update_mineral_colors(self, mineral: str, color: str) -> None:
+        self.colormap[mineral] = color
+        for row in range(self.legend_container_layout.rowCount()):
+            label = self.legend_container_layout.itemAtPosition(row, 1)
+            print(type(label))
+            if label and label.widget().text() == mineral:
+                button = self.legend_container_layout.itemAtPosition(
+                    row, 0
+                ).widget()
+                button.setStyleSheet(
+                    f"background-color: {color}; \
+                        border: 1 px solid"
+                )

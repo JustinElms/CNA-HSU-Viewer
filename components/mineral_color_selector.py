@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
@@ -17,6 +18,8 @@ class MineralColorSelector(Modal):
         color_changed(str): Signals to update color to selected value.
     """
 
+    update_color = Signal(str, str)
+
     def __init__(
         self, parent: QWidget = None, mineral: str = None, colors: list = None
     ) -> None:
@@ -34,6 +37,7 @@ class MineralColorSelector(Modal):
 
         self.selected_color = None
         self.selected_pos = None
+        self.mineral = mineral
 
         color_container = QWidget(self)
         self.color_container_layout = QGridLayout(color_container)
@@ -45,7 +49,7 @@ class MineralColorSelector(Modal):
             color_button.setStyleSheet(f"background-color: {color};")
             color_button.setFixedSize(20, 20)
             color_button.clicked.connect(
-                lambda chk=None, row=row, col=col, color=color: self.button_clicked(
+                lambda chk=None, row=row, col=col, color=color: self.color_clicked(
                     row, col, color
                 )
             )
@@ -57,7 +61,10 @@ class MineralColorSelector(Modal):
         apply_button.setStyleSheet(
             "background-color: green; border: 1px solid rgb(222, 222, 222);"
         )
+        apply_button.clicked.connect(self.apply_clicked)
+
         cancel_button = QPushButton("Cancel", button_container)
+        cancel_button.clicked.connect(self.cancel_clicked)
 
         button_container_layout = QHBoxLayout(button_container)
         button_container_layout.addStretch()
@@ -69,7 +76,7 @@ class MineralColorSelector(Modal):
 
         super().add_content(self)
 
-    def button_clicked(self, row: int, col: int, color: str) -> None:
+    def color_clicked(self, row: int, col: int, color: str) -> None:
         if self.selected_color:
             button = self.color_container_layout.itemAtPosition(
                 self.selected_pos[0], self.selected_pos[1]
@@ -86,5 +93,11 @@ class MineralColorSelector(Modal):
             border: 2px solid white;"
         )
 
-    def accept_clicked(self) -> None:
-        return
+    def apply_clicked(self) -> None:
+        """Emits update color signal and coloses color selector window."""
+        self.update_color.emit(self.mineral, self.selected_color)
+        super()._close()
+
+    def cancel_clicked(self) -> None:
+        """Closes the color selector window."""
+        super()._close()
