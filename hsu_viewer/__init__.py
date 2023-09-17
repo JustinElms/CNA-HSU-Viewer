@@ -160,7 +160,7 @@ class HSUViewer(QMainWindow):
         self.color_selector.update_color.connect(
             self.drawer.mineral_legend.update_mineral_colors
         )
-        # self.color_selector.update_color.connect(
-        #     self.dashboard.update_mineral_colors
-        # )
+        self.color_selector.update_color.connect(
+            self.dashboard.data_container.update_mineral_colors
+        )
         self.color_selector.show()

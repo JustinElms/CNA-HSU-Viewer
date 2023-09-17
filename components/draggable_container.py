@@ -135,8 +135,24 @@ class DraggableContainer(QWidget):
             self.depth_marker.hide()
 
     def update_depth_marker(self, y: int) -> None:
+        """Updates the depth marker's position as needed.
+
+        Args:
+            y (int): The marker's new vertical position.
+        """
         self.depth_marker.move(0, y)
         self.depth_marker.setFixedWidth(self.width())
         self.show_depth_marker = True
         self.depth_marker.raise_()
         self.depth_marker.show()
+
+    def update_mineral_colors(self, mineral: str, color: str) -> None:
+        """Updates the colormap ofeach panel.
+
+        Args:
+            mineral(str): The name of the mineral to be updated.
+            color(str): The new color (hex).
+        """        
+        for i in range(self.layout.count() - 2):
+            panel = self.layout.itemAt(i).widget()
+            panel.update_plot_colors(mineral, color)

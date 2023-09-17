@@ -122,7 +122,6 @@ class MineralLegend(QWidget):
         self.colormap[mineral] = color
         for row in range(self.legend_container_layout.rowCount()):
             label = self.legend_container_layout.itemAtPosition(row, 1)
-            print(type(label))
             if label and label.widget().text() == mineral:
                 button = self.legend_container_layout.itemAtPosition(
                     row, 0
