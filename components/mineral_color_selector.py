@@ -77,6 +77,13 @@ class MineralColorSelector(Modal):
         super().add_content(self)
 
     def color_clicked(self, row: int, col: int, color: str) -> None:
+        """Highlights andupdates the currently selected color.
+
+        Args:
+            row(int): The row position of the selected color.
+            co(int): The column positionof the selected color.
+            color(str): The selected color'shex value.
+        """
         if self.selected_color:
             button = self.color_container_layout.itemAtPosition(
                 self.selected_pos[0], self.selected_pos[1]
