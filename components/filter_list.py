@@ -48,7 +48,6 @@ class FilterList(QWidget):
         self.model_view = QTreeView(self)
         self.model_view.setHeaderHidden(True)
         self.model = QStandardItemModel()
-        # self.model_root = self.model.invisibleRootItem()
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)

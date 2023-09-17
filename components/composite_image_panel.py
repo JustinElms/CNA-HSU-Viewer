@@ -61,9 +61,9 @@ class CompositeImagePanel(DataPanel):
         self.layout.addStretch()
 
         self.loading.emit(True)
-        self.get_images()
+        self.get_plot()
 
-    def get_images(self) -> None:
+    def get_plot(self) -> None:
         """Handles the process of loading and displying images in the widget.
         Can be run asynchronously if a theadpool was assigned.
         """
@@ -205,4 +205,4 @@ class CompositeImagePanel(DataPanel):
         """
         self.loading.emit(True)
         self.resolution = resolution
-        self.get_images()
+        self.get_plot()

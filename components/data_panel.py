@@ -32,7 +32,7 @@ class DataPanel(QWidget):
         **kwargs
     ) -> None:
         """Initialize component
-        
+
         Args:
             parent(None/QWidget): The parent widget.
             threadpool(None/QThreadpool): The threadpool used to handle async
@@ -131,3 +131,8 @@ class DataPanel(QWidget):
             if not isinstance(item, QSpacerItem):
                 item.widget().setVisible(False)
                 item.widget().deleteLater()
+
+    def update_plot_colors(self, mineral: str, color: str) -> None:
+        self.plot_colors[mineral] = color
+        self.loading.emit(True)
+        self.get_plot()

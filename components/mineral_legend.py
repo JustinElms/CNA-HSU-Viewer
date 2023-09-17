@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
@@ -12,7 +13,12 @@ from data.colormap import hsu_colormap
 class MineralLegend(QWidget):
     """A legend that displays the assigned color of each mineral displayed in
     the applicaiton.
+
+    Signals:
+        color_clicked(dict): Opens the mineral color selection window.
     """
+
+    color_clicked = Signal(str, dict)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
@@ -49,10 +55,15 @@ class MineralLegend(QWidget):
                 idx = idx + 1
                 row_count = self.legend_container_layout.rowCount() + 1
 
-                color_button = QPushButton()
+                color_button = QPushButton(self.legend_container)
                 color_button.setStyleSheet(
                     f"background-color: {mineral_color}; \
                         border: 1 px solid"
+                )
+                color_button.clicked.connect(
+                    lambda chk=None, mineral=mineral: self.show_color_selector(
+                        mineral
+                    )
                 )
                 color_button.setFixedSize(10, 10)
                 mineral_label = QLabel(self.legend_container)
@@ -102,3 +113,20 @@ class MineralLegend(QWidget):
         """
         current_colors = list(self.colormap.values())
         return [color for color in hsu_colormap if color not in current_colors]
+
+    def show_color_selector(self, mineral: str) -> None:
+        colors = self._available_colors()
+        self.color_clicked.emit(mineral, colors)
+
+    def update_mineral_colors(self, mineral: str, color: str) -> None:
+        self.colormap[mineral] = color
+        for row in range(self.legend_container_layout.rowCount()):
+            label = self.legend_container_layout.itemAtPosition(row, 1)
+            if label and label.widget().text() == mineral:
+                button = self.legend_container_layout.itemAtPosition(
+                    row, 0
+                ).widget()
+                button.setStyleSheet(
+                    f"background-color: {color}; \
+                        border: 1 px solid"
+                )
