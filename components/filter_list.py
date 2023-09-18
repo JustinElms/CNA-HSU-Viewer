@@ -146,6 +146,8 @@ class FilterList(QWidget):
         if isinstance(self.options, list):
             if isinstance(index, str):
                 item = self.model.findItems(index)[0]
+            elif isinstance(index, list):
+                item = self.model.item(0)
             else:
                 item = self.model.item(index)
             item.setBackground(Qt.blue)
@@ -164,6 +166,11 @@ class FilterList(QWidget):
                 parent_item = self.model.item(idx)
                 child_item = parent_item.child(idx, index[1])
             elif isinstance(index[0], str):
+                if index[1] == "Composite Plot":
+                    index[1] = "Mineral Percent"
+                elif index[1] == "Composite Images":
+                    index[1] = "Mineral"
+
                 parent_item = self.model.findItems(index[0])[0]
                 for row in range(parent_item.rowCount()):
                     row_item = parent_item.child(row, 0)
