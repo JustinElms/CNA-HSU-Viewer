@@ -133,6 +133,13 @@ class DataPanel(QWidget):
                 item.widget().deleteLater()
 
     def update_plot_colors(self, mineral: str, color: str) -> None:
+        """Updates the mineral colors used in plots and composite images"""
         self.plot_colors[mineral] = color
+        if self.data_subtype == "Composite Images":
+            self.image_frame.setToolTip(
+                self.composite_tooltip(self.plot_colors)
+            )
+        elif self.data_subtype == "Composite Plot":
+            self.setToolTip(self.composite_tooltip(self.plot_colors))
         self.loading.emit(True)
         self.get_plot()

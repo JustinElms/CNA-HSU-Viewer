@@ -11,7 +11,7 @@ from data.dataset import Dataset
 from hsu_viewer.worker import Worker
 
 """
-TODO: 
+TODO:
     tooltip
 """
 
@@ -40,7 +40,7 @@ class CompositePlotPanel(DataPanel):
         **kwargs,
     ) -> None:
         """Initialize component
-        
+
         Args:
             parent(None/QWidget): The parent widget.
             threadpool(None/QThreadpool): The threadpool used to handle async

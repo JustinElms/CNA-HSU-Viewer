@@ -85,8 +85,10 @@ class CoreImagePanel(DataPanel):
                 self.meter = self.dataset.get_box_meter()
 
         if self.meter.max() >= 9999:
-            self.meter[:, 0] = np.arange(0, self.meter.shape[0], 1)
-            self.meter[:, 1] = np.arange(1, self.meter.shape[0] + 1, 1)
+            depth = self.dataset.n_rows() * 2
+            step = depth / (self.meter.shape[0])
+            self.meter[:, 0] = np.linspace(0, depth-step, self.meter.shape[0])
+            self.meter[:, 1] = np.linspace(step, depth, self.meter.shape[0])
 
         image_paths = os_sorted(
             Path(self.dataset_info.get("path")).glob("*.png")
