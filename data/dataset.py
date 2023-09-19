@@ -154,7 +154,7 @@ class Dataset:
 
         return meter_data
 
-    def get_box_meter(self) -> list:
+    def get_box_meter(self) -> np.array:
         meter_data = []
 
         box_numbers_col = self.config["csv_data"].get("box_number")
@@ -182,4 +182,4 @@ class Dataset:
                 [meter_from[np.min(rows)], meter_to[np.max(rows)]]
             )
 
-        return meter_data
+        return np.array(meter_data)
