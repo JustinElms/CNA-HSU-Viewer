@@ -1,4 +1,40 @@
-# CNA-HSU-Viewer
+# User Guide
 
-Sample data and .exe build can be found at:
-https://www.dropbox.com/sh/45zj4q35sja6rm1/AAB6WeGhxu4ltOyiCYAR3xJba?dl=0
+## Overview
+
+## Application Components
+
+### Main Window
+
+### Dataset Selector
+
+### Mineral Legend
+
+### Data Dashboard
+
+### Data Panels
+
+## Adding Panels to the Dashboard
+
+## Export Panels as Images
+
+
+# Developer Guide
+
+## Creating the HSU Viewer Python Environment
+
+## Compiling the Application Execuitable
+
+## Application Structure
+
+### UI Components
+
+### Data Objects
+
+### Main Application
+
+### Configuration Object
+
+### Multithread Worker
+
+### Static Resources
