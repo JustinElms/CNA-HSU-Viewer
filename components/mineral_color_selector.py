@@ -47,7 +47,6 @@ class MineralColorSelector(Modal):
             col = int(idx % 12)
             color_button = QPushButton(color_container)
             color_button.setStyleSheet(f"background-color: {color};")
-            color_button.setFixedSize(20, 20)
             color_button.clicked.connect(
                 lambda chk=None, row=row, col=col, color=color: self.color_clicked(
                     row, col, color
@@ -62,9 +61,11 @@ class MineralColorSelector(Modal):
             "background-color: green; border: 1px solid rgb(222, 222, 222);"
         )
         apply_button.clicked.connect(self.apply_clicked)
+        apply_button.setFixedWidth(40)
 
         cancel_button = QPushButton("Cancel", button_container)
         cancel_button.clicked.connect(self.cancel_clicked)
+        cancel_button.setFixedWidth(40)
 
         button_container_layout = QHBoxLayout(button_container)
         button_container_layout.addStretch()
