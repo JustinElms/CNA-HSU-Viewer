@@ -122,6 +122,8 @@ class HSUConfig:
     ) -> str:
         geochem_path = Path(geochem_path)
         dataset_name = geochem_path.name.replace(".xlsx", "")
+        if "_Geochemistry" in dataset_name:
+            dataset_name = dataset_name.replace("_Geochemistry", "")
 
         geochem_data = self._get_geochem_data(geochem_path.as_posix())
 
@@ -194,7 +196,7 @@ class HSUConfig:
                     "path": geochem_path,
                     "meter_start": meter_start,
                     "meter_end": meter_end,
-                    "min_value": min(col_data),
+                    "min_value": 0,
                     "max_value": max(col_data),
                 }
 
