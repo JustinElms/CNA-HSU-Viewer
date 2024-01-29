@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 
-from data.colormap import hsu_colormap
+from data.colormap import mineral_colormap, hsu_colormap
 
 
 class MineralLegend(QWidget):
@@ -49,10 +49,13 @@ class MineralLegend(QWidget):
         idx = 0
         for mineral in minerals:
             if mineral not in current_minerals:
-                mineral_color = available_colors[idx]
+                if mineral in mineral_colormap.keys():
+                    mineral_color = mineral_colormap[mineral]
+                else:
+                    mineral_color = available_colors[idx]
+                    idx = idx + 1
                 self.colormap[mineral] = mineral_color
 
-                idx = idx + 1
                 row_count = self.legend_container_layout.rowCount() + 1
 
                 color_button = QPushButton(self.legend_container)
@@ -81,6 +84,7 @@ class MineralLegend(QWidget):
         Args:
             minerals(str): Minerals to be removed from the legend.
         """
+
         self.colormap.pop(mineral)
 
         for idx in range(self.legend_container_layout.rowCount()):
