@@ -10,5 +10,9 @@
     <file>minus.svg</file>
     <file>save.svg</file>
     <file>loading.gif</file>
+    <file>colorbar_carbonate_mwir.png</file>
+    <file>colorbar_carbonate.png</file>
+    <file>colorbar_chlorite.png</file>
+    <file>colorbar_white_mica.png</file>
   </qresource>
 </RCC>

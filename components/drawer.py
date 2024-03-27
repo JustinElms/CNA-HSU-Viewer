@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 
+from components.mineral_colorbars import MineralColorbars
 from components.mineral_legend import MineralLegend
 
 
@@ -17,19 +18,20 @@ class Drawer(QWidget):
         self._expanded = False
 
         self.content_panel = QWidget(self)
-        self.content_panel.setFixedWidth(300)
+        self.content_panel.setFixedWidth(380)
 
         self.add_dataset_button = QPushButton("Add Data")
         self.add_dataset_button.setStyleSheet("background-color: green;")
 
+        self.mineral_colorbars = MineralColorbars(self)
         self.mineral_legend = MineralLegend(self)
 
         content_panel_layout = QVBoxLayout(self.content_panel)
         content_panel_layout.setContentsMargins(5, 20, 5, 20)
         content_panel_layout.addWidget(self.add_dataset_button)
-        content_panel_layout.addStretch()
         content_panel_layout.addWidget(self.mineral_legend)
         content_panel_layout.addStretch()
+        content_panel_layout.addWidget(self.mineral_colorbars)
         self.content_panel.hide()
 
         self.button_panel = QWidget(self)
@@ -75,7 +77,7 @@ class Drawer(QWidget):
 
         self.setLayout(layout)
 
-        self.setMaximumWidth(320)
+        self.setMaximumWidth(400)
 
     def _toggle_drawer(self):
         """
