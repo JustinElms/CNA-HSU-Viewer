@@ -10,7 +10,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=["PyQt5"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)
@@ -34,5 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['A:\\Users\\justi\\OneDrive\\Desktop\\CNA-HSU-Viewer\\static\\Icon.ico'],
+    icon=['C:\\Users\\ElmsJ\\Documents\\GitHub\\CNA-HSU-Viewer\\static\\Icon.ico'],
 )
